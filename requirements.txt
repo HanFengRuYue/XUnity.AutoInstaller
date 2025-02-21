@@ -1,0 +1,5 @@
+ttkbootstrap==1.10.1
+pyinstaller==6.3.0
+pillow>=10.2.0
+packaging>=23.2
+requests>=2.31.0
