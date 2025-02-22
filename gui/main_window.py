@@ -372,7 +372,12 @@ class MainWindow:
                 os.path.join(self.game_path, '.doorstop_version'),
                 os.path.join(self.game_path, 'changelog.txt'),
                 os.path.join(self.game_path, 'doorstop_config.ini'),
+                os.path.join(self.game_path, 'sourcehansanscn_u6'),
                 os.path.join(self.game_path, 'sourcehansanscn_u2022'),
+                os.path.join(self.game_path, 'sourcehansanscn_u2021'),
+                os.path.join(self.game_path, 'sourcehansanscn_u2020'),
+                os.path.join(self.game_path, 'sourcehansanscn_u2019'),
+                os.path.join(self.game_path, 'sourcehansanscn_u2018'),
                 os.path.join(self.game_path, 'tangyuanti_u2018'),
                 os.path.join(self.game_path, 'winhttp.dll')
             ]

@@ -136,7 +136,7 @@ class ConfigWindow:
         tmp_container.pack(expand=YES, fill=BOTH, padx=5, pady=5)
         
         # 字体选项
-        self.font_options = ['', 'tangyuanti_u2018', 'sourcehansanscn_u2022']
+        self.font_options = ['', 'sourcehansanscn_u6', 'sourcehansanscn_u2018', 'sourcehansanscn_u2019', 'sourcehansanscn_u2020', 'sourcehansanscn_u2021', 'sourcehansanscn_u2022']
         
         ttk.Label(tmp_container, text="覆盖TextMeshPro字体:").grid(row=0, column=0, sticky=E, padx=(0, 5))
         self.tmp_font_var = tk.StringVar()
@@ -383,7 +383,7 @@ class ConfigWindow:
             
             try:
                 # 如果选择了预设字体选项
-                if font_name in ['tangyuanti_u2018', 'sourcehansanscn_u2022']:
+                if font_name in ['sourcehansanscn_u6', 'sourcehansanscn_u2018', 'sourcehansanscn_u2019', 'sourcehansanscn_u2020', 'sourcehansanscn_u2021', 'sourcehansanscn_u2022']:
                     # 源文件路径
                     source_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'File', font_name)
                     # 目标路径
@@ -406,7 +406,7 @@ class ConfigWindow:
                 # 如果清空了选项
                 elif not font_name:
                     # 查找并删除可能存在的字体文件
-                    for font in ['tangyuanti_u2018', 'sourcehansanscn_u2022']:
+                    for font in ['sourcehansanscn_u6', 'sourcehansanscn_u2018', 'sourcehansanscn_u2019', 'sourcehansanscn_u2020', 'sourcehansanscn_u2021', 'sourcehansanscn_u2022']:
                         target_path = os.path.join(self.game_path, font)
                         if os.path.exists(target_path):
                             try:
