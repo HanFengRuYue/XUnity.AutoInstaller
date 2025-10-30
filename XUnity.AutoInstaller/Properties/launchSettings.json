@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "XUnity.AutoInstaller (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "XUnity.AutoInstaller (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
