@@ -47,16 +47,14 @@ public class GitHubApiClient
                     Platform? platform = null;
                     var name = asset.Name.ToLowerInvariant();
 
-                    // 识别平台
-                    if (name.Contains("il2cpp_x64") || name.Contains("il2cpp-x64"))
+                    // 跳过 IL2CPP 版本（这些版本将从 builds.bepinex.dev 获取）
+                    if (name.Contains("il2cpp"))
                     {
-                        platform = Platform.IL2CPP_x64;
+                        continue;
                     }
-                    else if (name.Contains("il2cpp_x86") || name.Contains("il2cpp-x86"))
-                    {
-                        platform = Platform.IL2CPP_x86;
-                    }
-                    else if (name.Contains("x64") || name.Contains("win_x64"))
+
+                    // 识别 Mono 平台
+                    if (name.Contains("x64") || name.Contains("win_x64"))
                     {
                         platform = Platform.x64;
                     }

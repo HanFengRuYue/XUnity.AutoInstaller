@@ -54,11 +54,6 @@
                     Padding="20">
                     <StackPanel Spacing="16">
                         <CheckBox
-                            x:Name="AutoDetectCheckBox"
-                            Content="启动时自动检测游戏"
-                            Checked="SettingChanged"
-                            Unchecked="SettingChanged"/>
-                        <CheckBox
                             x:Name="RememberPathCheckBox"
                             Content="记住上次选择的游戏路径"
                             Checked="SettingChanged"
@@ -95,33 +90,6 @@
                             Content="默认使用推荐配置"
                             Checked="SettingChanged"
                             Unchecked="SettingChanged"/>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
-
-            <!-- 更新 -->
-            <StackPanel Spacing="16">
-                <TextBlock
-                    Text="更新"
-                    Style="{StaticResource SubtitleTextBlockStyle}"/>
-
-                <Border
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8"
-                    Padding="20">
-                    <StackPanel Spacing="16">
-                        <CheckBox
-                            x:Name="CheckUpdateCheckBox"
-                            Content="启动时检查应用更新（功能待实现）"
-                            Checked="SettingChanged"
-                            Unchecked="SettingChanged"
-                            IsEnabled="False"/>
-                        <TextBlock
-                            Text="注：自动更新功能将在未来版本中提供"
-                            FontSize="12"
-                            Opacity="0.7"/>
                     </StackPanel>
                 </Border>
             </StackPanel>

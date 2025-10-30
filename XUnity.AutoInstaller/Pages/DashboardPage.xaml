@@ -25,7 +25,6 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <TextBox
@@ -36,23 +35,12 @@
 
                     <Button
                         Grid.Column="1"
+                        Style="{StaticResource AccentButtonStyle}"
                         Click="BrowseButton_Click">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <FontIcon Glyph="&#xE8B7;" FontSize="16"/>
-                                <TextBlock Text="浏览"/>
-                            </StackPanel>
-                        </Button.Content>
-                    </Button>
-
-                    <Button
-                        Grid.Column="2"
-                        Style="{StaticResource AccentButtonStyle}"
-                        Click="AutoDetectButton_Click">
-                        <Button.Content>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE721;" FontSize="16"/>
-                                <TextBlock Text="自动检测"/>
+                                <TextBlock Text="浏览选择"/>
                             </StackPanel>
                         </Button.Content>
                     </Button>

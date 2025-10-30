@@ -14,6 +14,10 @@ namespace XUnity.AutoInstaller
         {
             InitializeComponent();
 
+            // Enable custom title bar
+            ExtendsContentIntoTitleBar = true;
+            SetTitleBar(AppTitleBar);
+
             // 设置窗口初始大小
             this.AppWindow.Resize(new Windows.Graphics.SizeInt32(1200, 800));
 
@@ -24,12 +28,7 @@ namespace XUnity.AutoInstaller
 
         private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
         {
-            if (args.IsSettingsSelected)
-            {
-                // 导航到设置页面
-                ContentFrame.Navigate(typeof(SettingsPage));
-            }
-            else if (args.SelectedItemContainer != null)
+            if (args.SelectedItemContainer != null)
             {
                 var selectedTag = args.SelectedItemContainer.Tag?.ToString();
 
@@ -46,6 +45,9 @@ namespace XUnity.AutoInstaller
                         break;
                     case "Version":
                         ContentFrame.Navigate(typeof(VersionManagementPage));
+                        break;
+                    case "Settings":
+                        ContentFrame.Navigate(typeof(SettingsPage));
                         break;
                 }
             }

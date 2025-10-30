@@ -38,16 +38,12 @@ namespace XUnity.AutoInstaller.Pages
             };
 
             // 常规设置
-            AutoDetectCheckBox.IsChecked = _currentSettings.AutoDetectGameOnStartup;
             RememberPathCheckBox.IsChecked = _currentSettings.RememberLastGamePath;
             ShowDetailedProgressCheckBox.IsChecked = _currentSettings.ShowDetailedProgress;
 
             // 默认安装选项
             DefaultBackupCheckBox.IsChecked = _currentSettings.DefaultBackupExisting;
             DefaultRecommendedConfigCheckBox.IsChecked = _currentSettings.DefaultUseRecommendedConfig;
-
-            // 更新设置
-            CheckUpdateCheckBox.IsChecked = _currentSettings.CheckUpdateOnStartup;
         }
 
         /// <summary>
@@ -64,16 +60,12 @@ namespace XUnity.AutoInstaller.Pages
             };
 
             // 常规设置
-            _currentSettings.AutoDetectGameOnStartup = AutoDetectCheckBox.IsChecked == true;
             _currentSettings.RememberLastGamePath = RememberPathCheckBox.IsChecked == true;
             _currentSettings.ShowDetailedProgress = ShowDetailedProgressCheckBox.IsChecked == true;
 
             // 默认安装选项
             _currentSettings.DefaultBackupExisting = DefaultBackupCheckBox.IsChecked == true;
             _currentSettings.DefaultUseRecommendedConfig = DefaultRecommendedConfigCheckBox.IsChecked == true;
-
-            // 更新设置
-            _currentSettings.CheckUpdateOnStartup = CheckUpdateCheckBox.IsChecked == true;
 
             // 保存到本地存储
             _settingsService.SaveSettings(_currentSettings);
@@ -104,6 +96,8 @@ namespace XUnity.AutoInstaller.Pages
 
         private async void SaveButton_Click(object sender, RoutedEventArgs e)
         {
+            if (this.XamlRoot == null) return;
+
             try
             {
                 SaveSettingsFromUI();
@@ -134,6 +128,8 @@ namespace XUnity.AutoInstaller.Pages
 
         private async void ResetButton_Click(object sender, RoutedEventArgs e)
         {
+            if (this.XamlRoot == null) return;
+
             // 确认对话框
             var confirmDialog = new ContentDialog
             {

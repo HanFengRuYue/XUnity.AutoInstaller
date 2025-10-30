@@ -15,10 +15,12 @@ namespace XUnity.AutoInstaller.Services;
 public class VersionService
 {
     private readonly GitHubApiClient _githubClient;
+    private readonly BepInExBuildsApiClient _buildsClient;
 
     public VersionService()
     {
         _githubClient = new GitHubApiClient();
+        _buildsClient = new BepInExBuildsApiClient();
     }
 
     /// <summary>
@@ -32,8 +34,35 @@ public class VersionService
         {
             if (filterType == null || filterType == PackageType.BepInEx)
             {
-                var bepinexVersions = await _githubClient.GetBepInExVersionsAsync();
-                versions.AddRange(bepinexVersions.Where(v => includePrerelease || !v.IsPrerelease));
+                // 从 GitHub 获取 Mono 版本
+                var monoVersions = await _githubClient.GetBepInExVersionsAsync();
+                versions.AddRange(monoVersions.Where(v => includePrerelease || !v.IsPrerelease));
+                System.Diagnostics.Debug.WriteLine($"[VersionService] 从 GitHub 获取 {monoVersions.Count} 个 Mono 版本");
+
+                // 从 builds.bepinex.dev 获取 IL2CPP 版本
+                try
+                {
+                    System.Diagnostics.Debug.WriteLine($"[VersionService] 开始获取 IL2CPP 版本...");
+                    var il2cppVersions = await _buildsClient.GetIL2CPPVersionsAsync();
+                    System.Diagnostics.Debug.WriteLine($"[VersionService] 获取到 {il2cppVersions.Count} 个 IL2CPP 版本");
+
+                    // IL2CPP 版本都是预览版，根据 includePrerelease 过滤
+                    if (includePrerelease)
+                    {
+                        versions.AddRange(il2cppVersions);
+                        System.Diagnostics.Debug.WriteLine($"[VersionService] 添加了 {il2cppVersions.Count} 个 IL2CPP 版本到列表");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[VersionService] includePrerelease=false，跳过 IL2CPP 版本");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // 如果获取 IL2CPP 版本失败，不影响整体流程
+                    System.Diagnostics.Debug.WriteLine($"[VersionService] 获取 IL2CPP 版本失败: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"[VersionService] 详细错误: {ex}");
+                }
             }
 
             if (filterType == null || filterType == PackageType.XUnity)
@@ -57,7 +86,23 @@ public class VersionService
     {
         try
         {
-            var bepinex = await _githubClient.GetLatestBepInExVersionAsync(platform, includePrerelease: false);
+            VersionInfo? bepinex;
+
+            // IL2CPP 平台从 builds.bepinex.dev 获取
+            if (platform == Platform.IL2CPP_x86 || platform == Platform.IL2CPP_x64)
+            {
+                var il2cppVersions = await _buildsClient.GetIL2CPPVersionsAsync();
+                bepinex = il2cppVersions
+                    .Where(v => v.TargetPlatform == platform)
+                    .OrderByDescending(v => v.ReleaseDate)
+                    .FirstOrDefault();
+            }
+            else
+            {
+                // Mono 平台从 GitHub 获取
+                bepinex = await _githubClient.GetLatestBepInExVersionAsync(platform, includePrerelease: false);
+            }
+
             var xunity = await _githubClient.GetLatestXUnityVersionAsync(includePrerelease: false);
 
             return (bepinex, xunity);

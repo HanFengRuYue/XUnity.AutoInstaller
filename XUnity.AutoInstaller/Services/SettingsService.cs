@@ -13,10 +13,8 @@ namespace XUnity.AutoInstaller.Services;
 public class SettingsService
 {
     private static readonly string THEME_KEY = "AppTheme";
-    private static readonly string AUTO_DETECT_KEY = "AutoDetectGameOnStartup";
     private static readonly string REMEMBER_PATH_KEY = "RememberLastGamePath";
     private static readonly string LAST_GAME_PATH_KEY = "LastGamePath";
-    private static readonly string CHECK_UPDATE_KEY = "CheckUpdateOnStartup";
     private static readonly string SHOW_DETAILED_PROGRESS_KEY = "ShowDetailedProgress";
     private static readonly string DEFAULT_BACKUP_KEY = "DefaultBackupExisting";
     private static readonly string DEFAULT_RECOMMENDED_CONFIG_KEY = "DefaultUseRecommendedConfig";
@@ -36,10 +34,8 @@ public class SettingsService
         return new AppSettings
         {
             Theme = LoadTheme(),
-            AutoDetectGameOnStartup = LoadBool(AUTO_DETECT_KEY, false),
             RememberLastGamePath = LoadBool(REMEMBER_PATH_KEY, true),
             LastGamePath = LoadString(LAST_GAME_PATH_KEY),
-            CheckUpdateOnStartup = LoadBool(CHECK_UPDATE_KEY, false),
             ShowDetailedProgress = LoadBool(SHOW_DETAILED_PROGRESS_KEY, true),
             DefaultBackupExisting = LoadBool(DEFAULT_BACKUP_KEY, true),
             DefaultUseRecommendedConfig = LoadBool(DEFAULT_RECOMMENDED_CONFIG_KEY, true)
@@ -52,10 +48,8 @@ public class SettingsService
     public void SaveSettings(AppSettings settings)
     {
         SaveTheme(settings.Theme);
-        SaveBool(AUTO_DETECT_KEY, settings.AutoDetectGameOnStartup);
         SaveBool(REMEMBER_PATH_KEY, settings.RememberLastGamePath);
         SaveString(LAST_GAME_PATH_KEY, settings.LastGamePath);
-        SaveBool(CHECK_UPDATE_KEY, settings.CheckUpdateOnStartup);
         SaveBool(SHOW_DETAILED_PROGRESS_KEY, settings.ShowDetailedProgress);
         SaveBool(DEFAULT_BACKUP_KEY, settings.DefaultBackupExisting);
         SaveBool(DEFAULT_RECOMMENDED_CONFIG_KEY, settings.DefaultUseRecommendedConfig);

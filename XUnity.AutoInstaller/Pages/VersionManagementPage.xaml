@@ -61,53 +61,92 @@
                     <Grid>
                         <ListView
                             x:Name="InstalledVersionsListView"
-                            SelectionMode="Single">
+                            SelectionMode="None">
                             <ListView.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid Padding="12" ColumnSpacing="12">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
+                                    <Grid Padding="8,4">
+                                        <!-- 标题行显示 -->
+                                        <TextBlock
+                                            x:Name="HeaderText"
+                                            Text="{Binding DisplayText}"
+                                            FontWeight="SemiBold"
+                                            FontSize="14"
+                                            Margin="0,8,0,4"
+                                            Visibility="{Binding HeaderVisibility}"/>
 
-                                        <FontIcon
-                                            Grid.Column="0"
-                                            Glyph="&#xE7C3;"
-                                            FontSize="32"
-                                            VerticalAlignment="Center"
-                                            Foreground="{ThemeResource SystemAccentColor}"/>
+                                        <!-- 当前安装/快照显示 -->
+                                        <StackPanel
+                                            x:Name="ContentPanel"
+                                            Spacing="4"
+                                            Visibility="{Binding ContentVisibility}">
+                                            <Grid ColumnSpacing="12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
 
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBlock
-                                                Text="BepInEx v5.4.23.2"
-                                                FontWeight="SemiBold"
-                                                FontSize="14"/>
-                                            <TextBlock
-                                                Text="安装日期: 2024-01-15"
-                                                FontSize="12"
-                                                Opacity="0.7"/>
-                                            <TextBlock
-                                                Text="平台: x64"
-                                                FontSize="12"
-                                                Opacity="0.7"/>
-                                        </StackPanel>
+                                                <!-- 左侧信息 -->
+                                                <StackPanel Grid.Column="0" Spacing="2">
+                                                    <TextBlock
+                                                        Text="{Binding DisplayText}"
+                                                        FontWeight="SemiBold"
+                                                        FontSize="13"/>
+                                                    <TextBlock
+                                                        Text="{Binding SubText1}"
+                                                        FontSize="11"
+                                                        Opacity="0.7"/>
+                                                    <TextBlock
+                                                        Text="{Binding SubText2}"
+                                                        FontSize="11"
+                                                        Opacity="0.7"/>
+                                                </StackPanel>
 
-                                        <StackPanel Grid.Column="2" Spacing="4" VerticalAlignment="Center">
-                                            <Button
-                                                Content="卸载"
-                                                Click="UninstallButton_Click"
-                                                Width="80"/>
-                                            <Button
-                                                Content="设为活动"
-                                                Style="{StaticResource AccentButtonStyle}"
-                                                Click="SetActiveButton_Click"
-                                                Width="80"/>
+                                                <!-- 右侧按钮 -->
+                                                <StackPanel
+                                                    x:Name="ButtonPanel"
+                                                    Grid.Column="1"
+                                                    Orientation="Horizontal"
+                                                    Spacing="8"
+                                                    VerticalAlignment="Center"
+                                                    Visibility="{Binding ButtonsVisibility}">
+                                                    <Button
+                                                        FontSize="11"
+                                                        Padding="12,4"
+                                                        Tag="{Binding}"
+                                                        Click="RestoreSnapshotItemButton_Click">
+                                                        <Button.Content>
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <FontIcon Glyph="&#xE7A7;" FontSize="12"/>
+                                                                <TextBlock Text="恢复"/>
+                                                            </StackPanel>
+                                                        </Button.Content>
+                                                    </Button>
+                                                    <Button
+                                                        FontSize="11"
+                                                        Padding="12,4"
+                                                        Tag="{Binding}"
+                                                        Click="DeleteSnapshotItemButton_Click">
+                                                        <Button.Content>
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <FontIcon Glyph="&#xE74D;" FontSize="12"/>
+                                                                <TextBlock Text="删除"/>
+                                                            </StackPanel>
+                                                        </Button.Content>
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
                                         </StackPanel>
                                     </Grid>
                                 </DataTemplate>
                             </ListView.ItemTemplate>
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    <Setter Property="Padding" Value="0"/>
+                                </Style>
+                            </ListView.ItemContainerStyle>
                         </ListView>
+
 
                         <!-- 空状态提示 -->
                         <StackPanel
@@ -132,36 +171,16 @@
                 </Border>
 
                 <!-- 快照管理按钮 -->
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button
-                        Style="{StaticResource AccentButtonStyle}"
-                        Click="SetActiveButton_Click">
-                        <Button.Content>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE74E;" FontSize="16"/>
-                                <TextBlock Text="创建快照"/>
-                            </StackPanel>
-                        </Button.Content>
-                    </Button>
-                    <Button
-                        Click="RestoreSnapshotButton_Click">
-                        <Button.Content>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE7A7;" FontSize="16"/>
-                                <TextBlock Text="恢复快照"/>
-                            </StackPanel>
-                        </Button.Content>
-                    </Button>
-                    <Button
-                        Click="DeleteSnapshotButton_Click">
-                        <Button.Content>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE74D;" FontSize="16"/>
-                                <TextBlock Text="删除快照"/>
-                            </StackPanel>
-                        </Button.Content>
-                    </Button>
-                </StackPanel>
+                <Button
+                    Style="{StaticResource AccentButtonStyle}"
+                    Click="SetActiveButton_Click">
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE74E;" FontSize="16"/>
+                            <TextBlock Text="创建快照"/>
+                        </StackPanel>
+                    </Button.Content>
+                </Button>
             </StackPanel>
 
             <!-- 右侧：可用版本 -->
@@ -200,14 +219,26 @@
 
                         <StackPanel Spacing="8">
                             <ComboBox
-                                x:Name="PackageFilterComboBox"
-                                Header="选择包"
+                                x:Name="PlatformFilterComboBox"
+                                Header="平台"
                                 HorizontalAlignment="Stretch"
                                 SelectedIndex="0"
-                                SelectionChanged="PackageFilterComboBox_SelectionChanged">
-                                <ComboBoxItem Content="全部"/>
-                                <ComboBoxItem Content="BepInEx"/>
-                                <ComboBoxItem Content="XUnity.AutoTranslator"/>
+                                SelectionChanged="PlatformFilterComboBox_SelectionChanged">
+                                <ComboBoxItem Content="全部平台"/>
+                                <ComboBoxItem Content="x86"/>
+                                <ComboBoxItem Content="x64"/>
+                                <ComboBoxItem Content="ARM64"/>
+                            </ComboBox>
+
+                            <ComboBox
+                                x:Name="ArchitectureFilterComboBox"
+                                Header="架构"
+                                HorizontalAlignment="Stretch"
+                                SelectedIndex="0"
+                                SelectionChanged="ArchitectureFilterComboBox_SelectionChanged">
+                                <ComboBoxItem Content="全部架构"/>
+                                <ComboBoxItem Content="Mono"/>
+                                <ComboBoxItem Content="IL2CPP"/>
                             </ComboBox>
 
                             <ComboBox
@@ -224,93 +255,121 @@
                     </StackPanel>
                 </Border>
 
-                <!-- 可用版本列表 -->
-                <Border
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8"
-                    Height="380">
-                    <Grid>
-                        <ListView
-                            x:Name="AvailableVersionsListView"
-                            SelectionMode="Single">
-                            <ListView.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid Padding="12" ColumnSpacing="12">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <FontIcon
-                                            Grid.Column="0"
-                                            Glyph="&#xE896;"
-                                            FontSize="32"
-                                            VerticalAlignment="Center"
-                                            Foreground="{ThemeResource SystemAccentColor}"/>
-
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                                <TextBlock
-                                                    Text="BepInEx v5.4.23.2"
-                                                    FontWeight="SemiBold"
-                                                    FontSize="14"/>
-                                                <Border
-                                                    Background="{ThemeResource SystemAccentColor}"
-                                                    CornerRadius="4"
-                                                    Padding="6,2">
-                                                    <TextBlock
-                                                        Text="最新"
-                                                        FontSize="10"
-                                                        Foreground="White"/>
-                                                </Border>
-                                            </StackPanel>
+                <!-- BepInEx 版本列表 -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="BepInEx 版本" FontWeight="SemiBold" FontSize="14"/>
+                    <Border
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Height="180">
+                        <Grid>
+                            <ListView
+                                x:Name="BepInExVersionsListView"
+                                SelectionMode="None">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Padding="8,6" ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
                                             <TextBlock
-                                                Text="发布日期: 2024-01-10"
+                                                Grid.Column="0"
+                                                Text="{Binding DisplayText}"
+                                                TextWrapping="NoWrap"
                                                 FontSize="12"
-                                                Opacity="0.7"/>
+                                                VerticalAlignment="Center"/>
+                                            <Button
+                                                Grid.Column="1"
+                                                Content="下载"
+                                                FontSize="11"
+                                                Padding="12,4"
+                                                Tag="{Binding}"
+                                                Click="DownloadButton_Click"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+
+                            <!-- 加载提示 -->
+                            <StackPanel
+                                x:Name="BepInExLoadingPanel"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Spacing="12"
+                                Visibility="Collapsed">
+                                <ProgressRing
+                                    IsActive="True"
+                                    Width="32"
+                                    Height="32"/>
+                                <TextBlock
+                                    Text="加载中..."
+                                    FontSize="12"
+                                    Opacity="0.7"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <!-- XUnity 版本列表 -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="XUnity.AutoTranslator 版本" FontWeight="SemiBold" FontSize="14"/>
+                    <Border
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Height="180">
+                        <Grid>
+                            <ListView
+                                x:Name="XUnityVersionsListView"
+                                SelectionMode="None">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Padding="8,6" ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
                                             <TextBlock
-                                                Text="大小: 15.2 MB"
+                                                Grid.Column="0"
+                                                Text="{Binding DisplayText}"
+                                                TextWrapping="NoWrap"
                                                 FontSize="12"
-                                                Opacity="0.7"/>
-                                        </StackPanel>
+                                                VerticalAlignment="Center"/>
+                                            <Button
+                                                Grid.Column="1"
+                                                Content="下载"
+                                                FontSize="11"
+                                                Padding="12,4"
+                                                Tag="{Binding}"
+                                                Click="DownloadButton_Click"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
 
-                                        <Button
-                                            Grid.Column="2"
-                                            Style="{StaticResource AccentButtonStyle}"
-                                            Click="DownloadButton_Click"
-                                            VerticalAlignment="Center">
-                                            <Button.Content>
-                                                <StackPanel Orientation="Horizontal" Spacing="4">
-                                                    <FontIcon Glyph="&#xE896;" FontSize="14"/>
-                                                    <TextBlock Text="下载"/>
-                                                </StackPanel>
-                                            </Button.Content>
-                                        </Button>
-                                    </Grid>
-                                </DataTemplate>
-                            </ListView.ItemTemplate>
-                        </ListView>
-
-                        <!-- 加载提示 -->
-                        <StackPanel
-                            x:Name="LoadingPanel"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Spacing="12"
-                            Visibility="Collapsed">
-                            <ProgressRing
-                                IsActive="True"
-                                Width="48"
-                                Height="48"/>
-                            <TextBlock
-                                Text="正在获取版本列表..."
-                                Style="{StaticResource BodyTextBlockStyle}"/>
-                        </StackPanel>
-                    </Grid>
-                </Border>
+                            <!-- 加载提示 -->
+                            <StackPanel
+                                x:Name="XUnityLoadingPanel"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Spacing="12"
+                                Visibility="Collapsed">
+                                <ProgressRing
+                                    IsActive="True"
+                                    Width="32"
+                                    Height="32"/>
+                                <TextBlock
+                                    Text="加载中..."
+                                    FontSize="12"
+                                    Opacity="0.7"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
             </StackPanel>
         </Grid>
     </Grid>

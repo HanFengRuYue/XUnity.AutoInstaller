@@ -12,12 +12,27 @@ namespace XUnity.AutoInstaller.Pages
 {
     public sealed partial class DashboardPage : Page
     {
-        private string? _currentGamePath;
+        private readonly GameStateService _gameStateService;
 
         public DashboardPage()
         {
             this.InitializeComponent();
+            _gameStateService = GameStateService.Instance;
             QuickInstallButton.IsEnabled = false;
+
+            // Load current game path if available
+            LoadCurrentGamePath();
+        }
+
+        private void LoadCurrentGamePath()
+        {
+            var gamePath = _gameStateService.CurrentGamePath;
+            if (!string.IsNullOrEmpty(gamePath))
+            {
+                GamePathTextBox.Text = gamePath;
+                RefreshStatus();
+                QuickInstallButton.IsEnabled = true;
+            }
         }
 
         private async void BrowseButton_Click(object sender, RoutedEventArgs e)
@@ -40,7 +55,7 @@ namespace XUnity.AutoInstaller.Pages
                     // 验证游戏目录
                     if (PathHelper.IsValidGameDirectory(gamePath))
                     {
-                        _currentGamePath = gamePath;
+                        _gameStateService.SetGamePath(gamePath, saveToSettings: true);
                         GamePathTextBox.Text = gamePath;
                         RefreshStatus();
 
@@ -67,106 +82,11 @@ namespace XUnity.AutoInstaller.Pages
             }
         }
 
-        private async void AutoDetectButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                StatusInfoBar.Severity = InfoBarSeverity.Informational;
-                StatusInfoBar.Title = "提示";
-                StatusInfoBar.Message = "正在自动检测游戏...";
-                StatusInfoBar.IsOpen = true;
-
-                // 在后台线程运行检测
-                var games = await Task.Run(() => GameDetectionService.AutoDetectGames());
-
-                if (games.Count == 0)
-                {
-                    StatusInfoBar.Severity = InfoBarSeverity.Warning;
-                    StatusInfoBar.Title = "未找到游戏";
-                    StatusInfoBar.Message = "未在常见位置找到 Unity 游戏，请手动选择游戏目录";
-                    StatusInfoBar.IsOpen = true;
-                    return;
-                }
-
-                // 如果找到多个游戏，显示选择对话框
-                if (games.Count == 1)
-                {
-                    _currentGamePath = games[0].Path;
-                    GamePathTextBox.Text = _currentGamePath;
-                    RefreshStatus();
-
-                    StatusInfoBar.Severity = InfoBarSeverity.Success;
-                    StatusInfoBar.Title = "成功";
-                    StatusInfoBar.Message = $"已检测到游戏: {games[0].Name}";
-                    StatusInfoBar.IsOpen = true;
-                }
-                else
-                {
-                    // 显示选择对话框
-                    await ShowGameSelectionDialog(games);
-                }
-            }
-            catch (Exception ex)
-            {
-                StatusInfoBar.Severity = InfoBarSeverity.Error;
-                StatusInfoBar.Title = "错误";
-                StatusInfoBar.Message = $"自动检测失败: {ex.Message}";
-                StatusInfoBar.IsOpen = true;
-            }
-        }
-
-        private async Task ShowGameSelectionDialog(List<Models.GameInfo> games)
-        {
-            var dialog = new ContentDialog
-            {
-                Title = "选择游戏",
-                Content = new StackPanel
-                {
-                    Children =
-                    {
-                        new TextBlock
-                        {
-                            Text = $"检测到 {games.Count} 个游戏，请选择:",
-                            Margin = new Thickness(0, 0, 0, 12)
-                        }
-                    }
-                },
-                PrimaryButtonText = "确定",
-                CloseButtonText = "取消",
-                XamlRoot = this.XamlRoot
-            };
-
-            var listView = new ListView
-            {
-                SelectionMode = ListViewSelectionMode.Single
-            };
-
-            foreach (var game in games)
-            {
-                listView.Items.Add($"{game.Name} ({game.Engine})");
-            }
-
-            listView.SelectedIndex = 0;
-            ((StackPanel)dialog.Content).Children.Add(listView);
-
-            var result = await dialog.ShowAsync();
-            if (result == ContentDialogResult.Primary && listView.SelectedIndex >= 0)
-            {
-                var selectedGame = games[listView.SelectedIndex];
-                _currentGamePath = selectedGame.Path;
-                GamePathTextBox.Text = _currentGamePath;
-                RefreshStatus();
-
-                StatusInfoBar.Severity = InfoBarSeverity.Success;
-                StatusInfoBar.Title = "成功";
-                StatusInfoBar.Message = $"已选择游戏: {selectedGame.Name}";
-                StatusInfoBar.IsOpen = true;
-            }
-        }
 
         private void QuickInstallButton_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrEmpty(_currentGamePath))
+            var gamePath = _gameStateService.CurrentGamePath;
+            if (string.IsNullOrEmpty(gamePath))
             {
                 StatusInfoBar.Severity = InfoBarSeverity.Warning;
                 StatusInfoBar.Title = "警告";
@@ -175,13 +95,14 @@ namespace XUnity.AutoInstaller.Pages
                 return;
             }
 
-            // 导航到安装页面
-            Frame.Navigate(typeof(InstallPage), _currentGamePath);
+            // 导航到安装页面（不再需要传递参数）
+            Frame.Navigate(typeof(InstallPage));
         }
 
         private void OpenGameFolderButton_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrEmpty(_currentGamePath))
+            var gamePath = _gameStateService.CurrentGamePath;
+            if (string.IsNullOrEmpty(gamePath))
             {
                 StatusInfoBar.Severity = InfoBarSeverity.Warning;
                 StatusInfoBar.Title = "警告";
@@ -194,7 +115,7 @@ namespace XUnity.AutoInstaller.Pages
             {
                 Process.Start(new ProcessStartInfo
                 {
-                    FileName = _currentGamePath,
+                    FileName = gamePath,
                     UseShellExecute = true
                 });
             }
@@ -209,7 +130,7 @@ namespace XUnity.AutoInstaller.Pages
 
         private void RefreshStatusButton_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrEmpty(_currentGamePath))
+            if (!_gameStateService.HasValidGamePath())
             {
                 StatusInfoBar.Severity = InfoBarSeverity.Warning;
                 StatusInfoBar.Title = "警告";
@@ -230,12 +151,13 @@ namespace XUnity.AutoInstaller.Pages
         /// </summary>
         private void RefreshStatus()
         {
-            if (string.IsNullOrEmpty(_currentGamePath))
+            var gamePath = _gameStateService.CurrentGamePath;
+            if (string.IsNullOrEmpty(gamePath))
             {
                 return;
             }
 
-            var status = GameDetectionService.DetectInstallationStatus(_currentGamePath);
+            var status = GameDetectionService.DetectInstallationStatus(gamePath);
 
             // 更新 BepInEx 状态
             if (status.IsBepInExInstalled)

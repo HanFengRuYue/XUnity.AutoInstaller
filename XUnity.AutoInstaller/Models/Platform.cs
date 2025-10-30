@@ -23,5 +23,10 @@ public enum Platform
     /// <summary>
     /// IL2CPP x64 64位
     /// </summary>
-    IL2CPP_x64
+    IL2CPP_x64,
+
+    /// <summary>
+    /// ARM64 架构
+    /// </summary>
+    ARM64
 }

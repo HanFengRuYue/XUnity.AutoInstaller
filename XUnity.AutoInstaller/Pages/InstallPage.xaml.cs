@@ -22,7 +22,7 @@ namespace XUnity.AutoInstaller.Pages
 
     public sealed partial class InstallPage : Page
     {
-        private string? _gamePath;
+        private readonly GameStateService _gameStateService;
         private bool _isInstalling = false;
         private readonly VersionService _versionService;
         private List<VersionInfo> _bepinexVersions = new();
@@ -32,6 +32,7 @@ namespace XUnity.AutoInstaller.Pages
         {
             this.InitializeComponent();
 
+            _gameStateService = GameStateService.Instance;
             _versionService = new VersionService();
 
             // 设置默认值
@@ -44,9 +45,10 @@ namespace XUnity.AutoInstaller.Pages
         {
             base.OnNavigatedTo(e);
 
-            if (e.Parameter is string gamePath)
+            // Get game path from GameStateService
+            var gamePath = _gameStateService.CurrentGamePath;
+            if (!string.IsNullOrEmpty(gamePath))
             {
-                _gamePath = gamePath;
                 AppendLog($"游戏路径: {gamePath}");
 
                 // 检测游戏引擎并推荐平台
@@ -58,6 +60,10 @@ namespace XUnity.AutoInstaller.Pages
                     PlatformComboBox.SelectedIndex = 2; // IL2CPP x64
                     AppendLog("推荐平台: IL2CPP x64");
                 }
+            }
+            else
+            {
+                AppendLog("警告: 未设置游戏路径，请先在首页选择游戏目录");
             }
         }
 
@@ -197,9 +203,10 @@ namespace XUnity.AutoInstaller.Pages
                 return;
             }
 
-            if (string.IsNullOrEmpty(_gamePath))
+            var gamePath = _gameStateService.CurrentGamePath;
+            if (string.IsNullOrEmpty(gamePath))
             {
-                await ShowErrorAsync("游戏路径未设置");
+                await ShowErrorAsync("游戏路径未设置，请先在首页选择游戏目录");
                 return;
             }
 
@@ -251,7 +258,7 @@ namespace XUnity.AutoInstaller.Pages
                     }
                 }
 
-                AppendLog($"开始安装到: {_gamePath}");
+                AppendLog($"开始安装到: {gamePath}");
                 AppendLog($"平台: {options.TargetPlatform}");
                 AppendLog($"版本模式: {(VersionModeRadio.SelectedIndex == 0 ? "自动推荐" : "手动选择")}");
                 if (!string.IsNullOrEmpty(options.BepInExVersion))
@@ -284,7 +291,7 @@ namespace XUnity.AutoInstaller.Pages
                 });
 
                 // 执行安装
-                var success = await installService.InstallAsync(_gamePath, options, progress);
+                var success = await installService.InstallAsync(gamePath, options, progress);
 
                 if (success)
                 {
@@ -339,6 +346,13 @@ namespace XUnity.AutoInstaller.Pages
 
         private async Task ShowErrorAsync(string message)
         {
+            // 如果 XamlRoot 为 null,延迟到下一个 UI 周期
+            if (this.XamlRoot == null)
+            {
+                DispatcherQueue.TryEnqueue(async () => await ShowErrorAsync(message));
+                return;
+            }
+
             var dialog = new ContentDialog
             {
                 Title = "错误",
@@ -351,6 +365,13 @@ namespace XUnity.AutoInstaller.Pages
 
         private async Task ShowSuccessAsync(string message)
         {
+            // 如果 XamlRoot 为 null,延迟到下一个 UI 周期
+            if (this.XamlRoot == null)
+            {
+                DispatcherQueue.TryEnqueue(async () => await ShowSuccessAsync(message));
+                return;
+            }
+
             var dialog = new ContentDialog
             {
                 Title = "成功",

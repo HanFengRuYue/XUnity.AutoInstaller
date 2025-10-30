@@ -18,19 +18,25 @@ public class ConfigurationService
     {
         var configPath = PathHelper.GetBepInExConfigFile(gamePath);
 
+        System.Diagnostics.Debug.WriteLine($"[Config] 加载 BepInEx 配置: {configPath}");
+
         if (!File.Exists(configPath))
         {
+            System.Diagnostics.Debug.WriteLine($"[Config] 配置文件不存在，使用默认值");
             return BepInExConfig.CreateDefault();
         }
 
         try
         {
             var data = IniParser.Parse(configPath);
+            System.Diagnostics.Debug.WriteLine($"[Config] 成功解析配置文件，节数: {data.Count}");
+
             var config = new BepInExConfig();
 
             // [Logging.Console]
             config.LoggingConsoleEnabled = IniParser.GetBool(data, "Logging.Console", "Enabled", false);
             config.LoggingConsoleShiftJISCompatible = IniParser.GetBool(data, "Logging.Console", "ShiftJISCompatible", false);
+            System.Diagnostics.Debug.WriteLine($"[Config] LoggingConsoleEnabled = {config.LoggingConsoleEnabled}");
 
             // [Logging.Disk]
             config.LoggingDiskEnabled = IniParser.GetBool(data, "Logging.Disk", "Enabled", true);
@@ -48,10 +54,13 @@ public class ConfigurationService
             config.ChainloaderLoggerDisplayedLevels = IniParser.GetValue(data, "Chainloader", "LogLevels", "Info,Message,Warning,Error,Fatal");
             config.ChainloaderLogUnityMessages = IniParser.GetBool(data, "Chainloader", "LogUnityMessages", true);
 
+            System.Diagnostics.Debug.WriteLine($"[Config] BepInEx 配置加载成功");
             return config;
         }
-        catch
+        catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine($"[Config] 加载失败: {ex.GetType().Name} - {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[Config] 堆栈: {ex.StackTrace}");
             return BepInExConfig.CreateDefault();
         }
     }
@@ -94,68 +103,79 @@ public class ConfigurationService
     {
         var configPath = PathHelper.GetXUnityConfigFile(gamePath);
 
+        System.Diagnostics.Debug.WriteLine($"[Config] 加载 XUnity 配置: {configPath}");
+
         if (!File.Exists(configPath))
         {
+            System.Diagnostics.Debug.WriteLine($"[Config] 配置文件不存在，使用推荐值");
             return XUnityConfig.CreateRecommended();
         }
 
         try
         {
             var data = IniParser.Parse(configPath);
+            System.Diagnostics.Debug.WriteLine($"[Config] 成功解析配置文件，节数: {data.Count}");
+
             var config = new XUnityConfig();
 
             // [Service]
             config.ServiceEndpoint = IniParser.GetValue(data, "Service", "Endpoint", "GoogleTranslate");
             config.ServiceFallbackEndpoint = IniParser.GetValue(data, "Service", "FallbackEndpoint", "");
 
-            // [General]
+            // [General] - 只有语言设置
             config.GeneralLanguage = IniParser.GetValue(data, "General", "Language", "zh-CN");
             config.GeneralFromLanguage = IniParser.GetValue(data, "General", "FromLanguage", "ja");
-            config.GeneralMaxCharactersPerTranslation = IniParser.GetInt(data, "General", "MaxCharactersPerTranslation", 200);
-            config.GeneralMinDialogueChars = IniParser.GetInt(data, "General", "MinDialogueChars", 20);
-            config.GeneralIgnoreWhitespaceInDialogue = IniParser.GetBool(data, "General", "IgnoreWhitespaceInDialogue", true);
-            config.GeneralEnableUIResizing = IniParser.GetBool(data, "General", "EnableUIResizing", true);
-            config.GeneralOverrideFont = IniParser.GetValue(data, "General", "OverrideFont", "");
-            config.GeneralCopyToClipboard = IniParser.GetBool(data, "General", "CopyToClipboard", false);
 
-            // [TextFrameworks]
-            config.TextFrameworksUGUI = IniParser.GetBool(data, "TextFrameworks", "UGUI", true);
-            config.TextFrameworksNGUI = IniParser.GetBool(data, "TextFrameworks", "NGUI", true);
-            config.TextFrameworksTextMeshPro = IniParser.GetBool(data, "TextFrameworks", "TextMeshPro", true);
-            config.TextFrameworksTextMesh = IniParser.GetBool(data, "TextFrameworks", "TextMesh", true);
-            config.TextFrameworksIMGUI = IniParser.GetBool(data, "TextFrameworks", "IMGUI", false);
+            // [Behaviour] - 行为设置（实际配置文件中的节名）
+            config.GeneralMaxCharactersPerTranslation = IniParser.GetInt(data, "Behaviour", "MaxCharactersPerTranslation", 200);
+            System.Diagnostics.Debug.WriteLine($"[Config] MaxCharactersPerTranslation = {config.GeneralMaxCharactersPerTranslation}");
+            config.GeneralMinDialogueChars = IniParser.GetInt(data, "Behaviour", "MinDialogueChars", 20);
+            config.GeneralIgnoreWhitespaceInDialogue = IniParser.GetBool(data, "Behaviour", "IgnoreWhitespaceInDialogue", true);
+            config.GeneralEnableUIResizing = IniParser.GetBool(data, "Behaviour", "EnableUIResizing", true);
+            config.GeneralOverrideFont = IniParser.GetValue(data, "Behaviour", "OverrideFont", "");
+            config.GeneralCopyToClipboard = IniParser.GetBool(data, "Behaviour", "CopyToClipboard", false);
+
+            // [TextFrameworks] - 键名是 EnableXXX
+            config.TextFrameworksUGUI = IniParser.GetBool(data, "TextFrameworks", "EnableUGUI", true);
+            config.TextFrameworksNGUI = IniParser.GetBool(data, "TextFrameworks", "EnableNGUI", true);
+            config.TextFrameworksTextMeshPro = IniParser.GetBool(data, "TextFrameworks", "EnableTextMeshPro", true);
+            config.TextFrameworksTextMesh = IniParser.GetBool(data, "TextFrameworks", "EnableTextMesh", true);
+            config.TextFrameworksIMGUI = IniParser.GetBool(data, "TextFrameworks", "EnableIMGUI", false);
 
             // [Files]
-            config.FilesDirectory = IniParser.GetValue(data, "Files", "Directory", "Translation");
-            config.FilesOutputFile = IniParser.GetValue(data, "Files", "OutputFile", "_AutoGeneratedTranslations.txt");
-            config.FilesSubstitutionFile = IniParser.GetValue(data, "Files", "SubstitutionFile", "_Substitutions.txt");
-            config.FilesPreprocessorsFile = IniParser.GetValue(data, "Files", "PreprocessorsFile", "_Preprocessors.txt");
-            config.FilesPostprocessorsFile = IniParser.GetValue(data, "Files", "PostprocessorsFile", "_Postprocessors.txt");
+            config.FilesDirectory = IniParser.GetValue(data, "Files", "Directory", "Translation\\{Lang}\\Text");
+            config.FilesOutputFile = IniParser.GetValue(data, "Files", "OutputFile", "Translation\\{Lang}\\Text\\_AutoGeneratedTranslations.txt");
+            config.FilesSubstitutionFile = IniParser.GetValue(data, "Files", "SubstitutionFile", "Translation\\{Lang}\\Text\\_Substitutions.txt");
+            config.FilesPreprocessorsFile = IniParser.GetValue(data, "Files", "PreprocessorsFile", "Translation\\{Lang}\\Text\\_Preprocessors.txt");
+            config.FilesPostprocessorsFile = IniParser.GetValue(data, "Files", "PostprocessorsFile", "Translation\\{Lang}\\Text\\_Postprocessors.txt");
 
             // [Texture]
-            config.TextureDirectory = IniParser.GetValue(data, "Texture", "Directory", "Translation");
-            config.TextureEnableTranslation = IniParser.GetBool(data, "Texture", "EnableTranslation", true);
-            config.TextureEnableDumping = IniParser.GetBool(data, "Texture", "EnableDumping", false);
-            config.TextureHashGenerationStrategy = IniParser.GetValue(data, "Texture", "HashGenerationStrategy", "FromImageName");
+            config.TextureDirectory = IniParser.GetValue(data, "Texture", "TextureDirectory", "Translation\\{Lang}\\Texture");
+            config.TextureEnableTranslation = IniParser.GetBool(data, "Texture", "EnableTextureTranslation", false);
+            config.TextureEnableDumping = IniParser.GetBool(data, "Texture", "EnableTextureDumping", false);
+            config.TextureHashGenerationStrategy = IniParser.GetValue(data, "Texture", "TextureHashGenerationStrategy", "FromImageName");
 
-            // [Advanced]
-            config.AdvancedEnableTranslationScoping = IniParser.GetBool(data, "Advanced", "EnableTranslationScoping", true);
-            config.AdvancedHandleRichText = IniParser.GetBool(data, "Advanced", "HandleRichText", true);
-            config.AdvancedMaxTextParserRecursion = IniParser.GetInt(data, "Advanced", "MaxTextParserRecursion", 10);
-            config.AdvancedHtmlEntityPreprocessing = IniParser.GetBool(data, "Advanced", "HtmlEntityPreprocessing", true);
+            // [Behaviour] - 高级选项也在 Behaviour 节
+            config.AdvancedEnableTranslationScoping = IniParser.GetBool(data, "Behaviour", "EnableTranslationScoping", true);
+            config.AdvancedHandleRichText = IniParser.GetBool(data, "Behaviour", "HandleRichText", true);
+            config.AdvancedMaxTextParserRecursion = IniParser.GetInt(data, "Behaviour", "MaxTextParserRecursion", 1);
+            config.AdvancedHtmlEntityPreprocessing = IniParser.GetBool(data, "Behaviour", "HtmlEntityPreprocessing", true);
 
-            // [Authentication]
-            config.AuthenticationGoogleAPIKey = IniParser.GetValue(data, "Authentication", "GoogleAPIKey", "");
-            config.AuthenticationBingSubscriptionKey = IniParser.GetValue(data, "Authentication", "BingSubscriptionKey", "");
-            config.AuthenticationDeepLAPIKey = IniParser.GetValue(data, "Authentication", "DeepLAPIKey", "");
-            config.AuthenticationBaiduAppId = IniParser.GetValue(data, "Authentication", "BaiduAppId", "");
-            config.AuthenticationBaiduAppSecret = IniParser.GetValue(data, "Authentication", "BaiduAppSecret", "");
-            config.AuthenticationYandexAPIKey = IniParser.GetValue(data, "Authentication", "YandexAPIKey", "");
+            // [Authentication] - 各个翻译服务的认证信息在各自的节里
+            config.AuthenticationGoogleAPIKey = IniParser.GetValue(data, "GoogleLegitimate", "GoogleAPIKey", "");
+            config.AuthenticationBingSubscriptionKey = IniParser.GetValue(data, "BingLegitimate", "OcpApimSubscriptionKey", "");
+            config.AuthenticationDeepLAPIKey = IniParser.GetValue(data, "DeepLLegitimate", "ApiKey", "");
+            config.AuthenticationBaiduAppId = IniParser.GetValue(data, "Baidu", "BaiduAppId", "");
+            config.AuthenticationBaiduAppSecret = IniParser.GetValue(data, "Baidu", "BaiduAppSecret", "");
+            config.AuthenticationYandexAPIKey = IniParser.GetValue(data, "Yandex", "YandexAPIKey", "");
 
+            System.Diagnostics.Debug.WriteLine($"[Config] XUnity 配置加载成功");
             return config;
         }
-        catch
+        catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine($"[Config] 加载失败: {ex.GetType().Name} - {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[Config] 堆栈: {ex.StackTrace}");
             return XUnityConfig.CreateRecommended();
         }
     }
@@ -172,22 +192,24 @@ public class ConfigurationService
         IniParser.SetValue(data, "Service", "Endpoint", config.ServiceEndpoint);
         IniParser.SetValue(data, "Service", "FallbackEndpoint", config.ServiceFallbackEndpoint);
 
-        // [General]
+        // [General] - 只有语言
         IniParser.SetValue(data, "General", "Language", config.GeneralLanguage);
         IniParser.SetValue(data, "General", "FromLanguage", config.GeneralFromLanguage);
-        IniParser.SetValue(data, "General", "MaxCharactersPerTranslation", config.GeneralMaxCharactersPerTranslation.ToString());
-        IniParser.SetValue(data, "General", "MinDialogueChars", config.GeneralMinDialogueChars.ToString());
-        IniParser.SetValue(data, "General", "IgnoreWhitespaceInDialogue", config.GeneralIgnoreWhitespaceInDialogue.ToString().ToLower());
-        IniParser.SetValue(data, "General", "EnableUIResizing", config.GeneralEnableUIResizing.ToString().ToLower());
-        IniParser.SetValue(data, "General", "OverrideFont", config.GeneralOverrideFont);
-        IniParser.SetValue(data, "General", "CopyToClipboard", config.GeneralCopyToClipboard.ToString().ToLower());
 
-        // [TextFrameworks]
-        IniParser.SetValue(data, "TextFrameworks", "UGUI", config.TextFrameworksUGUI.ToString().ToLower());
-        IniParser.SetValue(data, "TextFrameworks", "NGUI", config.TextFrameworksNGUI.ToString().ToLower());
-        IniParser.SetValue(data, "TextFrameworks", "TextMeshPro", config.TextFrameworksTextMeshPro.ToString().ToLower());
-        IniParser.SetValue(data, "TextFrameworks", "TextMesh", config.TextFrameworksTextMesh.ToString().ToLower());
-        IniParser.SetValue(data, "TextFrameworks", "IMGUI", config.TextFrameworksIMGUI.ToString().ToLower());
+        // [Behaviour] - 行为设置
+        IniParser.SetValue(data, "Behaviour", "MaxCharactersPerTranslation", config.GeneralMaxCharactersPerTranslation.ToString());
+        IniParser.SetValue(data, "Behaviour", "MinDialogueChars", config.GeneralMinDialogueChars.ToString());
+        IniParser.SetValue(data, "Behaviour", "IgnoreWhitespaceInDialogue", config.GeneralIgnoreWhitespaceInDialogue.ToString());
+        IniParser.SetValue(data, "Behaviour", "EnableUIResizing", config.GeneralEnableUIResizing.ToString());
+        IniParser.SetValue(data, "Behaviour", "OverrideFont", config.GeneralOverrideFont);
+        IniParser.SetValue(data, "Behaviour", "CopyToClipboard", config.GeneralCopyToClipboard.ToString());
+
+        // [TextFrameworks] - 键名是 EnableXXX
+        IniParser.SetValue(data, "TextFrameworks", "EnableUGUI", config.TextFrameworksUGUI.ToString());
+        IniParser.SetValue(data, "TextFrameworks", "EnableNGUI", config.TextFrameworksNGUI.ToString());
+        IniParser.SetValue(data, "TextFrameworks", "EnableTextMeshPro", config.TextFrameworksTextMeshPro.ToString());
+        IniParser.SetValue(data, "TextFrameworks", "EnableTextMesh", config.TextFrameworksTextMesh.ToString());
+        IniParser.SetValue(data, "TextFrameworks", "EnableIMGUI", config.TextFrameworksIMGUI.ToString());
 
         // [Files]
         IniParser.SetValue(data, "Files", "Directory", config.FilesDirectory);
@@ -197,24 +219,24 @@ public class ConfigurationService
         IniParser.SetValue(data, "Files", "PostprocessorsFile", config.FilesPostprocessorsFile);
 
         // [Texture]
-        IniParser.SetValue(data, "Texture", "Directory", config.TextureDirectory);
-        IniParser.SetValue(data, "Texture", "EnableTranslation", config.TextureEnableTranslation.ToString().ToLower());
-        IniParser.SetValue(data, "Texture", "EnableDumping", config.TextureEnableDumping.ToString().ToLower());
-        IniParser.SetValue(data, "Texture", "HashGenerationStrategy", config.TextureHashGenerationStrategy);
+        IniParser.SetValue(data, "Texture", "TextureDirectory", config.TextureDirectory);
+        IniParser.SetValue(data, "Texture", "EnableTextureTranslation", config.TextureEnableTranslation.ToString());
+        IniParser.SetValue(data, "Texture", "EnableTextureDumping", config.TextureEnableDumping.ToString());
+        IniParser.SetValue(data, "Texture", "TextureHashGenerationStrategy", config.TextureHashGenerationStrategy);
 
-        // [Advanced]
-        IniParser.SetValue(data, "Advanced", "EnableTranslationScoping", config.AdvancedEnableTranslationScoping.ToString().ToLower());
-        IniParser.SetValue(data, "Advanced", "HandleRichText", config.AdvancedHandleRichText.ToString().ToLower());
-        IniParser.SetValue(data, "Advanced", "MaxTextParserRecursion", config.AdvancedMaxTextParserRecursion.ToString());
-        IniParser.SetValue(data, "Advanced", "HtmlEntityPreprocessing", config.AdvancedHtmlEntityPreprocessing.ToString().ToLower());
+        // [Behaviour] - 高级选项也在 Behaviour 节
+        IniParser.SetValue(data, "Behaviour", "EnableTranslationScoping", config.AdvancedEnableTranslationScoping.ToString());
+        IniParser.SetValue(data, "Behaviour", "HandleRichText", config.AdvancedHandleRichText.ToString());
+        IniParser.SetValue(data, "Behaviour", "MaxTextParserRecursion", config.AdvancedMaxTextParserRecursion.ToString());
+        IniParser.SetValue(data, "Behaviour", "HtmlEntityPreprocessing", config.AdvancedHtmlEntityPreprocessing.ToString());
 
-        // [Authentication]
-        IniParser.SetValue(data, "Authentication", "GoogleAPIKey", config.AuthenticationGoogleAPIKey);
-        IniParser.SetValue(data, "Authentication", "BingSubscriptionKey", config.AuthenticationBingSubscriptionKey);
-        IniParser.SetValue(data, "Authentication", "DeepLAPIKey", config.AuthenticationDeepLAPIKey);
-        IniParser.SetValue(data, "Authentication", "BaiduAppId", config.AuthenticationBaiduAppId);
-        IniParser.SetValue(data, "Authentication", "BaiduAppSecret", config.AuthenticationBaiduAppSecret);
-        IniParser.SetValue(data, "Authentication", "YandexAPIKey", config.AuthenticationYandexAPIKey);
+        // [Authentication] - 各个翻译服务的认证信息在各自的节里
+        IniParser.SetValue(data, "GoogleLegitimate", "GoogleAPIKey", config.AuthenticationGoogleAPIKey);
+        IniParser.SetValue(data, "BingLegitimate", "OcpApimSubscriptionKey", config.AuthenticationBingSubscriptionKey);
+        IniParser.SetValue(data, "DeepLLegitimate", "ApiKey", config.AuthenticationDeepLAPIKey);
+        IniParser.SetValue(data, "Baidu", "BaiduAppId", config.AuthenticationBaiduAppId);
+        IniParser.SetValue(data, "Baidu", "BaiduAppSecret", config.AuthenticationBaiduAppSecret);
+        IniParser.SetValue(data, "Yandex", "YandexAPIKey", config.AuthenticationYandexAPIKey);
 
         IniParser.Write(configPath, data);
     }

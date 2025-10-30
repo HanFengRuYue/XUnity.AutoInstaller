@@ -13,27 +13,43 @@ namespace XUnity.AutoInstaller.Pages
 {
     public sealed partial class VersionManagementPage : Page
     {
-        private string? _gamePath;
+        private readonly GameStateService _gameStateService;
         private readonly VersionService _versionService;
-        private List<VersionInfo> _allAvailableVersions = new();
+        private List<VersionInfo> _allBepInExVersions = new();
+        private List<VersionInfo> _allXUnityVersions = new();
         private List<InstalledVersionInfo> _installedVersions = new();
         private List<SnapshotInfo> _snapshots = new();
 
         public VersionManagementPage()
         {
             this.InitializeComponent();
+            _gameStateService = GameStateService.Instance;
             _versionService = new VersionService();
+
+            // Subscribe to game path changes
+            _gameStateService.GamePathChanged += OnGamePathChanged;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
 
-            if (e.Parameter is string gamePath)
+            // Load from GameStateService
+            if (_gameStateService.HasValidGamePath())
             {
-                _gamePath = gamePath;
                 _ = LoadDataAsync();
             }
+        }
+
+        private void OnGamePathChanged(object? sender, string? gamePath)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (!string.IsNullOrEmpty(gamePath))
+                {
+                    _ = LoadDataAsync();
+                }
+            });
         }
 
         private async Task LoadDataAsync()
@@ -54,15 +70,16 @@ namespace XUnity.AutoInstaller.Pages
 
         private async Task RefreshInstalledVersions()
         {
-            if (string.IsNullOrEmpty(_gamePath))
+            var gamePath = _gameStateService.CurrentGamePath;
+            if (string.IsNullOrEmpty(gamePath))
             {
                 return;
             }
 
             try
             {
-                _installedVersions = _versionService.GetInstalledVersions(_gamePath);
-                _snapshots = _versionService.GetSnapshots(_gamePath);
+                _installedVersions = _versionService.GetInstalledVersions(gamePath);
+                _snapshots = _versionService.GetSnapshots(gamePath);
                 UpdateInstalledVersionsUI();
             }
             catch (Exception ex)
@@ -75,18 +92,29 @@ namespace XUnity.AutoInstaller.Pages
         {
             try
             {
-                LoadingPanel.Visibility = Visibility.Visible;
-                AvailableVersionsListView.Visibility = Visibility.Collapsed;
+                BepInExLoadingPanel.Visibility = Visibility.Visible;
+                BepInExVersionsListView.Visibility = Visibility.Collapsed;
+                XUnityLoadingPanel.Visibility = Visibility.Visible;
+                XUnityVersionsListView.Visibility = Visibility.Collapsed;
 
-                _allAvailableVersions = await _versionService.GetAllAvailableVersionsAsync();
+                // Load all versions (including prereleases to show IL2CPP versions)
+                var allVersions = await _versionService.GetAllAvailableVersionsAsync(includePrerelease: true);
+
+                // Separate BepInEx and XUnity versions
+                _allBepInExVersions = allVersions.Where(v => v.PackageType == PackageType.BepInEx).ToList();
+                _allXUnityVersions = allVersions.Where(v => v.PackageType == PackageType.XUnity).ToList();
+
                 ApplyFilters();
 
-                LoadingPanel.Visibility = Visibility.Collapsed;
-                AvailableVersionsListView.Visibility = Visibility.Visible;
+                BepInExLoadingPanel.Visibility = Visibility.Collapsed;
+                BepInExVersionsListView.Visibility = Visibility.Visible;
+                XUnityLoadingPanel.Visibility = Visibility.Collapsed;
+                XUnityVersionsListView.Visibility = Visibility.Visible;
             }
             catch (Exception ex)
             {
-                LoadingPanel.Visibility = Visibility.Collapsed;
+                BepInExLoadingPanel.Visibility = Visibility.Collapsed;
+                XUnityLoadingPanel.Visibility = Visibility.Collapsed;
                 await ShowErrorAsync($"刷新可用版本失败: {ex.Message}");
             }
         }
@@ -98,26 +126,55 @@ namespace XUnity.AutoInstaller.Pages
             // 显示当前安装
             if (_installedVersions.Count > 0)
             {
-                InstalledVersionsListView.Items.Add("=== 当前安装 ===");
+                // 添加标题
+                InstalledVersionsListView.Items.Add(new InstalledVersionDisplayItem
+                {
+                    ItemType = InstalledItemType.Header,
+                    DisplayText = "当前安装",
+                    ShowButtons = false
+                });
+
+                // 添加已安装的版本
                 foreach (var version in _installedVersions)
                 {
-                    InstalledVersionsListView.Items.Add($"[活动] {version.PackageType} {version.Version} - {version.Platform}");
+                    var installDate = version.InstallDate.ToString("yyyy-MM-dd");
+                    InstalledVersionsListView.Items.Add(new InstalledVersionDisplayItem
+                    {
+                        ItemType = InstalledItemType.CurrentInstallation,
+                        DisplayText = $"[{version.PackageType}] {version.Version}",
+                        SubText1 = $"平台: {version.Platform}",
+                        SubText2 = $"安装于: {installDate}",
+                        ItemData = version,
+                        ShowButtons = false
+                    });
                 }
             }
 
             // 显示快照
             if (_snapshots.Count > 0)
             {
-                InstalledVersionsListView.Items.Add("");
-                InstalledVersionsListView.Items.Add("=== 版本快照 ===");
+                // 添加标题
+                InstalledVersionsListView.Items.Add(new InstalledVersionDisplayItem
+                {
+                    ItemType = InstalledItemType.Header,
+                    DisplayText = "版本快照",
+                    ShowButtons = false
+                });
+
+                // 添加快照
                 foreach (var snapshot in _snapshots)
                 {
-                    var versionInfo = snapshot.BepInExVersion ?? "未知";
-                    if (!string.IsNullOrEmpty(snapshot.XUnityVersion))
+                    var bepinexInfo = snapshot.BepInExVersion ?? "未知";
+                    var xunityInfo = snapshot.XUnityVersion ?? "未知";
+                    InstalledVersionsListView.Items.Add(new InstalledVersionDisplayItem
                     {
-                        versionInfo += $" + XUnity {snapshot.XUnityVersion}";
-                    }
-                    InstalledVersionsListView.Items.Add($"{snapshot.Name} - {snapshot.CreatedAt:yyyy-MM-dd HH:mm} ({versionInfo})");
+                        ItemType = InstalledItemType.Snapshot,
+                        DisplayText = $"[快照] {snapshot.Name}",
+                        SubText1 = $"时间: {snapshot.CreatedAt:yyyy-MM-dd HH:mm}",
+                        SubText2 = $"BepInEx: {bepinexInfo} | XUnity: {xunityInfo}",
+                        ItemData = snapshot,
+                        ShowButtons = true
+                    });
                 }
             }
 
@@ -136,50 +193,139 @@ namespace XUnity.AutoInstaller.Pages
 
         private void ApplyFilters()
         {
-            var filtered = _allAvailableVersions.AsEnumerable();
+            // Filter BepInEx versions
+            var filteredBepInEx = _allBepInExVersions.AsEnumerable();
 
-            // 包类型筛选
-            if (PackageFilterComboBox.SelectedIndex == 1)
+            // Platform filter (x86/x64/ARM64)
+            if (PlatformFilterComboBox.SelectedIndex == 1) // x86
             {
-                filtered = filtered.Where(v => v.PackageType == PackageType.BepInEx);
+                filteredBepInEx = filteredBepInEx.Where(v => v.TargetPlatform == Platform.x86 || v.TargetPlatform == Platform.IL2CPP_x86);
             }
-            else if (PackageFilterComboBox.SelectedIndex == 2)
+            else if (PlatformFilterComboBox.SelectedIndex == 2) // x64
             {
-                filtered = filtered.Where(v => v.PackageType == PackageType.XUnity);
+                filteredBepInEx = filteredBepInEx.Where(v => v.TargetPlatform == Platform.x64 || v.TargetPlatform == Platform.IL2CPP_x64);
             }
-
-            // 版本类型筛选
-            if (VersionTypeComboBox.SelectedIndex == 1)
+            else if (PlatformFilterComboBox.SelectedIndex == 3) // ARM64
             {
-                filtered = filtered.Where(v => !v.IsPrerelease);
-            }
-            else if (VersionTypeComboBox.SelectedIndex == 2)
-            {
-                filtered = filtered.Where(v => v.IsPrerelease);
+                filteredBepInEx = filteredBepInEx.Where(v => v.TargetPlatform == Platform.ARM64);
             }
 
-            UpdateAvailableVersionsUI(filtered.ToList());
+            // Architecture filter (Mono/IL2CPP)
+            if (ArchitectureFilterComboBox.SelectedIndex == 1) // Mono
+            {
+                filteredBepInEx = filteredBepInEx.Where(v => v.TargetPlatform == Platform.x86 || v.TargetPlatform == Platform.x64 || v.TargetPlatform == Platform.ARM64);
+            }
+            else if (ArchitectureFilterComboBox.SelectedIndex == 2) // IL2CPP
+            {
+                filteredBepInEx = filteredBepInEx.Where(v => v.TargetPlatform == Platform.IL2CPP_x86 || v.TargetPlatform == Platform.IL2CPP_x64);
+            }
+
+            // Version type filter (Stable/Prerelease)
+            if (VersionTypeComboBox.SelectedIndex == 1) // Stable
+            {
+                filteredBepInEx = filteredBepInEx.Where(v => !v.IsPrerelease);
+            }
+            else if (VersionTypeComboBox.SelectedIndex == 2) // Prerelease
+            {
+                filteredBepInEx = filteredBepInEx.Where(v => v.IsPrerelease);
+            }
+
+            // Filter XUnity versions (no platform filter needed)
+            var filteredXUnity = _allXUnityVersions.AsEnumerable();
+
+            if (VersionTypeComboBox.SelectedIndex == 1) // Stable
+            {
+                filteredXUnity = filteredXUnity.Where(v => !v.IsPrerelease);
+            }
+            else if (VersionTypeComboBox.SelectedIndex == 2) // Prerelease
+            {
+                filteredXUnity = filteredXUnity.Where(v => v.IsPrerelease);
+            }
+
+            UpdateBepInExVersionsUI(filteredBepInEx.ToList());
+            UpdateXUnityVersionsUI(filteredXUnity.ToList());
         }
 
-        private void UpdateAvailableVersionsUI(List<VersionInfo> versions)
+        private void UpdateBepInExVersionsUI(List<VersionInfo> versions)
         {
-            AvailableVersionsListView.Items.Clear();
+            BepInExVersionsListView.Items.Clear();
 
-            foreach (var version in versions.Take(50)) // 限制显示数量
+            if (versions.Count == 0)
+            {
+                BepInExVersionsListView.Items.Add(new { DisplayText = "未找到符合条件的版本", DownloadUrl = "", FileSize = 0L, Name = "", PackageType = PackageType.BepInEx, ReleaseDate = DateTime.Now, TargetPlatform = (Platform?)null, Version = "", IsPrerelease = false });
+                return;
+            }
+
+            foreach (var version in versions.Take(50)) // Limit display count
             {
                 var sizeText = PathHelper.FormatFileSize(version.FileSize);
                 var dateText = version.ReleaseDate.ToString("yyyy-MM-dd");
-                var displayText = $"{version.Name} - {dateText} ({sizeText})";
+                var platformText = GetPlatformDisplayName(version.TargetPlatform);
+                var displayText = $"{version.Version} - {platformText} - {dateText} ({sizeText})";
 
-                AvailableVersionsListView.Items.Add(displayText);
+                // 创建包含DisplayText和VersionInfo的对象
+                var item = new VersionDisplayItem
+                {
+                    DisplayText = displayText,
+                    Version = version
+                };
+
+                BepInExVersionsListView.Items.Add(item);
+            }
+        }
+
+        /// <summary>
+        /// 将 Platform 枚举转换为用户友好的显示名称
+        /// </summary>
+        private string GetPlatformDisplayName(Platform? platform)
+        {
+            return platform switch
+            {
+                Platform.x86 => "Mono x86",
+                Platform.x64 => "Mono x64",
+                Platform.IL2CPP_x86 => "IL2CPP x86",
+                Platform.IL2CPP_x64 => "IL2CPP x64",
+                Platform.ARM64 => "ARM64",
+                null => "未知",
+                _ => platform.ToString() ?? "未知"
+            };
+        }
+
+        private void UpdateXUnityVersionsUI(List<VersionInfo> versions)
+        {
+            XUnityVersionsListView.Items.Clear();
+
+            if (versions.Count == 0)
+            {
+                XUnityVersionsListView.Items.Add(new { DisplayText = "未找到符合条件的版本", DownloadUrl = "", FileSize = 0L, Name = "", PackageType = PackageType.XUnity, ReleaseDate = DateTime.Now, TargetPlatform = (Platform?)null, Version = "", IsPrerelease = false });
+                return;
+            }
+
+            foreach (var version in versions.Take(50)) // Limit display count
+            {
+                var sizeText = PathHelper.FormatFileSize(version.FileSize);
+                var dateText = version.ReleaseDate.ToString("yyyy-MM-dd");
+                var displayText = $"{version.Version} - {dateText} ({sizeText})";
+
+                // 创建包含DisplayText和VersionInfo的对象
+                var item = new VersionDisplayItem
+                {
+                    DisplayText = displayText,
+                    Version = version
+                };
+
+                XUnityVersionsListView.Items.Add(item);
             }
         }
 
         private async void UninstallButton_Click(object sender, RoutedEventArgs e)
         {
+            if (this.XamlRoot == null) return;
+
             var button = sender as Button;
             if (button?.Tag is InstalledVersionInfo version)
             {
+                var gamePath = _gameStateService.CurrentGamePath;
                 var dialog = new ContentDialog
                 {
                     Title = "确认卸载",
@@ -190,11 +336,11 @@ namespace XUnity.AutoInstaller.Pages
                 };
 
                 var result = await dialog.ShowAsync();
-                if (result == ContentDialogResult.Primary && !string.IsNullOrEmpty(_gamePath))
+                if (result == ContentDialogResult.Primary && !string.IsNullOrEmpty(gamePath))
                 {
                     try
                     {
-                        _versionService.UninstallPackage(_gamePath, version.PackageType);
+                        _versionService.UninstallPackage(gamePath, version.PackageType);
                         await RefreshInstalledVersions();
                         await ShowSuccessAsync("卸载成功");
                     }
@@ -209,8 +355,10 @@ namespace XUnity.AutoInstaller.Pages
         private async void SetActiveButton_Click(object sender, RoutedEventArgs e)
         {
             // 创建快照功能
-            if (string.IsNullOrEmpty(_gamePath))
+            var gamePath = _gameStateService.CurrentGamePath;
+            if (string.IsNullOrEmpty(gamePath))
             {
+                await ShowErrorAsync("未设置游戏路径");
                 return;
             }
 
@@ -220,6 +368,8 @@ namespace XUnity.AutoInstaller.Pages
                 await ShowErrorAsync("当前没有已安装的版本");
                 return;
             }
+
+            if (this.XamlRoot == null) return;
 
             // 询问快照名称
             var inputDialog = new ContentDialog
@@ -242,7 +392,7 @@ namespace XUnity.AutoInstaller.Pages
 
                 try
                 {
-                    var snapshotPath = await _versionService.CreateSnapshotAsync(_gamePath, snapshotName);
+                    var snapshotPath = await _versionService.CreateSnapshotAsync(gamePath, snapshotName);
                     await RefreshInstalledVersions();
                     await ShowSuccessAsync($"快照创建成功: {snapshotPath}");
                 }
@@ -284,8 +434,10 @@ namespace XUnity.AutoInstaller.Pages
 
         private async void RestoreSnapshotButton_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrEmpty(_gamePath))
+            var gamePath = _gameStateService.CurrentGamePath;
+            if (string.IsNullOrEmpty(gamePath))
             {
+                await ShowErrorAsync("未设置游戏路径");
                 return;
             }
 
@@ -317,6 +469,8 @@ namespace XUnity.AutoInstaller.Pages
 
             var snapshot = _snapshots[snapshotIndex];
 
+            if (this.XamlRoot == null) return;
+
             // 确认对话框
             var confirmDialog = new ContentDialog
             {
@@ -333,7 +487,7 @@ namespace XUnity.AutoInstaller.Pages
             {
                 try
                 {
-                    await _versionService.RestoreSnapshotAsync(_gamePath, snapshot.Path);
+                    await _versionService.RestoreSnapshotAsync(gamePath, snapshot.Path);
                     await RefreshInstalledVersions();
                     await ShowSuccessAsync("快照恢复成功");
                 }
@@ -346,8 +500,10 @@ namespace XUnity.AutoInstaller.Pages
 
         private async void DeleteSnapshotButton_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrEmpty(_gamePath))
+            var gamePath = _gameStateService.CurrentGamePath;
+            if (string.IsNullOrEmpty(gamePath))
             {
+                await ShowErrorAsync("未设置游戏路径");
                 return;
             }
 
@@ -377,6 +533,8 @@ namespace XUnity.AutoInstaller.Pages
 
             var snapshot = _snapshots[snapshotIndex];
 
+            if (this.XamlRoot == null) return;
+
             // 确认对话框
             var confirmDialog = new ContentDialog
             {
@@ -404,19 +562,103 @@ namespace XUnity.AutoInstaller.Pages
             }
         }
 
+        private async void RestoreSnapshotItemButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.XamlRoot == null) return;
+
+            var button = sender as Button;
+            var displayItem = button?.Tag as InstalledVersionDisplayItem;
+            if (displayItem?.ItemData is SnapshotInfo snapshot)
+            {
+                var gamePath = _gameStateService.CurrentGamePath;
+                if (string.IsNullOrEmpty(gamePath))
+                {
+                    await ShowErrorAsync("未设置游戏路径");
+                    return;
+                }
+
+                // 确认对话框
+                var confirmDialog = new ContentDialog
+                {
+                    Title = "确认恢复快照",
+                    Content = $"确定要恢复快照 \"{snapshot.Name}\" 吗？\n\n这将替换当前安装的版本。",
+                    PrimaryButtonText = "恢复",
+                    CloseButtonText = "取消",
+                    XamlRoot = this.XamlRoot,
+                    DefaultButton = ContentDialogButton.Close
+                };
+
+                var result = await confirmDialog.ShowAsync();
+                if (result == ContentDialogResult.Primary)
+                {
+                    try
+                    {
+                        await _versionService.RestoreSnapshotAsync(gamePath, snapshot.Path);
+                        await RefreshInstalledVersions();
+                        await ShowSuccessAsync("快照恢复成功");
+                    }
+                    catch (Exception ex)
+                    {
+                        await ShowErrorAsync($"恢复快照失败: {ex.Message}");
+                    }
+                }
+            }
+        }
+
+        private async void DeleteSnapshotItemButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.XamlRoot == null) return;
+
+            var button = sender as Button;
+            var displayItem = button?.Tag as InstalledVersionDisplayItem;
+            if (displayItem?.ItemData is SnapshotInfo snapshot)
+            {
+                // 确认对话框
+                var confirmDialog = new ContentDialog
+                {
+                    Title = "确认删除快照",
+                    Content = $"确定要删除快照 \"{snapshot.Name}\" 吗？\n\n此操作无法撤销。",
+                    PrimaryButtonText = "删除",
+                    CloseButtonText = "取消",
+                    XamlRoot = this.XamlRoot,
+                    DefaultButton = ContentDialogButton.Close
+                };
+
+                var result = await confirmDialog.ShowAsync();
+                if (result == ContentDialogResult.Primary)
+                {
+                    try
+                    {
+                        _versionService.DeleteSnapshot(snapshot.Path);
+                        await RefreshInstalledVersions();
+                        await ShowSuccessAsync("快照已删除");
+                    }
+                    catch (Exception ex)
+                    {
+                        await ShowErrorAsync($"删除快照失败: {ex.Message}");
+                    }
+                }
+            }
+        }
+
         private async void DownloadButton_Click(object sender, RoutedEventArgs e)
         {
+            if (this.XamlRoot == null) return;
+
             var button = sender as Button;
-            if (button?.Tag is VersionInfo version)
+            // 从VersionDisplayItem中提取VersionInfo
+            var displayItem = button?.Tag as VersionDisplayItem;
+            if (displayItem?.Version is VersionInfo version)
             {
                 var dialog = new ContentDialog
                 {
-                    Title = "下载版本",
+                    Title = "下载到缓存",
                     Content = new StackPanel
                     {
                         Children =
                         {
                             new TextBlock { Text = $"正在下载: {version.Name}" },
+                            new TextBlock { Text = "文件将被下载到本地缓存，不会自动安装", Margin = new Thickness(0, 5, 0, 0), Opacity = 0.8 },
                             new ProgressBar { IsIndeterminate = true, Margin = new Thickness(0, 10, 0, 0) }
                         }
                     },
@@ -431,7 +673,7 @@ namespace XUnity.AutoInstaller.Pages
                     var downloadPath = await _versionService.DownloadVersionAsync(version, progress);
 
                     dialog.Hide();
-                    await ShowSuccessAsync($"下载完成: {downloadPath}");
+                    await ShowSuccessAsync($"下载完成！\n\n文件已保存到缓存:\n{downloadPath}\n\n您可以在安装页面中使用已下载的版本进行安装。");
                 }
                 catch (Exception ex)
                 {
@@ -441,9 +683,17 @@ namespace XUnity.AutoInstaller.Pages
             }
         }
 
-        private void PackageFilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void PlatformFilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_allAvailableVersions.Count > 0)
+            if (_allBepInExVersions.Count > 0)
+            {
+                ApplyFilters();
+            }
+        }
+
+        private void ArchitectureFilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_allBepInExVersions.Count > 0)
             {
                 ApplyFilters();
             }
@@ -451,7 +701,7 @@ namespace XUnity.AutoInstaller.Pages
 
         private void VersionTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_allAvailableVersions.Count > 0)
+            if (_allBepInExVersions.Count > 0 || _allXUnityVersions.Count > 0)
             {
                 ApplyFilters();
             }
@@ -459,6 +709,13 @@ namespace XUnity.AutoInstaller.Pages
 
         private async Task ShowErrorAsync(string message)
         {
+            // 如果 XamlRoot 为 null,延迟到下一个 UI 周期
+            if (this.XamlRoot == null)
+            {
+                DispatcherQueue.TryEnqueue(async () => await ShowErrorAsync(message));
+                return;
+            }
+
             var dialog = new ContentDialog
             {
                 Title = "错误",
@@ -471,6 +728,13 @@ namespace XUnity.AutoInstaller.Pages
 
         private async Task ShowSuccessAsync(string message)
         {
+            // 如果 XamlRoot 为 null,延迟到下一个 UI 周期
+            if (this.XamlRoot == null)
+            {
+                DispatcherQueue.TryEnqueue(async () => await ShowSuccessAsync(message));
+                return;
+            }
+
             var dialog = new ContentDialog
             {
                 Title = "成功",
@@ -479,6 +743,43 @@ namespace XUnity.AutoInstaller.Pages
                 XamlRoot = this.XamlRoot
             };
             await dialog.ShowAsync();
+        }
+
+        /// <summary>
+        /// 用于在ListView中显示版本信息的辅助类
+        /// </summary>
+        private class VersionDisplayItem
+        {
+            public string DisplayText { get; set; } = string.Empty;
+            public VersionInfo Version { get; set; } = null!;
+        }
+
+        /// <summary>
+        /// 已安装版本/快照显示项类型
+        /// </summary>
+        private enum InstalledItemType
+        {
+            Header,              // 标题行
+            CurrentInstallation, // 当前安装的版本
+            Snapshot             // 快照
+        }
+
+        /// <summary>
+        /// 用于在已安装版本ListView中显示的辅助类
+        /// </summary>
+        private class InstalledVersionDisplayItem
+        {
+            public InstalledItemType ItemType { get; set; }
+            public string DisplayText { get; set; } = string.Empty;
+            public string SubText1 { get; set; } = string.Empty;
+            public string SubText2 { get; set; } = string.Empty;
+            public object? ItemData { get; set; }
+            public bool ShowButtons { get; set; }
+
+            // 用于XAML绑定的可见性属性
+            public Visibility HeaderVisibility => ItemType == InstalledItemType.Header ? Visibility.Visible : Visibility.Collapsed;
+            public Visibility ContentVisibility => ItemType != InstalledItemType.Header ? Visibility.Visible : Visibility.Collapsed;
+            public Visibility ButtonsVisibility => ShowButtons ? Visibility.Visible : Visibility.Collapsed;
         }
     }
 }

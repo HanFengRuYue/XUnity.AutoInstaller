@@ -13,51 +13,89 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
-    <NavigationView
-        x:Name="NavView"
-        IsBackButtonVisible="Collapsed"
-        PaneDisplayMode="Left"
-        IsSettingsVisible="True"
-        SelectionChanged="NavView_SelectionChanged">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-        <NavigationView.MenuItems>
-            <NavigationViewItem
-                Content="首页"
-                Tag="Dashboard"
-                x:Name="DashboardNavItem">
-                <NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE80F;"/>
-                </NavigationViewItem.Icon>
-            </NavigationViewItem>
+        <!-- Custom Title Bar -->
+        <Grid x:Name="AppTitleBar" Grid.Row="0" Height="48" Background="Transparent">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-            <NavigationViewItem
-                Content="自动安装"
-                Tag="Install"
-                x:Name="InstallNavItem">
-                <NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE896;"/>
-                </NavigationViewItem.Icon>
-            </NavigationViewItem>
+            <!-- App Icon and Title -->
+            <StackPanel Orientation="Horizontal" Grid.Column="0" Margin="16,0,0,0" VerticalAlignment="Center">
+                <Image Source="/Assets/Square44x44Logo.png" Width="16" Height="16" Margin="0,0,12,0"/>
+                <TextBlock
+                    Text="XUnity 自动安装器"
+                    Style="{StaticResource CaptionTextBlockStyle}"
+                    VerticalAlignment="Center"/>
+            </StackPanel>
+        </Grid>
 
-            <NavigationViewItem
-                Content="配置编辑"
-                Tag="Config"
-                x:Name="ConfigNavItem">
-                <NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE713;"/>
-                </NavigationViewItem.Icon>
-            </NavigationViewItem>
+        <!-- Navigation View -->
+        <NavigationView
+            x:Name="NavView"
+            Grid.Row="1"
+            IsBackButtonVisible="Collapsed"
+            PaneDisplayMode="Left"
+            IsSettingsVisible="False"
+            SelectionChanged="NavView_SelectionChanged">
 
-            <NavigationViewItem
-                Content="版本管理"
-                Tag="Version"
-                x:Name="VersionNavItem">
-                <NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE8F1;"/>
-                </NavigationViewItem.Icon>
-            </NavigationViewItem>
-        </NavigationView.MenuItems>
+            <NavigationView.MenuItems>
+                <NavigationViewItem
+                    Content="首页"
+                    Tag="Dashboard"
+                    x:Name="DashboardNavItem">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE80F;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
 
-        <Frame x:Name="ContentFrame"/>
-    </NavigationView>
+                <NavigationViewItem
+                    Content="自动安装"
+                    Tag="Install"
+                    x:Name="InstallNavItem">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE896;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
+                <NavigationViewItem
+                    Content="配置编辑"
+                    Tag="Config"
+                    x:Name="ConfigNavItem">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE713;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
+                <NavigationViewItem
+                    Content="版本管理"
+                    Tag="Version"
+                    x:Name="VersionNavItem">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8F1;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.MenuItems>
+
+            <NavigationView.FooterMenuItems>
+                <NavigationViewItem
+                    Content="设置"
+                    Tag="Settings"
+                    x:Name="SettingsNavItem">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE713;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.FooterMenuItems>
+
+            <Frame x:Name="ContentFrame"/>
+        </NavigationView>
+    </Grid>
 </Window>

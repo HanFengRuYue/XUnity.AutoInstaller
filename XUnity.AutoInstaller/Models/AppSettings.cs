@@ -13,11 +13,6 @@ public class AppSettings
     public ElementTheme Theme { get; set; } = ElementTheme.Default;
 
     /// <summary>
-    /// 启动时自动检测游戏
-    /// </summary>
-    public bool AutoDetectGameOnStartup { get; set; } = false;
-
-    /// <summary>
     /// 记住上次选择的游戏路径
     /// </summary>
     public bool RememberLastGamePath { get; set; } = true;
@@ -26,11 +21,6 @@ public class AppSettings
     /// 上次选择的游戏路径
     /// </summary>
     public string? LastGamePath { get; set; }
-
-    /// <summary>
-    /// 启动时检查应用更新
-    /// </summary>
-    public bool CheckUpdateOnStartup { get; set; } = false;
 
     /// <summary>
     /// 下载时显示详细进度

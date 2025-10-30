@@ -15,12 +15,51 @@
         </Grid.RowDefinitions>
 
         <!-- 配置内容区 -->
-        <ScrollViewer Grid.Row="0">
+        <ScrollViewer Grid.Row="0" x:Name="ConfigScrollViewer">
             <StackPanel Spacing="24" Margin="24">
                 <!-- 页面标题 -->
                 <TextBlock
                     Text="配置编辑"
                     Style="{StaticResource TitleTextBlockStyle}"/>
+
+                <!-- 错误提示 -->
+                <InfoBar
+                    x:Name="ErrorInfoBar"
+                    Severity="Error"
+                    IsOpen="False"
+                    IsClosable="True"
+                    Title="错误"/>
+
+                <!-- 加载指示器 -->
+                <StackPanel
+                    x:Name="LoadingPanel"
+                    Visibility="Collapsed"
+                    HorizontalAlignment="Center"
+                    Spacing="16"
+                    Margin="40">
+                    <ProgressRing IsActive="True" Width="60" Height="60"/>
+                    <TextBlock
+                        Text="正在加载配置文件..."
+                        Style="{StaticResource SubtitleTextBlockStyle}"
+                        HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- 配置内容面板 -->
+                <StackPanel x:Name="ConfigContentPanel" Spacing="16">
+                    <!-- 游戏路径提示 -->
+                    <InfoBar
+                        x:Name="GamePathInfoBar"
+                        Severity="Informational"
+                        IsOpen="True"
+                        IsClosable="False"
+                        Title="提示"
+                        Message="如果未检测到游戏路径或BepInEx未安装，请点击下方按钮选择游戏目录">
+                        <InfoBar.ActionButton>
+                            <Button
+                                Content="选择游戏目录"
+                                Click="BrowseGamePathButton_Click"/>
+                        </InfoBar.ActionButton>
+                    </InfoBar>
 
                 <!-- BepInEx 配置组 -->
                 <StackPanel Spacing="16">
@@ -279,7 +318,6 @@
                                         Opacity="0.7"/>
                                     <NumberBox
                                         x:Name="MaxCharactersPerTranslationNumber"
-                                        Value="200"
                                         Minimum="20"
                                         Maximum="2500"
                                         SpinButtonPlacementMode="Inline"
@@ -660,6 +698,7 @@
                             </StackPanel>
                         </Border>
                     </Expander>
+                </StackPanel>
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>

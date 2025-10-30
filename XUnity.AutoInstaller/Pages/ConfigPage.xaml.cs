@@ -13,33 +13,75 @@ namespace XUnity.AutoInstaller.Pages
 {
     public sealed partial class ConfigPage : Page
     {
-        private string? _gamePath;
+        private readonly GameStateService _gameStateService;
         private BepInExConfig? _bepinexConfig;
         private XUnityConfig? _xunityConfig;
 
         public ConfigPage()
         {
             this.InitializeComponent();
+            _gameStateService = GameStateService.Instance;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
 
-            // 从导航参数获取游戏路径
-            if (e.Parameter is string gamePath)
+            // 异步加载配置
+            DispatcherQueue.TryEnqueue(async () =>
             {
-                _gamePath = gamePath;
-                LoadConfiguration();
+                // 从 GameStateService 获取游戏路径
+                var gamePath = _gameStateService.CurrentGamePath;
+                if (!string.IsNullOrEmpty(gamePath))
+                {
+                    await LoadConfigurationAsync();
+                }
+                else
+                {
+                    ShowError("未设置游戏路径，请先在首页选择游戏目录，或点击下方按钮手动选择");
+                }
+            });
+        }
+
+        private async void BrowseGamePathButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var picker = new FolderPicker();
+                picker.SuggestedStartLocation = PickerLocationId.ComputerFolder;
+                picker.FileTypeFilter.Add("*");
+
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+                WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+                var folder = await picker.PickSingleFolderAsync();
+                if (folder != null)
+                {
+                    var gamePath = folder.Path;
+                    if (PathHelper.IsValidGameDirectory(gamePath))
+                    {
+                        _gameStateService.SetGamePath(gamePath, saveToSettings: true);
+                        await LoadConfigurationAsync();
+                    }
+                    else
+                    {
+                        ShowError("所选目录不是有效的游戏目录");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError($"选择文件夹失败: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// 加载配置并填充 UI
+        /// 异步加载配置并填充 UI
         /// </summary>
-        private void LoadConfiguration()
+        private async System.Threading.Tasks.Task LoadConfigurationAsync()
         {
-            if (string.IsNullOrEmpty(_gamePath) || !ConfigurationService.ValidateGamePath(_gamePath))
+            var gamePath = _gameStateService.CurrentGamePath;
+            if (string.IsNullOrEmpty(gamePath) || !ConfigurationService.ValidateGamePath(gamePath))
             {
                 ShowError("无效的游戏路径或 BepInEx 未安装");
                 return;
@@ -47,16 +89,35 @@ namespace XUnity.AutoInstaller.Pages
 
             try
             {
-                // 加载 BepInEx 配置
-                _bepinexConfig = ConfigurationService.LoadBepInExConfig(_gamePath);
-                LoadBepInExConfigToUI(_bepinexConfig);
+                // 显示加载指示器，隐藏配置内容
+                LoadingPanel.Visibility = Visibility.Visible;
+                ConfigContentPanel.Visibility = Visibility.Collapsed;
 
-                // 加载 XUnity 配置
-                _xunityConfig = ConfigurationService.LoadXUnityConfig(_gamePath);
+                // 在后台线程加载配置文件
+                var (bepinexConfig, xunityConfig) = await System.Threading.Tasks.Task.Run(() =>
+                {
+                    var bepinex = ConfigurationService.LoadBepInExConfig(gamePath);
+                    var xunity = ConfigurationService.LoadXUnityConfig(gamePath);
+                    return (bepinex, xunity);
+                });
+
+                // 在 UI 线程更新界面
+                _bepinexConfig = bepinexConfig;
+                _xunityConfig = xunityConfig;
+
+                LoadBepInExConfigToUI(_bepinexConfig);
                 LoadXUnityConfigToUI(_xunityConfig);
+
+                // 隐藏加载指示器，显示配置内容
+                LoadingPanel.Visibility = Visibility.Collapsed;
+                ConfigContentPanel.Visibility = Visibility.Visible;
             }
             catch (Exception ex)
             {
+                // 隐藏加载指示器
+                LoadingPanel.Visibility = Visibility.Collapsed;
+                ConfigContentPanel.Visibility = Visibility.Visible;
+
                 ShowError($"加载配置失败: {ex.Message}");
             }
         }
@@ -274,7 +335,8 @@ namespace XUnity.AutoInstaller.Pages
 
         private async void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrEmpty(_gamePath))
+            var gamePath = _gameStateService.CurrentGamePath;
+            if (string.IsNullOrEmpty(gamePath))
             {
                 ShowError("游戏路径未设置");
                 return;
@@ -287,22 +349,25 @@ namespace XUnity.AutoInstaller.Pages
                 var xunityConfig = ReadXUnityConfigFromUI();
 
                 // 保存配置
-                ConfigurationService.SaveBepInExConfig(_gamePath, bepinexConfig);
-                ConfigurationService.SaveXUnityConfig(_gamePath, xunityConfig);
+                ConfigurationService.SaveBepInExConfig(gamePath, bepinexConfig);
+                ConfigurationService.SaveXUnityConfig(gamePath, xunityConfig);
 
                 // 更新内部引用
                 _bepinexConfig = bepinexConfig;
                 _xunityConfig = xunityConfig;
 
                 // 显示成功对话框
-                var dialog = new ContentDialog
+                if (this.XamlRoot != null)
                 {
-                    Title = "保存成功",
-                    Content = "配置已成功保存",
-                    CloseButtonText = "确定",
-                    XamlRoot = this.XamlRoot
-                };
-                await dialog.ShowAsync();
+                    var dialog = new ContentDialog
+                    {
+                        Title = "保存成功",
+                        Content = "配置已成功保存",
+                        CloseButtonText = "确定",
+                        XamlRoot = this.XamlRoot
+                    };
+                    await dialog.ShowAsync();
+                }
             }
             catch (Exception ex)
             {
@@ -310,14 +375,16 @@ namespace XUnity.AutoInstaller.Pages
             }
         }
 
-        private void CancelButton_Click(object sender, RoutedEventArgs e)
+        private async void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             // 重新加载配置
-            LoadConfiguration();
+            await LoadConfigurationAsync();
         }
 
         private async void ResetButton_Click(object sender, RoutedEventArgs e)
         {
+            if (this.XamlRoot == null) return;
+
             var dialog = new ContentDialog
             {
                 Title = "重置配置",
@@ -342,7 +409,8 @@ namespace XUnity.AutoInstaller.Pages
 
         private void OpenConfigFolderButton_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrEmpty(_gamePath))
+            var gamePath = _gameStateService.CurrentGamePath;
+            if (string.IsNullOrEmpty(gamePath))
             {
                 ShowError("游戏路径未设置");
                 return;
@@ -350,7 +418,7 @@ namespace XUnity.AutoInstaller.Pages
 
             try
             {
-                var configPath = PathHelper.GetBepInExConfigPath(_gamePath);
+                var configPath = PathHelper.GetBepInExConfigPath(gamePath);
 
                 if (!Directory.Exists(configPath))
                 {
@@ -416,16 +484,13 @@ namespace XUnity.AutoInstaller.Pages
             }
         }
 
-        private async void ShowError(string message)
+        private void ShowError(string message)
         {
-            var dialog = new ContentDialog
+            DispatcherQueue.TryEnqueue(() =>
             {
-                Title = "错误",
-                Content = message,
-                CloseButtonText = "确定",
-                XamlRoot = this.XamlRoot
-            };
-            await dialog.ShowAsync();
+                ErrorInfoBar.Message = message;
+                ErrorInfoBar.IsOpen = true;
+            });
         }
     }
 }
