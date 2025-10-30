@@ -13,7 +13,51 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
-    <Grid>
+    <NavigationView
+        x:Name="NavView"
+        IsBackButtonVisible="Collapsed"
+        PaneDisplayMode="Left"
+        IsSettingsVisible="True"
+        SelectionChanged="NavView_SelectionChanged">
 
-    </Grid>
+        <NavigationView.MenuItems>
+            <NavigationViewItem
+                Content="首页"
+                Tag="Dashboard"
+                x:Name="DashboardNavItem">
+                <NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE80F;"/>
+                </NavigationViewItem.Icon>
+            </NavigationViewItem>
+
+            <NavigationViewItem
+                Content="自动安装"
+                Tag="Install"
+                x:Name="InstallNavItem">
+                <NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE896;"/>
+                </NavigationViewItem.Icon>
+            </NavigationViewItem>
+
+            <NavigationViewItem
+                Content="配置编辑"
+                Tag="Config"
+                x:Name="ConfigNavItem">
+                <NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE713;"/>
+                </NavigationViewItem.Icon>
+            </NavigationViewItem>
+
+            <NavigationViewItem
+                Content="版本管理"
+                Tag="Version"
+                x:Name="VersionNavItem">
+                <NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE8F1;"/>
+                </NavigationViewItem.Icon>
+            </NavigationViewItem>
+        </NavigationView.MenuItems>
+
+        <Frame x:Name="ContentFrame"/>
+    </NavigationView>
 </Window>

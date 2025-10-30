@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="XUnity.AutoInstaller.Pages.InstallPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:XUnity.AutoInstaller.Pages"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <ScrollViewer>
+        <StackPanel Spacing="24" Margin="24">
+            <!-- 页面标题 -->
+            <TextBlock
+                Text="自动安装"
+                Style="{StaticResource TitleTextBlockStyle}"/>
+
+            <!-- 版本选择区 -->
+            <StackPanel Spacing="16">
+                <TextBlock
+                    Text="版本选择"
+                    Style="{StaticResource SubtitleTextBlockStyle}"/>
+
+                <Border
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="20">
+                    <StackPanel Spacing="16">
+                        <!-- 版本选择模式 -->
+                        <RadioButtons x:Name="VersionModeRadio" SelectionChanged="VersionModeRadio_SelectionChanged">
+                            <RadioButton Content="自动推荐版本（推荐）" IsChecked="True"/>
+                            <RadioButton Content="手动选择版本"/>
+                        </RadioButtons>
+
+                        <!-- BepInEx 版本选择 -->
+                        <StackPanel Spacing="8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="BepInEx 版本" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <ProgressRing
+                                    x:Name="BepInExVersionLoadingRing"
+                                    Width="16"
+                                    Height="16"
+                                    IsActive="False"
+                                    Visibility="Collapsed"/>
+                            </StackPanel>
+                            <ComboBox
+                                x:Name="BepInExVersionComboBox"
+                                HorizontalAlignment="Stretch"
+                                PlaceholderText="选择 BepInEx 版本..."
+                                DisplayMemberPath="Display"
+                                IsEnabled="False"/>
+                        </StackPanel>
+
+                        <!-- XUnity 版本选择 -->
+                        <StackPanel Spacing="8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="XUnity.AutoTranslator 版本" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <ProgressRing
+                                    x:Name="XUnityVersionLoadingRing"
+                                    Width="16"
+                                    Height="16"
+                                    IsActive="False"
+                                    Visibility="Collapsed"/>
+                            </StackPanel>
+                            <ComboBox
+                                x:Name="XUnityVersionComboBox"
+                                HorizontalAlignment="Stretch"
+                                PlaceholderText="选择 XUnity 版本..."
+                                DisplayMemberPath="Display"
+                                IsEnabled="False"/>
+                        </StackPanel>
+
+                        <!-- 平台选择 -->
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="目标平台" FontWeight="SemiBold"/>
+                            <ComboBox
+                                x:Name="PlatformComboBox"
+                                HorizontalAlignment="Stretch"
+                                SelectedIndex="0"
+                                SelectionChanged="PlatformComboBox_SelectionChanged">
+                                <ComboBoxItem Content="BepInEx x64"/>
+                                <ComboBoxItem Content="BepInEx x86"/>
+                                <ComboBoxItem Content="BepInEx IL2CPP x64"/>
+                                <ComboBoxItem Content="BepInEx IL2CPP x86"/>
+                            </ComboBox>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- 安装选项 -->
+            <StackPanel Spacing="16">
+                <TextBlock
+                    Text="安装选项"
+                    Style="{StaticResource SubtitleTextBlockStyle}"/>
+
+                <Border
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="20">
+                    <StackPanel Spacing="12">
+                        <CheckBox
+                            x:Name="BackupCheckBox"
+                            Content="安装前备份现有文件"
+                            IsChecked="True"/>
+                        <CheckBox
+                            x:Name="CleanInstallCheckBox"
+                            Content="清理旧版本后安装"/>
+                        <CheckBox
+                            x:Name="CreateShortcutCheckBox"
+                            Content="创建配置文件快捷方式"/>
+                        <CheckBox
+                            x:Name="AutoConfigCheckBox"
+                            Content="使用推荐配置"
+                            IsChecked="True"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- 安装操作区 -->
+            <StackPanel Spacing="16">
+                <Button
+                    x:Name="StartInstallButton"
+                    HorizontalAlignment="Stretch"
+                    Style="{StaticResource AccentButtonStyle}"
+                    Padding="16,12"
+                    Click="StartInstallButton_Click">
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <FontIcon Glyph="&#xE896;" FontSize="20"/>
+                            <TextBlock Text="开始安装" FontSize="16" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Button.Content>
+                </Button>
+
+                <!-- 进度显示 -->
+                <StackPanel x:Name="ProgressPanel" Spacing="12" Visibility="Collapsed">
+                    <ProgressBar
+                        x:Name="InstallProgressBar"
+                        Maximum="100"
+                        Value="0"
+                        Height="6"/>
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <ProgressRing
+                            x:Name="InstallProgressRing"
+                            IsActive="False"
+                            Width="20"
+                            Height="20"/>
+                        <TextBlock
+                            x:Name="ProgressText"
+                            Text="准备中..."
+                            VerticalAlignment="Center"/>
+                        <TextBlock
+                            x:Name="ProgressPercentText"
+                            Text="0%"
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource SystemAccentColor}"/>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- 安装日志 -->
+            <StackPanel Spacing="16">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock
+                        Text="安装日志"
+                        Style="{StaticResource SubtitleTextBlockStyle}"
+                        VerticalAlignment="Center"/>
+                    <Button
+                        x:Name="ClearLogButton"
+                        Style="{StaticResource TextBlockButtonStyle}"
+                        Click="ClearLogButton_Click">
+                        <Button.Content>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <FontIcon Glyph="&#xE74D;" FontSize="14"/>
+                                <TextBlock Text="清空" FontSize="12"/>
+                            </StackPanel>
+                        </Button.Content>
+                    </Button>
+                </StackPanel>
+
+                <Border
+                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Height="200">
+                    <ScrollViewer
+                        x:Name="LogScrollViewer"
+                        VerticalScrollBarVisibility="Auto">
+                        <TextBlock
+                            x:Name="LogTextBlock"
+                            Text="准备就绪，等待开始安装..."
+                            Margin="12"
+                            FontFamily="Consolas"
+                            FontSize="12"
+                            TextWrapping="Wrap"/>
+                    </ScrollViewer>
+                </Border>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

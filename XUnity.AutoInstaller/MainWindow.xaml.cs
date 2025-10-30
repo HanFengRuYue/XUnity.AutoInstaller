@@ -1,31 +1,54 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+using XUnity.AutoInstaller.Pages;
 
 namespace XUnity.AutoInstaller
 {
     /// <summary>
-    /// An empty window that can be used on its own or navigated to within a Frame.
+    /// 主窗口，包含导航框架
     /// </summary>
     public sealed partial class MainWindow : Window
     {
         public MainWindow()
         {
             InitializeComponent();
+
+            // 设置窗口初始大小
+            this.AppWindow.Resize(new Windows.Graphics.SizeInt32(1200, 800));
+
+            // 默认导航到首页
+            NavView.SelectedItem = DashboardNavItem;
+            ContentFrame.Navigate(typeof(DashboardPage));
+        }
+
+        private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+        {
+            if (args.IsSettingsSelected)
+            {
+                // 导航到设置页面
+                ContentFrame.Navigate(typeof(SettingsPage));
+            }
+            else if (args.SelectedItemContainer != null)
+            {
+                var selectedTag = args.SelectedItemContainer.Tag?.ToString();
+
+                switch (selectedTag)
+                {
+                    case "Dashboard":
+                        ContentFrame.Navigate(typeof(DashboardPage));
+                        break;
+                    case "Install":
+                        ContentFrame.Navigate(typeof(InstallPage));
+                        break;
+                    case "Config":
+                        ContentFrame.Navigate(typeof(ConfigPage));
+                        break;
+                    case "Version":
+                        ContentFrame.Navigate(typeof(VersionManagementPage));
+                        break;
+                }
+            }
         }
     }
 }
