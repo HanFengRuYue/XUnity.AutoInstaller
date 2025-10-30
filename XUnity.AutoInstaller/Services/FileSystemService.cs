@@ -160,14 +160,20 @@ public class FileSystemService
             var shortcutPath = Path.Combine(desktopPath, $"{shortcutName}.lnk");
 
             // 使用 WScript.Shell COM 对象创建快捷方式
-            Type shellType = Type.GetTypeFromProgID("WScript.Shell");
+            Type? shellType = Type.GetTypeFromProgID("WScript.Shell");
             if (shellType != null)
             {
-                dynamic shell = Activator.CreateInstance(shellType);
-                dynamic shortcut = shell.CreateShortcut(shortcutPath);
-                shortcut.TargetPath = targetPath;
-                shortcut.WorkingDirectory = Path.GetDirectoryName(targetPath);
-                shortcut.Save();
+                dynamic? shell = Activator.CreateInstance(shellType);
+                if (shell != null)
+                {
+                    dynamic? shortcut = shell.CreateShortcut(shortcutPath);
+                    if (shortcut != null)
+                    {
+                        shortcut.TargetPath = targetPath;
+                        shortcut.WorkingDirectory = Path.GetDirectoryName(targetPath);
+                        shortcut.Save();
+                    }
+                }
             }
         }
         catch (Exception ex)

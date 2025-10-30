@@ -209,7 +209,7 @@ public class GitHubApiClient
     {
         try
         {
-            var rateLimit = await _client.Miscellaneous.GetRateLimits();
+            var rateLimit = await _client.RateLimit.GetRateLimits();
             var coreLimit = rateLimit.Resources.Core;
 
             return (coreLimit.Limit, coreLimit.Remaining, coreLimit.Reset.DateTime);
