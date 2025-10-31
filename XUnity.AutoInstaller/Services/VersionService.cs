@@ -16,12 +16,27 @@ public class VersionService
 {
     private readonly SettingsService _settingsService;
     private readonly BepInExBuildsApiClient _buildsClient;
+    private readonly GitHubAtomFeedClient _atomFeedClient;
     private GitHubApiClient? _githubClient;
+    private bool _useAtomFeed = true; // 默认使用 Atom feed
 
     public VersionService()
     {
         _settingsService = new SettingsService();
         _buildsClient = new BepInExBuildsApiClient();
+        _atomFeedClient = new GitHubAtomFeedClient();
+
+        // 如果用户配置了 GitHub Token，则使用 API（获得更多详细信息）
+        var settings = _settingsService.LoadSettings();
+        if (!string.IsNullOrEmpty(settings.GitHubToken))
+        {
+            _useAtomFeed = false;
+            LogService.Instance.Log("检测到 GitHub Token，将使用 API 模式", LogLevel.Info, "[VersionService]");
+        }
+        else
+        {
+            LogService.Instance.Log("未配置 GitHub Token，将使用 Atom Feed 模式（无速率限制）", LogLevel.Info, "[VersionService]");
+        }
     }
 
     /// <summary>
@@ -48,10 +63,31 @@ public class VersionService
         {
             if (filterType == null || filterType == PackageType.BepInEx)
             {
-                // 从 GitHub 获取 Mono 版本
-                var monoVersions = await GetGitHubApiClient().GetBepInExVersionsAsync();
+                // 优先使用 Atom feed（无速率限制），失败时回退到 API
+                List<VersionInfo> monoVersions;
+
+                if (_useAtomFeed)
+                {
+                    try
+                    {
+                        monoVersions = await _atomFeedClient.GetBepInExVersionsAsync(maxCount: 10);
+                        LogService.Instance.Log($"从 Atom Feed 获取 {monoVersions.Count} 个 Mono 版本", LogLevel.Debug, "[VersionService]");
+                    }
+                    catch (Exception ex)
+                    {
+                        LogService.Instance.Log($"Atom Feed 获取失败，回退到 API: {ex.Message}", LogLevel.Warning, "[VersionService]");
+                        monoVersions = await GetGitHubApiClient().GetBepInExVersionsAsync();
+                        LogService.Instance.Log($"从 GitHub API 获取 {monoVersions.Count} 个 Mono 版本", LogLevel.Debug, "[VersionService]");
+                    }
+                }
+                else
+                {
+                    // 使用 GitHub API（用户配置了 Token）
+                    monoVersions = await GetGitHubApiClient().GetBepInExVersionsAsync();
+                    LogService.Instance.Log($"从 GitHub API 获取 {monoVersions.Count} 个 Mono 版本", LogLevel.Debug, "[VersionService]");
+                }
+
                 versions.AddRange(monoVersions.Where(v => includePrerelease || !v.IsPrerelease));
-                LogService.Instance.Log($"从 GitHub 获取 {monoVersions.Count} 个 Mono 版本", LogLevel.Debug, "[VersionService]");
 
                 // 从 builds.bepinex.dev 获取 IL2CPP 版本
                 try
@@ -81,7 +117,30 @@ public class VersionService
 
             if (filterType == null || filterType == PackageType.XUnity)
             {
-                var xunityVersions = await GetGitHubApiClient().GetXUnityVersionsAsync();
+                // 优先使用 Atom feed（无速率限制），失败时回退到 API
+                List<VersionInfo> xunityVersions;
+
+                if (_useAtomFeed)
+                {
+                    try
+                    {
+                        xunityVersions = await _atomFeedClient.GetXUnityVersionsAsync(maxCount: 10);
+                        LogService.Instance.Log($"从 Atom Feed 获取 {xunityVersions.Count} 个 XUnity 版本", LogLevel.Debug, "[VersionService]");
+                    }
+                    catch (Exception ex)
+                    {
+                        LogService.Instance.Log($"Atom Feed 获取失败，回退到 API: {ex.Message}", LogLevel.Warning, "[VersionService]");
+                        xunityVersions = await GetGitHubApiClient().GetXUnityVersionsAsync();
+                        LogService.Instance.Log($"从 GitHub API 获取 {xunityVersions.Count} 个 XUnity 版本", LogLevel.Debug, "[VersionService]");
+                    }
+                }
+                else
+                {
+                    // 使用 GitHub API（用户配置了 Token）
+                    xunityVersions = await GetGitHubApiClient().GetXUnityVersionsAsync();
+                    LogService.Instance.Log($"从 GitHub API 获取 {xunityVersions.Count} 个 XUnity 版本", LogLevel.Debug, "[VersionService]");
+                }
+
                 versions.AddRange(xunityVersions.Where(v => includePrerelease || !v.IsPrerelease));
             }
 
@@ -117,8 +176,8 @@ public class VersionService
                 }
             }
 
-            // 缓存未初始化或没有数据，回退到直接 API 调用
-            LogService.Instance.Log("缓存未初始化，从 API 获取推荐版本", LogLevel.Debug, "[VersionService]");
+            // 缓存未初始化或没有数据，回退到直接获取
+            LogService.Instance.Log("缓存未初始化，直接获取推荐版本", LogLevel.Debug, "[VersionService]");
 
             // IL2CPP 平台从 builds.bepinex.dev 获取
             if (platform == Platform.IL2CPP_x86 || platform == Platform.IL2CPP_x64)
@@ -131,11 +190,51 @@ public class VersionService
             }
             else
             {
-                // Mono 平台从 GitHub 获取
-                bepinex = await GetGitHubApiClient().GetLatestBepInExVersionAsync(platform, includePrerelease: false);
+                // Mono 平台：优先使用 Atom feed
+                if (_useAtomFeed)
+                {
+                    try
+                    {
+                        var monoVersions = await _atomFeedClient.GetBepInExVersionsAsync(maxCount: 5);
+                        bepinex = monoVersions
+                            .Where(v => v.TargetPlatform == platform && !v.IsPrerelease)
+                            .OrderByDescending(v => v.ReleaseDate)
+                            .FirstOrDefault();
+                    }
+                    catch (Exception ex)
+                    {
+                        LogService.Instance.Log($"Atom Feed 获取失败，回退到 API: {ex.Message}", LogLevel.Warning, "[VersionService]");
+                        bepinex = await GetGitHubApiClient().GetLatestBepInExVersionAsync(platform, includePrerelease: false);
+                    }
+                }
+                else
+                {
+                    bepinex = await GetGitHubApiClient().GetLatestBepInExVersionAsync(platform, includePrerelease: false);
+                }
             }
 
-            var xunityVersion = await GetGitHubApiClient().GetLatestXUnityVersionAsync(includePrerelease: false);
+            // XUnity：优先使用 Atom feed
+            VersionInfo? xunityVersion;
+            if (_useAtomFeed)
+            {
+                try
+                {
+                    var xunityVersions = await _atomFeedClient.GetXUnityVersionsAsync(maxCount: 5);
+                    xunityVersion = xunityVersions
+                        .Where(v => !v.IsPrerelease)
+                        .OrderByDescending(v => v.ReleaseDate)
+                        .FirstOrDefault();
+                }
+                catch (Exception ex)
+                {
+                    LogService.Instance.Log($"Atom Feed 获取失败，回退到 API: {ex.Message}", LogLevel.Warning, "[VersionService]");
+                    xunityVersion = await GetGitHubApiClient().GetLatestXUnityVersionAsync(includePrerelease: false);
+                }
+            }
+            else
+            {
+                xunityVersion = await GetGitHubApiClient().GetLatestXUnityVersionAsync(includePrerelease: false);
+            }
 
             return (bepinex, xunityVersion);
         }

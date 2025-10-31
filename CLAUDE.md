@@ -74,18 +74,22 @@ The backend follows a service-oriented architecture organized into three main la
 **Models/** - Data structures and enums:
 - `GameEngine`, `Platform`, `PackageType` enums (Platform includes x86, x64, IL2CPP variants, ARM64)
 - `VersionInfo.TargetPlatform` is nullable `Platform?`
-- `BepInExConfig`, `XUnityConfig` contain 40+ configuration properties
+- `BepInExConfig`: 30 configuration properties covering Caching, Chainloader, Harmony.Logger, Logging (Console/Disk), and Preloader sections
+- `XUnityConfig`: 50+ configuration properties covering Service, General, Behaviour, TextFrameworks, Files, Texture, Advanced, Authentication (8 services), Http, Debug, Optimization, Integration, and ResourceRedirector sections
+- `InstallOptions`: Includes `LaunchGameToGenerateConfig` (bool) and `ConfigGenerationTimeout` (int) for automatic config generation
 - `AppSettings` stores user preferences including GitHub Token
 
 **Services/** - Business logic layer:
 - `LogService`: **Singleton** for unified application logging with event-driven updates to LogPage. Replaces all `Debug.WriteLine()` calls
 - `GameStateService`: **Singleton** for global game path management. Use `Instance.CurrentGamePath` and subscribe to `GamePathChanged` event
 - `VersionCacheService`: **Singleton** for global version list caching. Initialized once at app startup, provides cached versions to all pages, only refreshes on manual request in VersionManagementPage
-- `GitHubApiClient`: Supports optional GitHub Token authentication (60→5000 requests/hour), rate limit error handling, and API pagination limiting (maxCount parameter defaults to 3 versions)
-- `VersionService`: Lazy-loads `GitHubApiClient` with token from `SettingsService`, prioritizes `VersionCacheService` for queries
+- `GitHubAtomFeedClient`: **Primary version source** - Fetches releases via Atom feed (no rate limits, no authentication required). Parses XML and constructs download URLs
+- `GitHubApiClient`: **Fallback/Token mode** - Supports optional GitHub Token authentication (60→5000 requests/hour), rate limit error handling, and API pagination limiting (maxCount parameter defaults to 3 versions)
+- `VersionService`: **Smart mode switching** - Uses `GitHubAtomFeedClient` by default (no rate limits), automatically switches to `GitHubApiClient` when Token configured or on Atom feed failure
 - `BepInExBuildsApiClient`: Fetches IL2CPP versions (optimized to latest 1 build only)
 - `ConfigurationService`: Parses INI files with correct section mappings for XUnity config
 - `InstallationService`: Orchestrates installation pipeline using `LogWriter` which internally uses `LogService`
+- `GameLauncherService`: Launches game, monitors config file generation (BepInEx.cfg, AutoTranslatorConfig.ini), auto-closes game when configs are detected. Includes timeout handling and diagnostic capabilities
 - `SettingsService`: Manages settings persistence including GitHub Token
 
 **Utils/** - Shared utilities:
@@ -132,8 +136,12 @@ The backend follows a service-oriented architecture organized into three main la
 - Pages read from cache via `GetBepInExVersions()`, `GetXUnityVersions()`, or helper methods
 - Subscribe to `VersionCacheService.VersionsUpdated` event in page constructors
 - Only `VersionManagementPage` can trigger refresh via `VersionCacheService.RefreshAsync()`
-- `GitHubApiClient` methods accept optional `maxCount` parameter (default 3) to limit API response size
 - Cache initialized once in `App.OnLaunched()` via background `InitializeVersionCacheAsync()`
+- **Atom Feed vs API**:
+  - Default: `GitHubAtomFeedClient` (no rate limits, no auth required)
+  - Token mode: `GitHubApiClient` when user configures GitHub Token (more detailed info)
+  - Auto-fallback: Atom feed failure automatically switches to API
+  - Download URLs constructed from version info: `https://github.com/{owner}/{repo}/releases/download/{tag}/{filename}`
 
 **Installation Flow**:
 1. Validate game path and detect engine type
@@ -144,40 +152,76 @@ The backend follows a service-oriented architecture organized into three main la
 6. Download XUnity.AutoTranslator from GitHub
 7. Extract XUnity to `BepInEx/plugins/`
 8. Apply recommended configuration (optional)
+9. **Auto-launch game to generate configs** (optional, default enabled):
+   - Launches game executable
+   - Monitors for BepInEx.cfg and AutoTranslatorConfig.ini generation (polls every 500ms)
+   - Verifies file size > 0 to ensure complete writes
+   - Auto-closes game gracefully (3s timeout before force kill)
+   - Includes diagnostic logging if generation fails
+   - Configurable timeout (default 60s, range 10-300s)
 
 ## Important Notes
 
 ### Configuration File Mapping
 
-**BepInEx.cfg** - INI format with sections:
-- `[Logging.Console]`, `[Logging.Disk]` - Logging configuration
-- `[Preloader]`, `[Preloader.Entrypoint]` - Preloader settings
-- `[Chainloader]` - Plugin loading settings
+**BepInEx.cfg** - INI format with 30 configuration options across sections:
+- `[Caching]` - EnableAssemblyCache
+- `[Chainloader]` - HideManagerGameObject, LogLevels, LogUnityMessages
+- `[Harmony.Logger]` - LogChannels (None, Warn/Error, All)
+- `[Logging]` - UnityLogListening, LogConsoleToUnityLog
+- `[Logging.Console]` - Enabled, PreventClose, ShiftJisEncoding, StandardOutType (Auto/ConsoleOut/StandardOut), LogLevels (8 levels from None to All)
+- `[Logging.Disk]` - WriteUnityLog, AppendLog, Enabled, LogLevels
+- `[Preloader]` - ApplyRuntimePatches, HarmonyBackend (auto/dynamicmethod/methodbuilder/cecil), DumpAssemblies, LoadDumpedAssemblies, BreakBeforeLoadAssemblies, LogConsoleToUnityLog
+- `[Preloader.Entrypoint]` - Assembly, Type, Method
 
-**AutoTranslatorConfig.ini** - CRITICAL section mappings:
-- `[Service]` - Translation endpoint (17 supported: Passthrough, GoogleTranslate, GoogleTranslateV2, GoogleTranslateCompat, GoogleTranslateLegitimate, BingTranslate, BingTranslateLegitimate, DeepLTranslate, DeepLTranslateLegitimate, PapagoTranslate, BaiduTranslate, YandexTranslate, WatsonTranslate, LecPowerTranslator15, ezTransXP, LingoCloudTranslate, CustomTranslate)
-- `[General]` - **Only contains Language and FromLanguage**
-- `[Behaviour]` - **Most settings are here:** MaxCharactersPerTranslation, EnableUIResizing, OverrideFont, EnableTranslationScoping, HandleRichText, etc.
-- `[TextFrameworks]` - Keys use `Enable` prefix: `EnableUGUI`, `EnableNGUI`, etc.
-- `[Texture]` - Keys use `Texture` prefix or `Enable` prefix: `TextureDirectory`, `EnableTextureTranslation`
-- **Authentication sections** - Each service has its own section: `[GoogleLegitimate]`, `[BingLegitimate]`, `[DeepLLegitimate]`, `[Baidu]`, `[Yandex]`
+**AutoTranslatorConfig.ini** - CRITICAL section mappings with 50+ configuration options:
+- `[Service]` - Translation endpoint (17 supported: Passthrough, GoogleTranslate, GoogleTranslateV2, GoogleTranslateCompat, GoogleTranslateLegitimate, BingTranslate, BingTranslateLegitimate, DeepLTranslate, DeepLTranslateLegitimate, PapagoTranslate, BaiduTranslate, YandexTranslate, WatsonTranslate, LecPowerTranslator15, ezTransXP, LingoCloudTranslate, CustomTranslate), FallbackEndpoint
+- `[General]` - **Only contains Language and FromLanguage** (use zh-CN, zh-TW, en, ja, ko)
+- `[Behaviour]` - **Most settings are here:** MaxCharactersPerTranslation, MinDialogueChars, IgnoreWhitespaceInDialogue, EnableUIResizing, OverrideFont, CopyToClipboard, EnableTranslationScoping, HandleRichText, MaxTextParserRecursion, HtmlEntityPreprocessing, EnableBatching, UseStaticTranslations, IgnoreTextStartingWith, OutputUntranslatableText, Delay
+- `[TextFrameworks]` - Keys use `Enable` prefix: `EnableUGUI`, `EnableNGUI`, `EnableTextMeshPro`, `EnableTextMesh`, `EnableIMGUI`
+- `[Files]` - Directory, OutputFile, SubstitutionFile, PreprocessorsFile, PostprocessorsFile
+- `[Texture]` - Directory, EnableTranslation, EnableDumping, HashGenerationStrategy (FromImageName/FromImageData)
+- `[Http]` - UserAgent, DisableCertificateChecks
+- `[Debug]` - EnableConsole, EnableLog
+- `[Optimization]` - EnableCache, MaxCacheEntries (100-50000)
+- `[Integration]` - TextGetterCompatibilityMode
+- `[ResourceRedirector]` - EnableRedirector, DetectDuplicateResources
+- **Authentication sections** - Each service has its own section with API keys/tokens: Google (APIKey), Bing (SubscriptionKey), DeepL (APIKey), Baidu (AppId + AppSecret), Yandex (APIKey), Watson (APIKey), LingoCloud (Token)
 
 **IMPORTANT**: Use correct section names when reading/writing XUnity config:
 - ❌ WRONG: `IniParser.GetInt(data, "General", "MaxCharactersPerTranslation", 200)`
 - ✅ CORRECT: `IniParser.GetInt(data, "Behaviour", "MaxCharactersPerTranslation", 200)`
 
-### GitHub API Integration and Rate Limit Management
-- `GitHubApiClient` supports optional token authentication via constructor parameter
+### Version Fetching Strategy (Rate Limit Solution)
+The application uses a **dual-client strategy** to eliminate rate limit issues:
+
+**Primary: GitHub Atom Feed (GitHubAtomFeedClient)**
+- Fetches releases from `https://github.com/{owner}/{repo}/releases.atom`
+- **No rate limits, no authentication required**
+- Parses XML using `System.Xml.Linq` to extract version info
+- Constructs download URLs from version tags:
+  - BepInEx: `https://github.com/BepInEx/BepInEx/releases/download/v{version}/BepInEx_win_{arch}_{version}.zip`
+  - XUnity: `https://github.com/bbepis/XUnity.AutoTranslator/releases/download/v{version}/XUnity.AutoTranslator-BepInEx-{version}.zip`
+- Provides `ValidateDownloadUrlAsync()` and `GetFileSizeAsync()` for URL verification
+
+**Fallback: GitHub REST API (GitHubApiClient)**
+- Used when: (1) User configures GitHub Token, or (2) Atom feed fails
 - Unauthenticated: 60 requests/hour, Authenticated: 5000 requests/hour
-- Rate limit errors throw custom exception with Chinese error message and guidance
-- `VersionService` lazy-loads `GitHubApiClient` with token from `SettingsService.LoadSettings()`
-- All GitHub API calls wrapped with `RateLimitExceededException` handling
-- **API Call Optimization**:
-  - `GetBepInExVersionsAsync(maxCount)` and `GetXUnityVersionsAsync(maxCount)` use Octokit `ApiOptions` to limit results (default 3 versions)
-  - `VersionCacheService` initialized once at app startup, caches results globally
-  - Pages never call GitHub API directly - always read from `VersionCacheService`
-  - Manual refresh only available in `VersionManagementPage` via "刷新" button
-  - Typical API usage: 2-3 calls at startup, then only on manual refresh (vs. previous: 2-4 calls per page navigation)
+- Rate limit errors throw custom exception with Chinese error message
+- Uses Octokit with `ApiOptions` to limit results (maxCount parameter)
+
+**Smart Mode Switching (VersionService)**
+- Constructor checks for GitHub Token in settings
+- If Token present: uses API mode (more detailed metadata)
+- If no Token: uses Atom feed mode (unlimited, faster)
+- All methods have automatic fallback: Atom → API on failure
+- Logs mode selection: `[VersionService]` prefix shows active mode
+
+**Caching Layer (VersionCacheService)**
+- Initialized once at app startup, caches results globally
+- Pages never fetch directly - always read from cache
+- Manual refresh only in `VersionManagementPage` via "刷新" button
+- Typical usage: 1-2 fetches at startup, then cache-only until manual refresh
 
 ### IL2CPP Version Detection
 - `BepInExBuildsApiClient` scrapes HTML from builds.bepinex.dev
@@ -263,16 +307,31 @@ private void OnPageLoaded(object sender, RoutedEventArgs e)
 - `ProgressRing` and `ProgressBar` for loading states
 
 ### Recent Architectural Changes
-1. **Version Caching System** (Latest): Introduced `VersionCacheService` singleton for global version list caching
+1. **Atom Feed Integration** (Latest): Eliminated GitHub API rate limit issues
+   - New `GitHubAtomFeedClient` fetches from `releases.atom` (no authentication, no limits)
+   - Smart mode switching in `VersionService`: Atom feed by default, API when Token configured
+   - Automatic fallback: Atom → API on failure
+   - Download URL construction from version tags
+   - **Result**: Users without Token can refresh versions unlimited times
+2. **Auto-Launch Game for Config Generation**: New `GameLauncherService` automates first-run config generation
+   - Launches game after installation, monitors for BepInEx.cfg and AutoTranslatorConfig.ini
+   - Polls every 500ms with file size verification
+   - Auto-closes game gracefully or force-kills after 3s
+   - Configurable timeout (10-300s) with diagnostic logging on failure
+   - Integrated into step 9 of installation flow
+3. **Comprehensive Configuration Editor**: Expanded from basic to complete config coverage
+   - BepInEx: 11→30 properties across 8 sections (Caching, Chainloader, Harmony, Logging, Preloader)
+   - XUnity: 34→50+ properties across 12 sections (added Http, Debug, Optimization, Integration, ResourceRedirector, Watson/LingoCloud auth)
+   - All UI controls properly wired with correct property names and type mappings
+4. **Version Caching System**: Introduced `VersionCacheService` singleton for global version list caching
    - Initialized once at app startup in background (non-blocking)
-   - All pages read from cache, preventing redundant API calls
+   - All pages read from cache, preventing redundant fetches
    - Manual refresh only in VersionManagementPage
-   - GitHub API limited to 3 versions per request (vs. all releases)
-   - Reduces API calls by 90%+, improves page navigation speed 10x
-2. **Unified Logging System**: All output routed through LogService to dedicated LogPage
-3. **GitHub Token Support**: Optional token configuration increases API rate limit 60→5000/hour
-4. **Translation Services**: Expanded from 6 to 17 endpoints with Tag-based mapping
-5. **IL2CPP Optimization**: Reduced fetch from 5 builds to 1 for faster loading
-6. **Page Initialization**: Fixed NullReferenceException with Loaded event pattern
-7. **Layout Redesign**: VersionManagementPage changed to vertical layout with larger fonts/controls
-8. **ARM64 Removal**: Discontinued from UI (platform filter) due to plugin incompatibility
+   - Reduces fetch frequency by 90%+, improves page navigation speed 10x
+5. **Unified Logging System**: All output routed through LogService to dedicated LogPage
+6. **GitHub Token Support**: Optional token configuration switches to API mode (more metadata)
+7. **Translation Services**: Expanded from 6 to 17 endpoints with Tag-based mapping
+8. **IL2CPP Optimization**: Reduced fetch from 5 builds to 1 for faster loading
+9. **Page Initialization**: Fixed NullReferenceException with Loaded event pattern
+10. **Layout Redesign**: VersionManagementPage changed to vertical layout with larger fonts/controls
+11. **ARM64 Removal**: Discontinued from UI (platform filter) due to plugin incompatibility
