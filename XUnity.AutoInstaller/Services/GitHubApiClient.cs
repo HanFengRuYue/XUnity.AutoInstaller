@@ -38,11 +38,20 @@ public class GitHubApiClient
     /// <summary>
     /// 获取 BepInEx 所有版本
     /// </summary>
-    public async Task<List<VersionInfo>> GetBepInExVersionsAsync()
+    /// <param name="maxCount">最多获取的版本数量（默认 3 个）</param>
+    public async Task<List<VersionInfo>> GetBepInExVersionsAsync(int maxCount = 3)
     {
         try
         {
-            var releases = await _client.Repository.Release.GetAll("BepInEx", "BepInEx");
+            // 使用 ApiOptions 限制获取的版本数量
+            var options = new ApiOptions
+            {
+                PageSize = maxCount,
+                PageCount = 1
+            };
+            var releases = await _client.Repository.Release.GetAll("BepInEx", "BepInEx", options);
+
+            LogService.Instance.Log($"从 GitHub 获取 BepInEx releases，限制 {maxCount} 个，实际获取 {releases.Count} 个", LogLevel.Debug, "[GitHub]");
             var versions = new List<VersionInfo>();
 
             foreach (var release in releases)
@@ -112,11 +121,20 @@ public class GitHubApiClient
     /// <summary>
     /// 获取 XUnity.AutoTranslator 所有版本
     /// </summary>
-    public async Task<List<VersionInfo>> GetXUnityVersionsAsync()
+    /// <param name="maxCount">最多获取的版本数量（默认 3 个）</param>
+    public async Task<List<VersionInfo>> GetXUnityVersionsAsync(int maxCount = 3)
     {
         try
         {
-            var releases = await _client.Repository.Release.GetAll("bbepis", "XUnity.AutoTranslator");
+            // 使用 ApiOptions 限制获取的版本数量
+            var options = new ApiOptions
+            {
+                PageSize = maxCount,
+                PageCount = 1
+            };
+            var releases = await _client.Repository.Release.GetAll("bbepis", "XUnity.AutoTranslator", options);
+
+            LogService.Instance.Log($"从 GitHub 获取 XUnity releases，限制 {maxCount} 个，实际获取 {releases.Count} 个", LogLevel.Debug, "[GitHub]");
             var versions = new List<VersionInfo>();
 
             foreach (var release in releases)

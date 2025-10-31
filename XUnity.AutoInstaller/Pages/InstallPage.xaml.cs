@@ -23,6 +23,7 @@ namespace XUnity.AutoInstaller.Pages
     public sealed partial class InstallPage : Page
     {
         private readonly GameStateService _gameStateService;
+        private readonly VersionCacheService _versionCacheService;
         private bool _isInstalling = false;
         private readonly VersionService _versionService;
         private List<VersionInfo> _bepinexVersions = new();
@@ -33,7 +34,11 @@ namespace XUnity.AutoInstaller.Pages
             this.InitializeComponent();
 
             _gameStateService = GameStateService.Instance;
+            _versionCacheService = VersionCacheService.Instance;
             _versionService = new VersionService();
+
+            // 订阅版本更新事件
+            _versionCacheService.VersionsUpdated += OnVersionsUpdated;
 
             // 设置默认值
             PlatformComboBox.SelectedIndex = 0; // x64
@@ -99,7 +104,25 @@ namespace XUnity.AutoInstaller.Pages
         }
 
         /// <summary>
-        /// 加载可用版本列表
+        /// 版本更新事件处理
+        /// </summary>
+        private void OnVersionsUpdated(object? sender, VersionsUpdatedEventArgs e)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                _bepinexVersions = e.BepInExVersions;
+                _xunityVersions = e.XUnityVersions;
+
+                // 更新ComboBox
+                UpdateBepInExVersionComboBox();
+                UpdateXUnityVersionComboBox();
+
+                LogService.Instance.Log($"版本列表已更新: BepInEx {_bepinexVersions.Count} 个, XUnity {_xunityVersions.Count} 个", LogLevel.Info, "[安装]");
+            });
+        }
+
+        /// <summary>
+        /// 加载可用版本列表（从缓存）
         /// </summary>
         private async Task LoadVersionsAsync()
         {
@@ -111,18 +134,33 @@ namespace XUnity.AutoInstaller.Pages
                 XUnityVersionLoadingRing.IsActive = true;
                 XUnityVersionLoadingRing.Visibility = Visibility.Visible;
 
-                LogService.Instance.Log("正在加载可用版本列表...", LogLevel.Info, "[安装]");
+                LogService.Instance.Log("正在从缓存加载版本列表...", LogLevel.Info, "[安装]");
 
-                // 并行加载BepInEx和XUnity版本
-                var bepinexTask = _versionService.GetAllAvailableVersionsAsync(PackageType.BepInEx, includePrerelease: false);
-                var xunityTask = _versionService.GetAllAvailableVersionsAsync(PackageType.XUnity, includePrerelease: false);
+                // 从缓存获取版本列表
+                _bepinexVersions = _versionCacheService.GetBepInExVersions();
+                _xunityVersions = _versionCacheService.GetXUnityVersions();
 
-                await Task.WhenAll(bepinexTask, xunityTask);
+                // 如果缓存为空，等待初始化完成
+                if (_bepinexVersions.Count == 0 && _xunityVersions.Count == 0 && !_versionCacheService.IsInitialized)
+                {
+                    LogService.Instance.Log("版本缓存尚未初始化，等待初始化完成...", LogLevel.Info, "[安装]");
 
-                _bepinexVersions = bepinexTask.Result;
-                _xunityVersions = xunityTask.Result;
+                    // 等待最多 10 秒
+                    var startTime = DateTime.Now;
+                    while (!_versionCacheService.IsInitialized && (DateTime.Now - startTime).TotalSeconds < 10)
+                    {
+                        await Task.Delay(500);
+                        _bepinexVersions = _versionCacheService.GetBepInExVersions();
+                        _xunityVersions = _versionCacheService.GetXUnityVersions();
 
-                LogService.Instance.Log($"已加载 {_bepinexVersions.Count} 个 BepInEx 版本和 {_xunityVersions.Count} 个 XUnity 版本", LogLevel.Info, "[安装]");
+                        if (_bepinexVersions.Count > 0 || _xunityVersions.Count > 0)
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                LogService.Instance.Log($"已从缓存加载 {_bepinexVersions.Count} 个 BepInEx 版本和 {_xunityVersions.Count} 个 XUnity 版本", LogLevel.Info, "[安装]");
 
                 // 更新ComboBox
                 UpdateBepInExVersionComboBox();

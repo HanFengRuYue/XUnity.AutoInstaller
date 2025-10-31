@@ -100,7 +100,25 @@ public class VersionService
     {
         try
         {
+            // 优先从缓存获取
+            var cacheService = VersionCacheService.Instance;
             VersionInfo? bepinex;
+
+            if (cacheService.IsInitialized)
+            {
+                // 从缓存获取
+                bepinex = cacheService.GetLatestBepInExVersion(platform, includePrerelease: false);
+                var xunity = cacheService.GetLatestXUnityVersion(includePrerelease: false);
+
+                if (bepinex != null && xunity != null)
+                {
+                    LogService.Instance.Log($"从缓存获取推荐版本: BepInEx {bepinex.Version}, XUnity {xunity.Version}", LogLevel.Debug, "[VersionService]");
+                    return (bepinex, xunity);
+                }
+            }
+
+            // 缓存未初始化或没有数据，回退到直接 API 调用
+            LogService.Instance.Log("缓存未初始化，从 API 获取推荐版本", LogLevel.Debug, "[VersionService]");
 
             // IL2CPP 平台从 builds.bepinex.dev 获取
             if (platform == Platform.IL2CPP_x86 || platform == Platform.IL2CPP_x64)
@@ -117,9 +135,9 @@ public class VersionService
                 bepinex = await GetGitHubApiClient().GetLatestBepInExVersionAsync(platform, includePrerelease: false);
             }
 
-            var xunity = await GetGitHubApiClient().GetLatestXUnityVersionAsync(includePrerelease: false);
+            var xunityVersion = await GetGitHubApiClient().GetLatestXUnityVersionAsync(includePrerelease: false);
 
-            return (bepinex, xunity);
+            return (bepinex, xunityVersion);
         }
         catch (Exception ex)
         {

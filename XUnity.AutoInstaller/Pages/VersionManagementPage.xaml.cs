@@ -14,6 +14,7 @@ namespace XUnity.AutoInstaller.Pages
     public sealed partial class VersionManagementPage : Page
     {
         private readonly GameStateService _gameStateService;
+        private readonly VersionCacheService _versionCacheService;
         private readonly VersionService _versionService;
         private List<VersionInfo> _allBepInExVersions = new();
         private List<VersionInfo> _allXUnityVersions = new();
@@ -24,20 +25,51 @@ namespace XUnity.AutoInstaller.Pages
         {
             this.InitializeComponent();
             _gameStateService = GameStateService.Instance;
+            _versionCacheService = VersionCacheService.Instance;
             _versionService = new VersionService();
 
             // Subscribe to game path changes
             _gameStateService.GamePathChanged += OnGamePathChanged;
+
+            // Subscribe to version updates
+            _versionCacheService.VersionsUpdated += OnVersionsUpdated;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
 
-            // Load from GameStateService
+            // Load from GameStateService and cache
             if (_gameStateService.HasValidGamePath())
             {
                 _ = LoadDataAsync();
+            }
+
+            // 从缓存加载版本列表（不触发 API 调用）
+            LoadVersionsFromCache();
+        }
+
+        /// <summary>
+        /// 从缓存加载版本列表（不触发 API 调用）
+        /// </summary>
+        private void LoadVersionsFromCache()
+        {
+            _allBepInExVersions = _versionCacheService.GetBepInExVersions();
+            _allXUnityVersions = _versionCacheService.GetXUnityVersions();
+
+            if (_allBepInExVersions.Count > 0 || _allXUnityVersions.Count > 0)
+            {
+                ApplyFilters();
+                BepInExLoadingPanel.Visibility = Visibility.Collapsed;
+                BepInExVersionsListView.Visibility = Visibility.Visible;
+                XUnityLoadingPanel.Visibility = Visibility.Collapsed;
+                XUnityVersionsListView.Visibility = Visibility.Visible;
+
+                LogService.Instance.Log($"从缓存加载版本列表: BepInEx {_allBepInExVersions.Count} 个, XUnity {_allXUnityVersions.Count} 个", LogLevel.Info, "[版本管理]");
+            }
+            else
+            {
+                LogService.Instance.Log("缓存中没有版本数据，请点击刷新按钮获取", LogLevel.Info, "[版本管理]");
             }
         }
 
@@ -88,6 +120,22 @@ namespace XUnity.AutoInstaller.Pages
             }
         }
 
+        /// <summary>
+        /// 版本更新事件处理
+        /// </summary>
+        private void OnVersionsUpdated(object? sender, VersionsUpdatedEventArgs e)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                _allBepInExVersions = e.BepInExVersions;
+                _allXUnityVersions = e.XUnityVersions;
+
+                ApplyFilters();
+
+                LogService.Instance.Log($"版本列表已更新: BepInEx {_allBepInExVersions.Count} 个, XUnity {_allXUnityVersions.Count} 个", LogLevel.Info, "[版本管理]");
+            });
+        }
+
         private async Task RefreshAvailableVersions()
         {
             try
@@ -97,12 +145,14 @@ namespace XUnity.AutoInstaller.Pages
                 XUnityLoadingPanel.Visibility = Visibility.Visible;
                 XUnityVersionsListView.Visibility = Visibility.Collapsed;
 
-                // Load all versions (including prereleases to show IL2CPP versions)
-                var allVersions = await _versionService.GetAllAvailableVersionsAsync(includePrerelease: true);
+                LogService.Instance.Log("正在刷新版本列表（从 GitHub API）...", LogLevel.Info, "[版本管理]");
 
-                // Separate BepInEx and XUnity versions
-                _allBepInExVersions = allVersions.Where(v => v.PackageType == PackageType.BepInEx).ToList();
-                _allXUnityVersions = allVersions.Where(v => v.PackageType == PackageType.XUnity).ToList();
+                // 调用 VersionCacheService 刷新（会触发 API 调用）
+                await _versionCacheService.RefreshAsync();
+
+                // 从缓存获取最新版本
+                _allBepInExVersions = _versionCacheService.GetBepInExVersions();
+                _allXUnityVersions = _versionCacheService.GetXUnityVersions();
 
                 ApplyFilters();
 
@@ -110,11 +160,14 @@ namespace XUnity.AutoInstaller.Pages
                 BepInExVersionsListView.Visibility = Visibility.Visible;
                 XUnityLoadingPanel.Visibility = Visibility.Collapsed;
                 XUnityVersionsListView.Visibility = Visibility.Visible;
+
+                LogService.Instance.Log($"版本列表刷新完成: BepInEx {_allBepInExVersions.Count} 个, XUnity {_allXUnityVersions.Count} 个", LogLevel.Info, "[版本管理]");
             }
             catch (Exception ex)
             {
                 BepInExLoadingPanel.Visibility = Visibility.Collapsed;
                 XUnityLoadingPanel.Visibility = Visibility.Collapsed;
+                LogService.Instance.Log($"刷新版本列表失败: {ex.Message}", LogLevel.Error, "[版本管理]");
                 await ShowErrorAsync($"刷新可用版本失败: {ex.Message}");
             }
         }
