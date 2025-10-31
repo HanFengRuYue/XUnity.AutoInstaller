@@ -18,25 +18,25 @@ public class ConfigurationService
     {
         var configPath = PathHelper.GetBepInExConfigFile(gamePath);
 
-        System.Diagnostics.Debug.WriteLine($"[Config] 加载 BepInEx 配置: {configPath}");
+        LogService.Instance.Log($"加载 BepInEx 配置: {configPath}", LogLevel.Debug, "[Config]");
 
         if (!File.Exists(configPath))
         {
-            System.Diagnostics.Debug.WriteLine($"[Config] 配置文件不存在，使用默认值");
+            LogService.Instance.Log($"配置文件不存在，使用默认值", LogLevel.Debug, "[Config]");
             return BepInExConfig.CreateDefault();
         }
 
         try
         {
             var data = IniParser.Parse(configPath);
-            System.Diagnostics.Debug.WriteLine($"[Config] 成功解析配置文件，节数: {data.Count}");
+            LogService.Instance.Log($"成功解析配置文件，节数: {data.Count}", LogLevel.Debug, "[Config]");
 
             var config = new BepInExConfig();
 
             // [Logging.Console]
             config.LoggingConsoleEnabled = IniParser.GetBool(data, "Logging.Console", "Enabled", false);
             config.LoggingConsoleShiftJISCompatible = IniParser.GetBool(data, "Logging.Console", "ShiftJISCompatible", false);
-            System.Diagnostics.Debug.WriteLine($"[Config] LoggingConsoleEnabled = {config.LoggingConsoleEnabled}");
+            LogService.Instance.Log($"LoggingConsoleEnabled = {config.LoggingConsoleEnabled}", LogLevel.Debug, "[Config]");
 
             // [Logging.Disk]
             config.LoggingDiskEnabled = IniParser.GetBool(data, "Logging.Disk", "Enabled", true);
@@ -54,13 +54,13 @@ public class ConfigurationService
             config.ChainloaderLoggerDisplayedLevels = IniParser.GetValue(data, "Chainloader", "LogLevels", "Info,Message,Warning,Error,Fatal");
             config.ChainloaderLogUnityMessages = IniParser.GetBool(data, "Chainloader", "LogUnityMessages", true);
 
-            System.Diagnostics.Debug.WriteLine($"[Config] BepInEx 配置加载成功");
+            LogService.Instance.Log($"BepInEx 配置加载成功", LogLevel.Debug, "[Config]");
             return config;
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[Config] 加载失败: {ex.GetType().Name} - {ex.Message}");
-            System.Diagnostics.Debug.WriteLine($"[Config] 堆栈: {ex.StackTrace}");
+            LogService.Instance.Log($"加载失败: {ex.GetType().Name} - {ex.Message}", LogLevel.Error, "[Config]");
+            LogService.Instance.Log($"堆栈: {ex.StackTrace}", LogLevel.Error, "[Config]");
             return BepInExConfig.CreateDefault();
         }
     }
@@ -103,18 +103,18 @@ public class ConfigurationService
     {
         var configPath = PathHelper.GetXUnityConfigFile(gamePath);
 
-        System.Diagnostics.Debug.WriteLine($"[Config] 加载 XUnity 配置: {configPath}");
+        LogService.Instance.Log($"加载 XUnity 配置: {configPath}", LogLevel.Debug, "[Config]");
 
         if (!File.Exists(configPath))
         {
-            System.Diagnostics.Debug.WriteLine($"[Config] 配置文件不存在，使用推荐值");
+            LogService.Instance.Log($"配置文件不存在，使用推荐值", LogLevel.Debug, "[Config]");
             return XUnityConfig.CreateRecommended();
         }
 
         try
         {
             var data = IniParser.Parse(configPath);
-            System.Diagnostics.Debug.WriteLine($"[Config] 成功解析配置文件，节数: {data.Count}");
+            LogService.Instance.Log($"成功解析配置文件，节数: {data.Count}", LogLevel.Debug, "[Config]");
 
             var config = new XUnityConfig();
 
@@ -128,7 +128,7 @@ public class ConfigurationService
 
             // [Behaviour] - 行为设置（实际配置文件中的节名）
             config.GeneralMaxCharactersPerTranslation = IniParser.GetInt(data, "Behaviour", "MaxCharactersPerTranslation", 200);
-            System.Diagnostics.Debug.WriteLine($"[Config] MaxCharactersPerTranslation = {config.GeneralMaxCharactersPerTranslation}");
+            LogService.Instance.Log($"MaxCharactersPerTranslation = {config.GeneralMaxCharactersPerTranslation}", LogLevel.Debug, "[Config]");
             config.GeneralMinDialogueChars = IniParser.GetInt(data, "Behaviour", "MinDialogueChars", 20);
             config.GeneralIgnoreWhitespaceInDialogue = IniParser.GetBool(data, "Behaviour", "IgnoreWhitespaceInDialogue", true);
             config.GeneralEnableUIResizing = IniParser.GetBool(data, "Behaviour", "EnableUIResizing", true);
@@ -169,13 +169,13 @@ public class ConfigurationService
             config.AuthenticationBaiduAppSecret = IniParser.GetValue(data, "Baidu", "BaiduAppSecret", "");
             config.AuthenticationYandexAPIKey = IniParser.GetValue(data, "Yandex", "YandexAPIKey", "");
 
-            System.Diagnostics.Debug.WriteLine($"[Config] XUnity 配置加载成功");
+            LogService.Instance.Log($"XUnity 配置加载成功", LogLevel.Debug, "[Config]");
             return config;
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[Config] 加载失败: {ex.GetType().Name} - {ex.Message}");
-            System.Diagnostics.Debug.WriteLine($"[Config] 堆栈: {ex.StackTrace}");
+            LogService.Instance.Log($"加载失败: {ex.GetType().Name} - {ex.Message}", LogLevel.Error, "[Config]");
+            LogService.Instance.Log($"堆栈: {ex.StackTrace}", LogLevel.Error, "[Config]");
             return XUnityConfig.CreateRecommended();
         }
     }

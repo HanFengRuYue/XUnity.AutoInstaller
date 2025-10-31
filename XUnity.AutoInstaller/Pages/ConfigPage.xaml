@@ -231,16 +231,24 @@
                                     <ComboBox
                                         x:Name="EndpointComboBox"
                                         HorizontalAlignment="Stretch"
-                                        SelectedIndex="0">
-                                        <ComboBoxItem Content="GoogleTranslate（谷歌翻译-免费）"/>
-                                        <ComboBoxItem Content="BingTranslate（必应翻译-免费）"/>
-                                        <ComboBoxItem Content="DeepL（DeepL-免费）"/>
-                                        <ComboBoxItem Content="Papago（Papago-免费）"/>
-                                        <ComboBoxItem Content="BaiduTranslate（百度翻译-免费）"/>
-                                        <ComboBoxItem Content="YandexTranslate（Yandex-免费）"/>
-                                        <ComboBoxItem Content="WatsonTranslate（Watson-需认证）"/>
-                                        <ComboBoxItem Content="GoogleCloudTranslate（谷歌云-需认证）"/>
-                                        <ComboBoxItem Content="AzureTranslate（Azure-需认证）"/>
+                                        SelectedIndex="1">
+                                        <ComboBoxItem Content="Passthrough（直通-无翻译）" Tag="Passthrough"/>
+                                        <ComboBoxItem Content="GoogleTranslate（谷歌翻译-免费）" Tag="GoogleTranslate"/>
+                                        <ComboBoxItem Content="GoogleTranslateV2（谷歌V2-免费）" Tag="GoogleTranslateV2"/>
+                                        <ComboBoxItem Content="GoogleTranslateCompat（谷歌兼容-免费）" Tag="GoogleTranslateCompat"/>
+                                        <ComboBoxItem Content="GoogleTranslateLegitimate（谷歌云-需API密钥）" Tag="GoogleTranslateLegitimate"/>
+                                        <ComboBoxItem Content="BingTranslate（必应翻译-免费）" Tag="BingTranslate"/>
+                                        <ComboBoxItem Content="BingTranslateLegitimate（Azure翻译-需API密钥）" Tag="BingTranslateLegitimate"/>
+                                        <ComboBoxItem Content="DeepLTranslate（DeepL-免费）" Tag="DeepLTranslate"/>
+                                        <ComboBoxItem Content="DeepLTranslateLegitimate（DeepL Pro-需API密钥）" Tag="DeepLTranslateLegitimate"/>
+                                        <ComboBoxItem Content="PapagoTranslate（Papago-免费）" Tag="PapagoTranslate"/>
+                                        <ComboBoxItem Content="BaiduTranslate（百度翻译-需AppId）" Tag="BaiduTranslate"/>
+                                        <ComboBoxItem Content="YandexTranslate（Yandex-需API密钥）" Tag="YandexTranslate"/>
+                                        <ComboBoxItem Content="WatsonTranslate（IBM Watson-需认证）" Tag="WatsonTranslate"/>
+                                        <ComboBoxItem Content="LecPowerTranslator15（本地软件）" Tag="LecPowerTranslator15"/>
+                                        <ComboBoxItem Content="ezTransXP（本地软件-日韩）" Tag="ezTransXP"/>
+                                        <ComboBoxItem Content="LingoCloudTranslate（彩云小译-中日英）" Tag="LingoCloudTranslate"/>
+                                        <ComboBoxItem Content="CustomTranslate（自定义HTTP端点）" Tag="CustomTranslate"/>
                                     </ComboBox>
                                 </StackPanel>
 

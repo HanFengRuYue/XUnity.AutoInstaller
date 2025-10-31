@@ -49,21 +49,21 @@ namespace XUnity.AutoInstaller.Pages
             var gamePath = _gameStateService.CurrentGamePath;
             if (!string.IsNullOrEmpty(gamePath))
             {
-                AppendLog($"游戏路径: {gamePath}");
+                LogService.Instance.Log($"游戏路径: {gamePath}", LogLevel.Info, "[安装]");
 
                 // 检测游戏引擎并推荐平台
                 var gameInfo = GameDetectionService.GetGameInfo(gamePath);
-                AppendLog($"检测到游戏引擎: {gameInfo.Engine}");
+                LogService.Instance.Log($"检测到游戏引擎: {gameInfo.Engine}", LogLevel.Info, "[安装]");
 
                 if (gameInfo.Engine == GameEngine.UnityIL2CPP)
                 {
                     PlatformComboBox.SelectedIndex = 2; // IL2CPP x64
-                    AppendLog("推荐平台: IL2CPP x64");
+                    LogService.Instance.Log("推荐平台: IL2CPP x64", LogLevel.Info, "[安装]");
                 }
             }
             else
             {
-                AppendLog("警告: 未设置游戏路径，请先在首页选择游戏目录");
+                LogService.Instance.Log("警告: 未设置游戏路径，请先在首页选择游戏目录", LogLevel.Warning, "[安装]");
             }
         }
 
@@ -111,7 +111,7 @@ namespace XUnity.AutoInstaller.Pages
                 XUnityVersionLoadingRing.IsActive = true;
                 XUnityVersionLoadingRing.Visibility = Visibility.Visible;
 
-                AppendLog("正在加载可用版本列表...");
+                LogService.Instance.Log("正在加载可用版本列表...", LogLevel.Info, "[安装]");
 
                 // 并行加载BepInEx和XUnity版本
                 var bepinexTask = _versionService.GetAllAvailableVersionsAsync(PackageType.BepInEx, includePrerelease: false);
@@ -122,7 +122,7 @@ namespace XUnity.AutoInstaller.Pages
                 _bepinexVersions = bepinexTask.Result;
                 _xunityVersions = xunityTask.Result;
 
-                AppendLog($"已加载 {_bepinexVersions.Count} 个 BepInEx 版本和 {_xunityVersions.Count} 个 XUnity 版本");
+                LogService.Instance.Log($"已加载 {_bepinexVersions.Count} 个 BepInEx 版本和 {_xunityVersions.Count} 个 XUnity 版本", LogLevel.Info, "[安装]");
 
                 // 更新ComboBox
                 UpdateBepInExVersionComboBox();
@@ -130,7 +130,7 @@ namespace XUnity.AutoInstaller.Pages
             }
             catch (Exception ex)
             {
-                AppendLog($"加载版本列表失败: {ex.Message}");
+                LogService.Instance.Log($"加载版本列表失败: {ex.Message}", LogLevel.Error, "[安装]");
                 await ShowErrorAsync($"加载版本列表失败: {ex.Message}");
             }
             finally
@@ -258,23 +258,23 @@ namespace XUnity.AutoInstaller.Pages
                     }
                 }
 
-                AppendLog($"开始安装到: {gamePath}");
-                AppendLog($"平台: {options.TargetPlatform}");
-                AppendLog($"版本模式: {(VersionModeRadio.SelectedIndex == 0 ? "自动推荐" : "手动选择")}");
+                LogService.Instance.Log($"开始安装到: {gamePath}", LogLevel.Info, "[安装]");
+                LogService.Instance.Log($"平台: {options.TargetPlatform}", LogLevel.Info, "[安装]");
+                LogService.Instance.Log($"版本模式: {(VersionModeRadio.SelectedIndex == 0 ? "自动推荐" : "手动选择")}", LogLevel.Info, "[安装]");
                 if (!string.IsNullOrEmpty(options.BepInExVersion))
                 {
-                    AppendLog($"BepInEx 版本: {options.BepInExVersion}");
+                    LogService.Instance.Log($"BepInEx 版本: {options.BepInExVersion}", LogLevel.Info, "[安装]");
                 }
                 if (!string.IsNullOrEmpty(options.XUnityVersion))
                 {
-                    AppendLog($"XUnity 版本: {options.XUnityVersion}");
+                    LogService.Instance.Log($"XUnity 版本: {options.XUnityVersion}", LogLevel.Info, "[安装]");
                 }
-                AppendLog($"备份现有: {options.BackupExisting}");
-                AppendLog($"清理旧版本: {options.CleanOldVersion}");
-                AppendLog($"使用推荐配置: {options.UseRecommendedConfig}");
+                LogService.Instance.Log($"备份现有: {options.BackupExisting}", LogLevel.Info, "[安装]");
+                LogService.Instance.Log($"清理旧版本: {options.CleanOldVersion}", LogLevel.Info, "[安装]");
+                LogService.Instance.Log($"使用推荐配置: {options.UseRecommendedConfig}", LogLevel.Info, "[安装]");
 
-                // 创建日志记录器
-                var logger = new LogWriter(AppendLog, DispatcherQueue);
+                // 创建日志记录器（现在内部使用LogService）
+                var logger = new LogWriter(null, DispatcherQueue);
 
                 // 创建安装服务
                 var installService = new InstallationService(logger);
@@ -295,23 +295,23 @@ namespace XUnity.AutoInstaller.Pages
 
                 if (success)
                 {
-                    AppendLog("");
-                    AppendLog("========================================");
-                    AppendLog("安装成功完成！");
-                    AppendLog("========================================");
-                    AppendLog("你现在可以启动游戏并享受自动翻译功能。");
-                    AppendLog("");
+                    LogService.Instance.Log("", LogLevel.Info, "[安装]");
+                    LogService.Instance.Log("========================================", LogLevel.Info, "[安装]");
+                    LogService.Instance.Log("安装成功完成！", LogLevel.Info, "[安装]");
+                    LogService.Instance.Log("========================================", LogLevel.Info, "[安装]");
+                    LogService.Instance.Log("你现在可以启动游戏并享受自动翻译功能。", LogLevel.Info, "[安装]");
+                    LogService.Instance.Log("", LogLevel.Info, "[安装]");
 
                     await ShowSuccessAsync("安装成功完成！");
                 }
             }
             catch (Exception ex)
             {
-                AppendLog("");
-                AppendLog("========================================");
-                AppendLog($"安装失败: {ex.Message}");
-                AppendLog("========================================");
-                AppendLog("");
+                LogService.Instance.Log("", LogLevel.Error, "[安装]");
+                LogService.Instance.Log("========================================", LogLevel.Error, "[安装]");
+                LogService.Instance.Log($"安装失败: {ex.Message}", LogLevel.Error, "[安装]");
+                LogService.Instance.Log("========================================", LogLevel.Error, "[安装]");
+                LogService.Instance.Log("", LogLevel.Error, "[安装]");
 
                 await ShowErrorAsync($"安装失败: {ex.Message}");
             }
@@ -323,26 +323,6 @@ namespace XUnity.AutoInstaller.Pages
             }
         }
 
-        private void ClearLogButton_Click(object sender, RoutedEventArgs e)
-        {
-            LogTextBlock.Text = string.Empty;
-        }
-
-        /// <summary>
-        /// 向日志添加一行文本
-        /// </summary>
-        private void AppendLog(string message)
-        {
-            var timestamp = DateTime.Now.ToString("HH:mm:ss");
-            var logLine = $"[{timestamp}] {message}\n";
-
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                LogTextBlock.Text += logLine;
-                // 自动滚动到底部
-                LogScrollViewer.ChangeView(null, LogScrollViewer.ScrollableHeight, null);
-            });
-        }
 
         private async Task ShowErrorAsync(string message)
         {

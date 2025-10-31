@@ -82,6 +82,15 @@
                         <FontIcon Glyph="&#xE8F1;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+
+                <NavigationViewItem
+                    Content="运行日志"
+                    Tag="Log"
+                    x:Name="LogNavItem">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE9D9;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
             </NavigationView.MenuItems>
 
             <NavigationView.FooterMenuItems>

@@ -19,9 +19,20 @@ public class GitHubApiClient
     private readonly GitHubClient _client;
     private static readonly HttpClient _httpClient = new HttpClient();
 
-    public GitHubApiClient()
+    public GitHubApiClient(string? githubToken = null)
     {
         _client = new GitHubClient(new ProductHeaderValue("XUnity-AutoInstaller"));
+
+        // Authenticate if token provided
+        if (!string.IsNullOrEmpty(githubToken))
+        {
+            _client.Credentials = new Credentials(githubToken);
+            LogService.Instance.Log("已使用 GitHub Token 认证", LogLevel.Info, "[GitHub]");
+        }
+        else
+        {
+            LogService.Instance.Log("未配置 GitHub Token，使用未认证模式（60次/小时）", LogLevel.Warning, "[GitHub]");
+        }
     }
 
     /// <summary>
@@ -82,6 +93,16 @@ public class GitHubApiClient
 
             return versions;
         }
+        catch (RateLimitExceededException)
+        {
+            var rateLimit = await GetRateLimitAsync();
+            var resetTime = rateLimit.Reset.ToLocalTime();
+            throw new Exception($"GitHub API 速率限制已超出。\n" +
+                $"剩余请求: {rateLimit.Remaining}/{rateLimit.Limit}\n" +
+                $"限制重置时间: {resetTime:yyyy-MM-dd HH:mm:ss}\n\n" +
+                $"未认证用户限制为 60 次/小时。\n" +
+                $"请在【设置】页面配置 GitHub Token 以提升至 5000 次/小时。");
+        }
         catch (Exception ex)
         {
             throw new Exception($"获取 BepInEx 版本失败: {ex.Message}", ex);
@@ -123,6 +144,16 @@ public class GitHubApiClient
 
             return versions;
         }
+        catch (RateLimitExceededException)
+        {
+            var rateLimit = await GetRateLimitAsync();
+            var resetTime = rateLimit.Reset.ToLocalTime();
+            throw new Exception($"GitHub API 速率限制已超出。\n" +
+                $"剩余请求: {rateLimit.Remaining}/{rateLimit.Limit}\n" +
+                $"限制重置时间: {resetTime:yyyy-MM-dd HH:mm:ss}\n\n" +
+                $"未认证用户限制为 60 次/小时。\n" +
+                $"请在【设置】页面配置 GitHub Token 以提升至 5000 次/小时。");
+        }
         catch (Exception ex)
         {
             throw new Exception($"获取 XUnity 版本失败: {ex.Message}", ex);
@@ -134,11 +165,24 @@ public class GitHubApiClient
     /// </summary>
     public async Task<VersionInfo?> GetLatestBepInExVersionAsync(Platform platform, bool includePrerelease = false)
     {
-        var versions = await GetBepInExVersionsAsync();
-        return versions
-            .Where(v => v.TargetPlatform == platform && (includePrerelease || !v.IsPrerelease))
-            .OrderByDescending(v => v.ReleaseDate)
-            .FirstOrDefault();
+        try
+        {
+            var versions = await GetBepInExVersionsAsync();
+            return versions
+                .Where(v => v.TargetPlatform == platform && (includePrerelease || !v.IsPrerelease))
+                .OrderByDescending(v => v.ReleaseDate)
+                .FirstOrDefault();
+        }
+        catch (RateLimitExceededException)
+        {
+            var rateLimit = await GetRateLimitAsync();
+            var resetTime = rateLimit.Reset.ToLocalTime();
+            throw new Exception($"GitHub API 速率限制已超出。\n" +
+                $"剩余请求: {rateLimit.Remaining}/{rateLimit.Limit}\n" +
+                $"限制重置时间: {resetTime:yyyy-MM-dd HH:mm:ss}\n\n" +
+                $"未认证用户限制为 60 次/小时。\n" +
+                $"请在【设置】页面配置 GitHub Token 以提升至 5000 次/小时。");
+        }
     }
 
     /// <summary>
@@ -146,11 +190,24 @@ public class GitHubApiClient
     /// </summary>
     public async Task<VersionInfo?> GetLatestXUnityVersionAsync(bool includePrerelease = false)
     {
-        var versions = await GetXUnityVersionsAsync();
-        return versions
-            .Where(v => includePrerelease || !v.IsPrerelease)
-            .OrderByDescending(v => v.ReleaseDate)
-            .FirstOrDefault();
+        try
+        {
+            var versions = await GetXUnityVersionsAsync();
+            return versions
+                .Where(v => includePrerelease || !v.IsPrerelease)
+                .OrderByDescending(v => v.ReleaseDate)
+                .FirstOrDefault();
+        }
+        catch (RateLimitExceededException)
+        {
+            var rateLimit = await GetRateLimitAsync();
+            var resetTime = rateLimit.Reset.ToLocalTime();
+            throw new Exception($"GitHub API 速率限制已超出。\n" +
+                $"剩余请求: {rateLimit.Remaining}/{rateLimit.Limit}\n" +
+                $"限制重置时间: {resetTime:yyyy-MM-dd HH:mm:ss}\n\n" +
+                $"未认证用户限制为 60 次/小时。\n" +
+                $"请在【设置】页面配置 GitHub Token 以提升至 5000 次/小时。");
+        }
     }
 
     /// <summary>

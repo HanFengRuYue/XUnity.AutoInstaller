@@ -44,6 +44,9 @@ namespace XUnity.AutoInstaller.Pages
             // 默认安装选项
             DefaultBackupCheckBox.IsChecked = _currentSettings.DefaultBackupExisting;
             DefaultRecommendedConfigCheckBox.IsChecked = _currentSettings.DefaultUseRecommendedConfig;
+
+            // GitHub Token
+            GitHubTokenPasswordBox.Password = _currentSettings.GitHubToken ?? string.Empty;
         }
 
         /// <summary>
@@ -66,6 +69,9 @@ namespace XUnity.AutoInstaller.Pages
             // 默认安装选项
             _currentSettings.DefaultBackupExisting = DefaultBackupCheckBox.IsChecked == true;
             _currentSettings.DefaultUseRecommendedConfig = DefaultRecommendedConfigCheckBox.IsChecked == true;
+
+            // GitHub Token
+            _currentSettings.GitHubToken = string.IsNullOrWhiteSpace(GitHubTokenPasswordBox.Password) ? null : GitHubTokenPasswordBox.Password.Trim();
 
             // 保存到本地存储
             _settingsService.SaveSettings(_currentSettings);
@@ -111,6 +117,12 @@ namespace XUnity.AutoInstaller.Pages
                     XamlRoot = this.XamlRoot
                 };
                 await dialog.ShowAsync();
+
+                // 如果输入了Token，显示Token信息提示
+                if (!string.IsNullOrWhiteSpace(GitHubTokenPasswordBox.Password))
+                {
+                    TokenInfoBar.IsOpen = true;
+                }
             }
             catch (Exception ex)
             {

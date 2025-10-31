@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Microsoft.UI.Dispatching;
+using XUnity.AutoInstaller.Services;
 
 namespace XUnity.AutoInstaller.Utils;
 
@@ -74,14 +75,24 @@ public class LogWriter
     /// </summary>
     private void WriteLog(string level, string message)
     {
-        var timestamp = DateTime.Now.ToString("HH:mm:ss");
-        var logMessage = $"[{timestamp}] [{level}] {message}";
+        // Map level to LogLevel enum
+        var logLevel = level switch
+        {
+            "WARN" => LogLevel.Warning,
+            "ERROR" => LogLevel.Error,
+            _ => LogLevel.Info
+        };
 
-        // 写入到文件
+        // Use LogService for unified logging
+        LogService.Instance.Log(message, logLevel, "[安装]");
+
+        // Write to file if specified
         if (!string.IsNullOrEmpty(_logFilePath))
         {
             try
             {
+                var timestamp = DateTime.Now.ToString("HH:mm:ss");
+                var logMessage = $"[{timestamp}] [{level}] {message}";
                 File.AppendAllText(_logFilePath, logMessage + Environment.NewLine);
             }
             catch
@@ -90,9 +101,12 @@ public class LogWriter
             }
         }
 
-        // 更新 UI（需要在 UI 线程上执行）
+        // Update UI callback if provided (for backward compatibility)
         if (_uiLogAction != null)
         {
+            var timestamp = DateTime.Now.ToString("HH:mm:ss");
+            var logMessage = $"[{timestamp}] [{level}] {message}";
+
             if (_dispatcherQueue != null)
             {
                 _dispatcherQueue.TryEnqueue(() => _uiLogAction(logMessage));

@@ -46,6 +46,9 @@ namespace XUnity.AutoInstaller
                     case "Version":
                         ContentFrame.Navigate(typeof(VersionManagementPage));
                         break;
+                    case "Log":
+                        ContentFrame.Navigate(typeof(LogPage));
+                        break;
                     case "Settings":
                         ContentFrame.Navigate(typeof(SettingsPage));
                         break;

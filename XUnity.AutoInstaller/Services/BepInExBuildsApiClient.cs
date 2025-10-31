@@ -35,38 +35,38 @@ namespace XUnity.AutoInstaller.Services
 
             try
             {
-                System.Diagnostics.Debug.WriteLine($"[IL2CPP] 开始获取 IL2CPP 版本，URL: {BepInExBeProjectUrl}");
+                LogService.Instance.Log($"开始获取 IL2CPP 版本，URL: {BepInExBeProjectUrl}", LogLevel.Debug, "[IL2CPP]");
 
                 // 获取项目页面 HTML
                 var html = await _httpClient.GetStringAsync(BepInExBeProjectUrl);
-                System.Diagnostics.Debug.WriteLine($"[IL2CPP] HTML 长度: {html.Length} 字符");
+                LogService.Instance.Log($"HTML 长度: {html.Length} 字符", LogLevel.Debug, "[IL2CPP]");
 
                 // 解析构建列表
                 var builds = ParseBuilds(html);
-                System.Diagnostics.Debug.WriteLine($"[IL2CPP] 解析到 {builds.Count} 个构建");
+                LogService.Instance.Log($"解析到 {builds.Count} 个构建", LogLevel.Debug, "[IL2CPP]");
 
                 if (builds.Count == 0)
                 {
-                    System.Diagnostics.Debug.WriteLine("[IL2CPP] 警告: 未找到任何构建，HTML 片段:");
-                    System.Diagnostics.Debug.WriteLine(html.Substring(0, Math.Min(500, html.Length)));
+                    LogService.Instance.Log("警告: 未找到任何构建，HTML 片段:", LogLevel.Warning, "[IL2CPP]");
+                    LogService.Instance.Log(html.Substring(0, Math.Min(500, html.Length)), LogLevel.Warning, "[IL2CPP]");
                 }
 
-                // 为每个构建获取 IL2CPP 版本（只获取最新的5个以提升性能）
-                foreach (var build in builds.Take(5))
+                // 为每个构建获取 IL2CPP 版本（只获取最新的1个以提升性能）
+                foreach (var build in builds.Take(1))
                 {
-                    System.Diagnostics.Debug.WriteLine($"[IL2CPP] 处理构建 #{build.BuildNumber} - {build.Version}");
+                    LogService.Instance.Log($"处理构建 #{build.BuildNumber} - {build.Version}", LogLevel.Debug, "[IL2CPP]");
                     var il2cppVersions = await GetBuildArtifactsAsync(build.BuildNumber, build.Version);
-                    System.Diagnostics.Debug.WriteLine($"[IL2CPP] 构建 #{build.BuildNumber} 找到 {il2cppVersions.Count} 个制品");
+                    LogService.Instance.Log($"构建 #{build.BuildNumber} 找到 {il2cppVersions.Count} 个制品", LogLevel.Debug, "[IL2CPP]");
                     versions.AddRange(il2cppVersions);
                 }
 
-                System.Diagnostics.Debug.WriteLine($"[IL2CPP] 完成！总共获取 {versions.Count} 个 IL2CPP 版本");
+                LogService.Instance.Log($"完成！总共获取 {versions.Count} 个 IL2CPP 版本", LogLevel.Debug, "[IL2CPP]");
                 return versions;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[IL2CPP] 错误: {ex.GetType().Name} - {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"[IL2CPP] 堆栈: {ex.StackTrace}");
+                LogService.Instance.Log($"错误: {ex.GetType().Name} - {ex.Message}", LogLevel.Error, "[IL2CPP]");
+                LogService.Instance.Log($"堆栈: {ex.StackTrace}", LogLevel.Error, "[IL2CPP]");
                 throw new Exception($"从 builds.bepinex.dev 获取 IL2CPP 版本失败: {ex.Message}", ex);
             }
         }
@@ -91,9 +91,9 @@ namespace XUnity.AutoInstaller.Services
 
             foreach (var pattern in patterns)
             {
-                System.Diagnostics.Debug.WriteLine($"[IL2CPP] 尝试正则: {pattern}");
+                LogService.Instance.Log($"尝试正则: {pattern}", LogLevel.Debug, "[IL2CPP]");
                 var matches = Regex.Matches(html, pattern, RegexOptions.IgnoreCase | RegexOptions.Multiline);
-                System.Diagnostics.Debug.WriteLine($"[IL2CPP] 匹配到 {matches.Count} 个结果");
+                LogService.Instance.Log($"匹配到 {matches.Count} 个结果", LogLevel.Debug, "[IL2CPP]");
 
                 if (matches.Count > 0)
                 {
@@ -130,11 +130,11 @@ namespace XUnity.AutoInstaller.Services
                                 Version = version
                             });
 
-                            System.Diagnostics.Debug.WriteLine($"[IL2CPP] 找到构建: #{buildNumber} - {version}");
+                            LogService.Instance.Log($"找到构建: #{buildNumber} - {version}", LogLevel.Debug, "[IL2CPP]");
                         }
                         catch (Exception ex)
                         {
-                            System.Diagnostics.Debug.WriteLine($"[IL2CPP] 解析匹配失败: {ex.Message}");
+                            LogService.Instance.Log($"解析匹配失败: {ex.Message}", LogLevel.Error, "[IL2CPP]");
                         }
                     }
 
@@ -172,7 +172,7 @@ namespace XUnity.AutoInstaller.Services
                     var fileName = $"BepInEx-Unity.IL2CPP-{arch}-{version}.zip";
                     var downloadUrl = $"{BuildsBaseUrl}/projects/bepinex_be/{buildNumber}/{Uri.EscapeDataString(fileName)}";
 
-                    System.Diagnostics.Debug.WriteLine($"[IL2CPP] 检查文件: {downloadUrl}");
+                    LogService.Instance.Log($"检查文件: {downloadUrl}", LogLevel.Debug, "[IL2CPP]");
 
                     // 尝试获取文件大小（通过 HEAD 请求）
                     long fileSize = 0;
@@ -181,20 +181,20 @@ namespace XUnity.AutoInstaller.Services
                         var headRequest = new HttpRequestMessage(HttpMethod.Head, downloadUrl);
                         var headResponse = await _httpClient.SendAsync(headRequest);
 
-                        System.Diagnostics.Debug.WriteLine($"[IL2CPP] HEAD 响应: {headResponse.StatusCode}");
+                        LogService.Instance.Log($"HEAD 响应: {headResponse.StatusCode}", LogLevel.Debug, "[IL2CPP]");
 
                         if (headResponse.IsSuccessStatusCode)
                         {
                             if (headResponse.Content.Headers.ContentLength.HasValue)
                             {
                                 fileSize = headResponse.Content.Headers.ContentLength.Value;
-                                System.Diagnostics.Debug.WriteLine($"[IL2CPP] 文件大小: {fileSize} 字节");
+                                LogService.Instance.Log($"文件大小: {fileSize} 字节", LogLevel.Debug, "[IL2CPP]");
                             }
                             else
                             {
                                 // 文件存在但没有 Content-Length，设置默认值
                                 fileSize = 0;
-                                System.Diagnostics.Debug.WriteLine($"[IL2CPP] 警告: 文件存在但无 Content-Length，使用默认值");
+                                LogService.Instance.Log("警告: 文件存在但无 Content-Length，使用默认值", LogLevel.Warning, "[IL2CPP]");
                             }
 
                             artifacts.Add(new VersionInfo
@@ -211,12 +211,12 @@ namespace XUnity.AutoInstaller.Services
                         }
                         else
                         {
-                            System.Diagnostics.Debug.WriteLine($"[IL2CPP] 文件不存在，跳过: {fileName}");
+                            LogService.Instance.Log($"文件不存在，跳过: {fileName}", LogLevel.Debug, "[IL2CPP]");
                         }
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine($"[IL2CPP] HEAD 请求失败: {ex.Message}");
+                        LogService.Instance.Log($"HEAD 请求失败: {ex.Message}", LogLevel.Warning, "[IL2CPP]");
                         // HEAD 请求失败，仍然添加版本（设置文件大小为0）
                         artifacts.Add(new VersionInfo
                         {

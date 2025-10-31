@@ -8,45 +8,35 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Margin="24">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <ScrollViewer Margin="24">
+        <StackPanel Spacing="24">
+            <!-- 页面标题 -->
+            <TextBlock
+                Text="版本管理"
+                FontSize="32"
+                FontWeight="Bold"
+                Margin="0,0,0,8"/>
 
-        <!-- 页面标题 -->
-        <TextBlock
-            Grid.Row="0"
-            Text="版本管理"
-            Style="{StaticResource TitleTextBlockStyle}"
-            Margin="0,0,0,24"/>
-
-        <!-- 主内容区 -->
-        <Grid Grid.Row="1" ColumnSpacing="16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- 左侧：已安装版本 -->
-            <StackPanel Grid.Column="0" Spacing="16">
+            <!-- 已安装版本区域 -->
+            <StackPanel Spacing="16">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <FontIcon
                         Glyph="&#xE74C;"
-                        FontSize="20"
+                        FontSize="24"
                         VerticalAlignment="Center"
                         Foreground="{ThemeResource SystemAccentColor}"/>
                     <TextBlock
                         Text="已安装版本"
-                        Style="{StaticResource SubtitleTextBlockStyle}"
+                        FontSize="22"
+                        FontWeight="SemiBold"
                         VerticalAlignment="Center"/>
                     <Button
                         Style="{StaticResource TextBlockButtonStyle}"
                         Click="RefreshInstalledButton_Click">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal" Spacing="4">
-                                <FontIcon Glyph="&#xE72C;" FontSize="14"/>
-                                <TextBlock Text="刷新" FontSize="12"/>
+                                <FontIcon Glyph="&#xE72C;" FontSize="16"/>
+                                <TextBlock Text="刷新" FontSize="14"/>
                             </StackPanel>
                         </Button.Content>
                     </Button>
@@ -57,7 +47,7 @@
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
                     CornerRadius="8"
-                    Height="500">
+                    Height="400">
                     <Grid>
                         <ListView
                             x:Name="InstalledVersionsListView"
@@ -70,7 +60,7 @@
                                             x:Name="HeaderText"
                                             Text="{Binding DisplayText}"
                                             FontWeight="SemiBold"
-                                            FontSize="14"
+                                            FontSize="16"
                                             Margin="0,8,0,4"
                                             Visibility="{Binding HeaderVisibility}"/>
 
@@ -90,14 +80,14 @@
                                                     <TextBlock
                                                         Text="{Binding DisplayText}"
                                                         FontWeight="SemiBold"
-                                                        FontSize="13"/>
+                                                        FontSize="16"/>
                                                     <TextBlock
                                                         Text="{Binding SubText1}"
-                                                        FontSize="11"
+                                                        FontSize="14"
                                                         Opacity="0.7"/>
                                                     <TextBlock
                                                         Text="{Binding SubText2}"
-                                                        FontSize="11"
+                                                        FontSize="14"
                                                         Opacity="0.7"/>
                                                 </StackPanel>
 
@@ -110,25 +100,27 @@
                                                     VerticalAlignment="Center"
                                                     Visibility="{Binding ButtonsVisibility}">
                                                     <Button
-                                                        FontSize="11"
-                                                        Padding="12,4"
+                                                        FontSize="16"
+                                                        Height="40"
+                                                        Padding="16,8"
                                                         Tag="{Binding}"
                                                         Click="RestoreSnapshotItemButton_Click">
                                                         <Button.Content>
-                                                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                                                <FontIcon Glyph="&#xE7A7;" FontSize="12"/>
+                                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                <FontIcon Glyph="&#xE7A7;" FontSize="16"/>
                                                                 <TextBlock Text="恢复"/>
                                                             </StackPanel>
                                                         </Button.Content>
                                                     </Button>
                                                     <Button
-                                                        FontSize="11"
-                                                        Padding="12,4"
+                                                        FontSize="16"
+                                                        Height="40"
+                                                        Padding="16,8"
                                                         Tag="{Binding}"
                                                         Click="DeleteSnapshotItemButton_Click">
                                                         <Button.Content>
-                                                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                                                <FontIcon Glyph="&#xE74D;" FontSize="12"/>
+                                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                <FontIcon Glyph="&#xE74D;" FontSize="16"/>
                                                                 <TextBlock Text="删除"/>
                                                             </StackPanel>
                                                         </Button.Content>
@@ -160,11 +152,12 @@
                                 Foreground="{ThemeResource SystemFillColorAttentionBrush}"/>
                             <TextBlock
                                 Text="暂无已安装版本"
-                                Style="{StaticResource SubtitleTextBlockStyle}"
+                                FontSize="18"
+                                FontWeight="SemiBold"
                                 Foreground="{ThemeResource SystemFillColorAttentionBrush}"/>
                             <TextBlock
                                 Text="请先安装 BepInEx 或 XUnity"
-                                FontSize="12"
+                                FontSize="14"
                                 Opacity="0.7"/>
                         </StackPanel>
                     </Grid>
@@ -173,35 +166,37 @@
                 <!-- 快照管理按钮 -->
                 <Button
                     Style="{StaticResource AccentButtonStyle}"
+                    Height="40"
                     Click="SetActiveButton_Click">
                     <Button.Content>
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon Glyph="&#xE74E;" FontSize="16"/>
-                            <TextBlock Text="创建快照"/>
+                            <FontIcon Glyph="&#xE74E;" FontSize="18"/>
+                            <TextBlock Text="创建快照" FontSize="16"/>
                         </StackPanel>
                     </Button.Content>
                 </Button>
             </StackPanel>
 
-            <!-- 右侧：可用版本 -->
-            <StackPanel Grid.Column="1" Spacing="16">
+            <!-- 可用版本区域 -->
+            <StackPanel Spacing="16">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <FontIcon
                         Glyph="&#xE896;"
-                        FontSize="20"
+                        FontSize="24"
                         VerticalAlignment="Center"
                         Foreground="{ThemeResource SystemAccentColor}"/>
                     <TextBlock
                         Text="可用版本"
-                        Style="{StaticResource SubtitleTextBlockStyle}"
+                        FontSize="22"
+                        FontWeight="SemiBold"
                         VerticalAlignment="Center"/>
                     <Button
                         Style="{StaticResource TextBlockButtonStyle}"
                         Click="RefreshAvailableButton_Click">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal" Spacing="4">
-                                <FontIcon Glyph="&#xE72C;" FontSize="14"/>
-                                <TextBlock Text="刷新" FontSize="12"/>
+                                <FontIcon Glyph="&#xE72C;" FontSize="16"/>
+                                <TextBlock Text="刷新" FontSize="14"/>
                             </StackPanel>
                         </Button.Content>
                     </Button>
@@ -213,26 +208,27 @@
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
                     CornerRadius="8"
-                    Padding="16">
-                    <StackPanel Spacing="12">
-                        <TextBlock Text="筛选选项" FontWeight="SemiBold"/>
+                    Padding="20">
+                    <StackPanel Spacing="16">
+                        <TextBlock Text="筛选选项" FontSize="16" FontWeight="SemiBold"/>
 
-                        <StackPanel Spacing="8">
+                        <StackPanel Spacing="12">
                             <ComboBox
                                 x:Name="PlatformFilterComboBox"
                                 Header="平台"
+                                FontSize="14"
                                 HorizontalAlignment="Stretch"
                                 SelectedIndex="0"
                                 SelectionChanged="PlatformFilterComboBox_SelectionChanged">
                                 <ComboBoxItem Content="全部平台"/>
                                 <ComboBoxItem Content="x86"/>
                                 <ComboBoxItem Content="x64"/>
-                                <ComboBoxItem Content="ARM64"/>
                             </ComboBox>
 
                             <ComboBox
                                 x:Name="ArchitectureFilterComboBox"
                                 Header="架构"
+                                FontSize="14"
                                 HorizontalAlignment="Stretch"
                                 SelectedIndex="0"
                                 SelectionChanged="ArchitectureFilterComboBox_SelectionChanged">
@@ -244,6 +240,7 @@
                             <ComboBox
                                 x:Name="VersionTypeComboBox"
                                 Header="版本类型"
+                                FontSize="14"
                                 HorizontalAlignment="Stretch"
                                 SelectedIndex="0"
                                 SelectionChanged="VersionTypeComboBox_SelectionChanged">
@@ -256,21 +253,21 @@
                 </Border>
 
                 <!-- BepInEx 版本列表 -->
-                <StackPanel Spacing="8">
-                    <TextBlock Text="BepInEx 版本" FontWeight="SemiBold" FontSize="14"/>
+                <StackPanel Spacing="12">
+                    <TextBlock Text="BepInEx 版本" FontWeight="SemiBold" FontSize="16"/>
                     <Border
                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
-                        Height="180">
+                        Height="250">
                         <Grid>
                             <ListView
                                 x:Name="BepInExVersionsListView"
                                 SelectionMode="None">
                                 <ListView.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid Padding="8,6" ColumnSpacing="12">
+                                        <Grid Padding="12,8" ColumnSpacing="16">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
@@ -279,13 +276,14 @@
                                                 Grid.Column="0"
                                                 Text="{Binding DisplayText}"
                                                 TextWrapping="NoWrap"
-                                                FontSize="12"
+                                                FontSize="14"
                                                 VerticalAlignment="Center"/>
                                             <Button
                                                 Grid.Column="1"
                                                 Content="下载"
-                                                FontSize="11"
-                                                Padding="12,4"
+                                                FontSize="14"
+                                                Height="36"
+                                                Padding="16,6"
                                                 Tag="{Binding}"
                                                 Click="DownloadButton_Click"/>
                                         </Grid>
@@ -302,11 +300,11 @@
                                 Visibility="Collapsed">
                                 <ProgressRing
                                     IsActive="True"
-                                    Width="32"
-                                    Height="32"/>
+                                    Width="40"
+                                    Height="40"/>
                                 <TextBlock
                                     Text="加载中..."
-                                    FontSize="12"
+                                    FontSize="14"
                                     Opacity="0.7"/>
                             </StackPanel>
                         </Grid>
@@ -314,21 +312,21 @@
                 </StackPanel>
 
                 <!-- XUnity 版本列表 -->
-                <StackPanel Spacing="8">
-                    <TextBlock Text="XUnity.AutoTranslator 版本" FontWeight="SemiBold" FontSize="14"/>
+                <StackPanel Spacing="12">
+                    <TextBlock Text="XUnity.AutoTranslator 版本" FontWeight="SemiBold" FontSize="16"/>
                     <Border
                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
-                        Height="180">
+                        Height="250">
                         <Grid>
                             <ListView
                                 x:Name="XUnityVersionsListView"
                                 SelectionMode="None">
                                 <ListView.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid Padding="8,6" ColumnSpacing="12">
+                                        <Grid Padding="12,8" ColumnSpacing="16">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
@@ -337,13 +335,14 @@
                                                 Grid.Column="0"
                                                 Text="{Binding DisplayText}"
                                                 TextWrapping="NoWrap"
-                                                FontSize="12"
+                                                FontSize="14"
                                                 VerticalAlignment="Center"/>
                                             <Button
                                                 Grid.Column="1"
                                                 Content="下载"
-                                                FontSize="11"
-                                                Padding="12,4"
+                                                FontSize="14"
+                                                Height="36"
+                                                Padding="16,6"
                                                 Tag="{Binding}"
                                                 Click="DownloadButton_Click"/>
                                         </Grid>
@@ -360,17 +359,17 @@
                                 Visibility="Collapsed">
                                 <ProgressRing
                                     IsActive="True"
-                                    Width="32"
-                                    Height="32"/>
+                                    Width="40"
+                                    Height="40"/>
                                 <TextBlock
                                     Text="加载中..."
-                                    FontSize="12"
+                                    FontSize="14"
                                     Opacity="0.7"/>
                             </StackPanel>
                         </Grid>
                     </Border>
                 </StackPanel>
             </StackPanel>
-        </Grid>
-    </Grid>
+        </StackPanel>
+    </ScrollViewer>
 </Page>

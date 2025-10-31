@@ -196,7 +196,7 @@ namespace XUnity.AutoInstaller.Pages
             // Filter BepInEx versions
             var filteredBepInEx = _allBepInExVersions.AsEnumerable();
 
-            // Platform filter (x86/x64/ARM64)
+            // Platform filter (x86/x64) - ARM64 removed
             if (PlatformFilterComboBox.SelectedIndex == 1) // x86
             {
                 filteredBepInEx = filteredBepInEx.Where(v => v.TargetPlatform == Platform.x86 || v.TargetPlatform == Platform.IL2CPP_x86);
@@ -205,15 +205,11 @@ namespace XUnity.AutoInstaller.Pages
             {
                 filteredBepInEx = filteredBepInEx.Where(v => v.TargetPlatform == Platform.x64 || v.TargetPlatform == Platform.IL2CPP_x64);
             }
-            else if (PlatformFilterComboBox.SelectedIndex == 3) // ARM64
-            {
-                filteredBepInEx = filteredBepInEx.Where(v => v.TargetPlatform == Platform.ARM64);
-            }
 
             // Architecture filter (Mono/IL2CPP)
             if (ArchitectureFilterComboBox.SelectedIndex == 1) // Mono
             {
-                filteredBepInEx = filteredBepInEx.Where(v => v.TargetPlatform == Platform.x86 || v.TargetPlatform == Platform.x64 || v.TargetPlatform == Platform.ARM64);
+                filteredBepInEx = filteredBepInEx.Where(v => v.TargetPlatform == Platform.x86 || v.TargetPlatform == Platform.x64);
             }
             else if (ArchitectureFilterComboBox.SelectedIndex == 2) // IL2CPP
             {

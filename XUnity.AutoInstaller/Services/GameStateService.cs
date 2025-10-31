@@ -70,7 +70,8 @@ public class GameStateService
             // Validate the path exists before setting it
             if (System.IO.Directory.Exists(settings.LastGamePath))
             {
-                _currentGamePath = settings.LastGamePath;
+                // Use property assignment to trigger GamePathChanged event
+                CurrentGamePath = settings.LastGamePath;
             }
         }
     }

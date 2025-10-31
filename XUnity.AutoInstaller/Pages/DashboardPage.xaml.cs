@@ -20,8 +20,20 @@ namespace XUnity.AutoInstaller.Pages
             _gameStateService = GameStateService.Instance;
             QuickInstallButton.IsEnabled = false;
 
+            // Subscribe to GamePathChanged event
+            _gameStateService.GamePathChanged += OnGamePathChanged;
+
             // Load current game path if available
             LoadCurrentGamePath();
+        }
+
+        private void OnGamePathChanged(object? sender, string? gamePath)
+        {
+            // Update UI on dispatcher queue
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                LoadCurrentGamePath();
+            });
         }
 
         private void LoadCurrentGamePath()

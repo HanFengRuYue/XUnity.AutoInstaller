@@ -159,17 +159,19 @@ namespace XUnity.AutoInstaller.Pages
         /// </summary>
         private void LoadXUnityConfigToUI(XUnityConfig config)
         {
-            // Service
-            EndpointComboBox.SelectedIndex = config.ServiceEndpoint switch
+            // Service - Use Tag-based mapping for more reliability
+            var endpoint = config.ServiceEndpoint;
+            var foundIndex = -1;
+            for (int i = 0; i < EndpointComboBox.Items.Count; i++)
             {
-                "GoogleTranslate" => 0,
-                "BingTranslate" => 1,
-                "DeepL" => 2,
-                "Papago" => 3,
-                "BaiduTranslate" => 4,
-                "YandexTranslate" => 5,
-                _ => 0
-            };
+                if (EndpointComboBox.Items[i] is ComboBoxItem item &&
+                    item.Tag?.ToString() == endpoint)
+                {
+                    foundIndex = i;
+                    break;
+                }
+            }
+            EndpointComboBox.SelectedIndex = foundIndex >= 0 ? foundIndex : 1; // Default to GoogleTranslate if not found
 
             FallbackEndpointComboBox.SelectedIndex = string.IsNullOrEmpty(config.ServiceFallbackEndpoint) ? 0 : 1;
 
@@ -274,15 +276,11 @@ namespace XUnity.AutoInstaller.Pages
         {
             var config = new XUnityConfig
             {
-                ServiceEndpoint = EndpointComboBox.SelectedIndex switch
-                {
-                    1 => "BingTranslate",
-                    2 => "DeepL",
-                    3 => "Papago",
-                    4 => "BaiduTranslate",
-                    5 => "YandexTranslate",
-                    _ => "GoogleTranslate"
-                },
+                // Service - Use Tag-based mapping
+                ServiceEndpoint = EndpointComboBox.SelectedItem is ComboBoxItem selectedEndpoint &&
+                                  selectedEndpoint.Tag != null
+                    ? selectedEndpoint.Tag.ToString() ?? "GoogleTranslate"
+                    : "GoogleTranslate",
                 ServiceFallbackEndpoint = FallbackEndpointComboBox.SelectedIndex > 0 ? "BingTranslate" : "",
                 GeneralLanguage = LanguageComboBox.SelectedIndex switch
                 {

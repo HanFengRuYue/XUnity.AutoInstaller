@@ -18,6 +18,7 @@ public class SettingsService
     private static readonly string SHOW_DETAILED_PROGRESS_KEY = "ShowDetailedProgress";
     private static readonly string DEFAULT_BACKUP_KEY = "DefaultBackupExisting";
     private static readonly string DEFAULT_RECOMMENDED_CONFIG_KEY = "DefaultUseRecommendedConfig";
+    private static readonly string GITHUB_TOKEN_KEY = "GitHubToken";
 
     private readonly ApplicationDataContainer _localSettings;
 
@@ -38,7 +39,8 @@ public class SettingsService
             LastGamePath = LoadString(LAST_GAME_PATH_KEY),
             ShowDetailedProgress = LoadBool(SHOW_DETAILED_PROGRESS_KEY, true),
             DefaultBackupExisting = LoadBool(DEFAULT_BACKUP_KEY, true),
-            DefaultUseRecommendedConfig = LoadBool(DEFAULT_RECOMMENDED_CONFIG_KEY, true)
+            DefaultUseRecommendedConfig = LoadBool(DEFAULT_RECOMMENDED_CONFIG_KEY, true),
+            GitHubToken = LoadString(GITHUB_TOKEN_KEY)
         };
     }
 
@@ -53,6 +55,7 @@ public class SettingsService
         SaveBool(SHOW_DETAILED_PROGRESS_KEY, settings.ShowDetailedProgress);
         SaveBool(DEFAULT_BACKUP_KEY, settings.DefaultBackupExisting);
         SaveBool(DEFAULT_RECOMMENDED_CONFIG_KEY, settings.DefaultUseRecommendedConfig);
+        SaveString(GITHUB_TOKEN_KEY, settings.GitHubToken);
     }
 
     /// <summary>

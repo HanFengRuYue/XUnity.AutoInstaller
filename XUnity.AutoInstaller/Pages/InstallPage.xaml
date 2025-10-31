@@ -163,46 +163,6 @@
                     </StackPanel>
                 </StackPanel>
             </StackPanel>
-
-            <!-- 安装日志 -->
-            <StackPanel Spacing="16">
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <TextBlock
-                        Text="安装日志"
-                        Style="{StaticResource SubtitleTextBlockStyle}"
-                        VerticalAlignment="Center"/>
-                    <Button
-                        x:Name="ClearLogButton"
-                        Style="{StaticResource TextBlockButtonStyle}"
-                        Click="ClearLogButton_Click">
-                        <Button.Content>
-                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                <FontIcon Glyph="&#xE74D;" FontSize="14"/>
-                                <TextBlock Text="清空" FontSize="12"/>
-                            </StackPanel>
-                        </Button.Content>
-                    </Button>
-                </StackPanel>
-
-                <Border
-                    Background="{ThemeResource LayerFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8"
-                    Height="200">
-                    <ScrollViewer
-                        x:Name="LogScrollViewer"
-                        VerticalScrollBarVisibility="Auto">
-                        <TextBlock
-                            x:Name="LogTextBlock"
-                            Text="准备就绪，等待开始安装..."
-                            Margin="12"
-                            FontFamily="Consolas"
-                            FontSize="12"
-                            TextWrapping="Wrap"/>
-                    </ScrollViewer>
-                </Border>
-            </StackPanel>
         </StackPanel>
     </ScrollViewer>
 </Page>
