@@ -127,31 +127,109 @@ namespace XUnity.AutoInstaller.Pages
         /// </summary>
         private void LoadBepInExConfigToUI(BepInExConfig config)
         {
-            ConsoleToggle.IsOn = config.LoggingConsoleEnabled;
-            ConsoleShiftJISToggle.IsOn = config.LoggingConsoleShiftJISCompatible;
-            PreloaderLogConsoleToggle.IsOn = config.PreloaderLogConsoleToUnityLog;
+            // Caching
+            EnableAssemblyCacheToggle.IsOn = config.CachingEnableAssemblyCache;
 
-            // 日志级别
-            var logLevels = config.ChainloaderLoggerDisplayedLevels;
-            LoggerDisplayedLevelsComboBox.SelectedIndex = logLevels switch
+            // Chainloader
+            HideManagerGameObjectToggle.IsOn = config.ChainloaderHideManagerGameObject;
+
+            var chainloaderLogLevels = config.ChainloaderLogLevels;
+            ChainloaderLogLevelsComboBox.SelectedIndex = chainloaderLogLevels switch
             {
-                var l when l.Contains("All") => 7,
-                var l when l.Contains("Debug") => 6,
-                var l when l.Contains("Info") => 5,
-                var l when l.Contains("Message") => 4,
-                var l when l.Contains("Warning") => 3,
-                var l when l.Contains("Error") => 2,
+                "All" => 7,
+                var l when l.Contains("Debug") && l.Contains("Info") => 6,
+                var l when l.Contains("Info") && l.Contains("Message") => 5,
+                var l when l.Contains("Message") && l.Contains("Warning") => 4,
+                var l when l.Contains("Warning") && l.Contains("Error") => 3,
+                var l when l.Contains("Error") && l.Contains("Fatal") => 2,
                 var l when l.Contains("Fatal") => 1,
-                _ => 0
+                "None" => 0,
+                _ => 5
             };
 
             ChainloaderLogUnityMessagesToggle.IsOn = config.ChainloaderLogUnityMessages;
 
-            // Preloader 高级设置
+            // Harmony.Logger
+            var harmonyChannels = config.HarmonyLoggerLogChannels;
+            HarmonyLogChannelsComboBox.SelectedIndex = harmonyChannels switch
+            {
+                "All" => 2,
+                var l when l.Contains("Warn") || l.Contains("Error") => 1,
+                "None" => 0,
+                _ => 1
+            };
+
+            // Logging
+            UnityLogListeningToggle.IsOn = config.LoggingUnityLogListening;
+            LogConsoleToUnityLogToggle.IsOn = config.LoggingLogConsoleToUnityLog;
+
+            // Logging.Console
+            ConsoleToggle.IsOn = config.LoggingConsoleEnabled;
+            ConsolePreventCloseToggle.IsOn = config.LoggingConsolePreventClose;
+            ConsoleShiftJISToggle.IsOn = config.LoggingConsoleShiftJisEncoding;
+
+            ConsoleStandardOutTypeComboBox.SelectedIndex = config.LoggingConsoleStandardOutType switch
+            {
+                "Auto" => 0,
+                "ConsoleOut" => 1,
+                "StandardOut" => 2,
+                _ => 0
+            };
+
+            var consoleLogLevels = config.LoggingConsoleLogLevels;
+            ConsoleLogLevelsComboBox.SelectedIndex = consoleLogLevels switch
+            {
+                "All" => 7,
+                var l when l.Contains("Debug") && l.Contains("Info") => 6,
+                var l when l.Contains("Info") && l.Contains("Message") => 5,
+                var l when l.Contains("Message") && l.Contains("Warning") => 4,
+                var l when l.Contains("Warning") && l.Contains("Error") => 3,
+                var l when l.Contains("Error") && l.Contains("Fatal") => 2,
+                var l when l.Contains("Fatal") => 1,
+                "None" => 0,
+                _ => 5
+            };
+
+            // Logging.Disk
+            DiskWriteUnityLogToggle.IsOn = config.LoggingDiskWriteUnityLog;
+            DiskAppendLogToggle.IsOn = config.LoggingDiskAppendLog;
+            DiskEnabledToggle.IsOn = config.LoggingDiskEnabled;
+
+            var diskLogLevels = config.LoggingDiskLogLevels;
+            DiskLogLevelsComboBox.SelectedIndex = diskLogLevels switch
+            {
+                "All" => 7,
+                var l when l.Contains("Debug") && l.Contains("Info") => 6,
+                var l when l.Contains("Info") && l.Contains("Message") => 5,
+                var l when l.Contains("Message") && l.Contains("Warning") => 4,
+                var l when l.Contains("Warning") && l.Contains("Error") => 3,
+                var l when l.Contains("Error") && l.Contains("Fatal") => 2,
+                var l when l.Contains("Fatal") => 1,
+                "None" => 0,
+                _ => 5
+            };
+
+            // Preloader
+            ApplyRuntimePatchesToggle.IsOn = config.PreloaderApplyRuntimePatches;
+
+            HarmonyBackendComboBox.SelectedIndex = config.PreloaderHarmonyBackend switch
+            {
+                "auto" => 0,
+                "dynamicmethod" => 1,
+                "methodbuilder" => 2,
+                "cecil" => 3,
+                _ => 0
+            };
+
+            DumpAssembliesToggle.IsOn = config.PreloaderDumpAssemblies;
+            LoadDumpedAssembliesToggle.IsOn = config.PreloaderLoadDumpedAssemblies;
+            BreakBeforeLoadAssembliesToggle.IsOn = config.PreloaderBreakBeforeLoadAssemblies;
+            PreloaderLogConsoleToUnityLogToggle.IsOn = config.PreloaderLogConsoleToUnityLog;
+
+            // Preloader.Entrypoint
             EntrypointAssemblyTextBox.Text = config.PreloaderEntrypointAssembly;
             EntrypointTypeTextBox.Text = config.PreloaderEntrypointType;
             EntrypointMethodTextBox.Text = config.PreloaderEntrypointMethod;
-            DumpAssembliesToggle.IsOn = config.PreloaderDumpAssemblies;
         }
 
         /// <summary>
@@ -235,6 +313,34 @@ namespace XUnity.AutoInstaller.Pages
             BaiduAppIdTextBox.Text = config.AuthenticationBaiduAppId;
             BaiduAppSecretTextBox.Text = config.AuthenticationBaiduAppSecret;
             YandexAPIKeyTextBox.Text = config.AuthenticationYandexAPIKey;
+            WatsonAPIKeyTextBox.Text = config.AuthenticationWatsonAPIKey;
+            LingoCloudTokenTextBox.Text = config.AuthenticationLingoCloudToken;
+
+            // Behaviour (扩展)
+            EnableBatchingToggle.IsOn = config.BehaviourEnableBatching;
+            UseStaticTranslationsToggle.IsOn = config.BehaviourUseStaticTranslations;
+            IgnoreTextStartingWithTextBox.Text = config.BehaviourIgnoreTextStartingWith;
+            OutputUntranslatableTextToggle.IsOn = config.BehaviourOutputUntranslatableText;
+            TranslationDelayNumber.Value = config.BehaviourDelay;
+
+            // Http
+            HttpUserAgentTextBox.Text = config.HttpUserAgent;
+            DisableCertificateChecksToggle.IsOn = config.HttpDisableCertificateChecks;
+
+            // Debug
+            DebugEnableConsoleToggle.IsOn = config.DebugEnableConsole;
+            DebugEnableLogToggle.IsOn = config.DebugEnableLog;
+
+            // Optimization
+            EnableCacheToggle.IsOn = config.OptimizationEnableCache;
+            MaxCacheEntriesNumber.Value = config.OptimizationMaxCacheEntries;
+
+            // Integration
+            TextGetterCompatibilityModeToggle.IsOn = config.IntegrationTextGetterCompatibilityMode;
+
+            // ResourceRedirector
+            EnableRedirectorToggle.IsOn = config.ResourceRedirectorEnableRedirector;
+            DetectDuplicateResourcesToggle.IsOn = config.ResourceRedirectorDetectDuplicateResources;
         }
 
         /// <summary>
@@ -244,10 +350,12 @@ namespace XUnity.AutoInstaller.Pages
         {
             var config = new BepInExConfig
             {
-                LoggingConsoleEnabled = ConsoleToggle.IsOn,
-                LoggingConsoleShiftJISCompatible = ConsoleShiftJISToggle.IsOn,
-                PreloaderLogConsoleToUnityLog = PreloaderLogConsoleToggle.IsOn,
-                ChainloaderLoggerDisplayedLevels = LoggerDisplayedLevelsComboBox.SelectedIndex switch
+                // Caching
+                CachingEnableAssemblyCache = EnableAssemblyCacheToggle.IsOn,
+
+                // Chainloader
+                ChainloaderHideManagerGameObject = HideManagerGameObjectToggle.IsOn,
+                ChainloaderLogLevels = ChainloaderLogLevelsComboBox.SelectedIndex switch
                 {
                     0 => "None",
                     1 => "Fatal",
@@ -260,10 +368,80 @@ namespace XUnity.AutoInstaller.Pages
                     _ => "Info,Message,Warning,Error,Fatal"
                 },
                 ChainloaderLogUnityMessages = ChainloaderLogUnityMessagesToggle.IsOn,
+
+                // Harmony.Logger
+                HarmonyLoggerLogChannels = HarmonyLogChannelsComboBox.SelectedIndex switch
+                {
+                    0 => "None",
+                    1 => "Warn, Error",
+                    2 => "All",
+                    _ => "Warn, Error"
+                },
+
+                // Logging
+                LoggingUnityLogListening = UnityLogListeningToggle.IsOn,
+                LoggingLogConsoleToUnityLog = LogConsoleToUnityLogToggle.IsOn,
+
+                // Logging.Console
+                LoggingConsoleEnabled = ConsoleToggle.IsOn,
+                LoggingConsolePreventClose = ConsolePreventCloseToggle.IsOn,
+                LoggingConsoleShiftJisEncoding = ConsoleShiftJISToggle.IsOn,
+                LoggingConsoleStandardOutType = ConsoleStandardOutTypeComboBox.SelectedIndex switch
+                {
+                    0 => "Auto",
+                    1 => "ConsoleOut",
+                    2 => "StandardOut",
+                    _ => "Auto"
+                },
+                LoggingConsoleLogLevels = ConsoleLogLevelsComboBox.SelectedIndex switch
+                {
+                    0 => "None",
+                    1 => "Fatal",
+                    2 => "Error,Fatal",
+                    3 => "Warning,Error,Fatal",
+                    4 => "Message,Warning,Error,Fatal",
+                    5 => "Info,Message,Warning,Error,Fatal",
+                    6 => "Debug,Info,Message,Warning,Error,Fatal",
+                    7 => "All",
+                    _ => "Info,Message,Warning,Error,Fatal"
+                },
+
+                // Logging.Disk
+                LoggingDiskWriteUnityLog = DiskWriteUnityLogToggle.IsOn,
+                LoggingDiskAppendLog = DiskAppendLogToggle.IsOn,
+                LoggingDiskEnabled = DiskEnabledToggle.IsOn,
+                LoggingDiskLogLevels = DiskLogLevelsComboBox.SelectedIndex switch
+                {
+                    0 => "None",
+                    1 => "Fatal",
+                    2 => "Error,Fatal",
+                    3 => "Warning,Error,Fatal",
+                    4 => "Message,Warning,Error,Fatal",
+                    5 => "Info,Message,Warning,Error,Fatal",
+                    6 => "Debug,Info,Message,Warning,Error,Fatal",
+                    7 => "All",
+                    _ => "Info,Message,Warning,Error,Fatal"
+                },
+
+                // Preloader
+                PreloaderApplyRuntimePatches = ApplyRuntimePatchesToggle.IsOn,
+                PreloaderHarmonyBackend = HarmonyBackendComboBox.SelectedIndex switch
+                {
+                    0 => "auto",
+                    1 => "dynamicmethod",
+                    2 => "methodbuilder",
+                    3 => "cecil",
+                    _ => "auto"
+                },
+                PreloaderDumpAssemblies = DumpAssembliesToggle.IsOn,
+                PreloaderLoadDumpedAssemblies = LoadDumpedAssembliesToggle.IsOn,
+                PreloaderBreakBeforeLoadAssemblies = BreakBeforeLoadAssembliesToggle.IsOn,
+                PreloaderLogConsoleToUnityLog = PreloaderLogConsoleToUnityLogToggle.IsOn,
+
+                // Preloader.Entrypoint
                 PreloaderEntrypointAssembly = EntrypointAssemblyTextBox.Text,
                 PreloaderEntrypointType = EntrypointTypeTextBox.Text,
-                PreloaderEntrypointMethod = EntrypointMethodTextBox.Text,
-                PreloaderDumpAssemblies = DumpAssembliesToggle.IsOn
+                PreloaderEntrypointMethod = EntrypointMethodTextBox.Text
             };
 
             return config;
@@ -325,7 +503,35 @@ namespace XUnity.AutoInstaller.Pages
                 AuthenticationDeepLAPIKey = DeepLAPIKeyTextBox.Text,
                 AuthenticationBaiduAppId = BaiduAppIdTextBox.Text,
                 AuthenticationBaiduAppSecret = BaiduAppSecretTextBox.Text,
-                AuthenticationYandexAPIKey = YandexAPIKeyTextBox.Text
+                AuthenticationYandexAPIKey = YandexAPIKeyTextBox.Text,
+                AuthenticationWatsonAPIKey = WatsonAPIKeyTextBox.Text,
+                AuthenticationLingoCloudToken = LingoCloudTokenTextBox.Text,
+
+                // Behaviour (扩展)
+                BehaviourEnableBatching = EnableBatchingToggle.IsOn,
+                BehaviourUseStaticTranslations = UseStaticTranslationsToggle.IsOn,
+                BehaviourIgnoreTextStartingWith = IgnoreTextStartingWithTextBox.Text,
+                BehaviourOutputUntranslatableText = OutputUntranslatableTextToggle.IsOn,
+                BehaviourDelay = (int)TranslationDelayNumber.Value,
+
+                // Http
+                HttpUserAgent = HttpUserAgentTextBox.Text,
+                HttpDisableCertificateChecks = DisableCertificateChecksToggle.IsOn,
+
+                // Debug
+                DebugEnableConsole = DebugEnableConsoleToggle.IsOn,
+                DebugEnableLog = DebugEnableLogToggle.IsOn,
+
+                // Optimization
+                OptimizationEnableCache = EnableCacheToggle.IsOn,
+                OptimizationMaxCacheEntries = (int)MaxCacheEntriesNumber.Value,
+
+                // Integration
+                IntegrationTextGetterCompatibilityMode = TextGetterCompatibilityModeToggle.IsOn,
+
+                // ResourceRedirector
+                ResourceRedirectorEnableRedirector = EnableRedirectorToggle.IsOn,
+                ResourceRedirectorDetectDuplicateResources = DetectDuplicateResourcesToggle.IsOn
             };
 
             return config;

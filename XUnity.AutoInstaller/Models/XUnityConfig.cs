@@ -39,11 +39,87 @@ public class XUnityConfig
     public bool TextureEnableDumping { get; set; } = false;
     public string TextureHashGenerationStrategy { get; set; } = "FromImageName";
 
-    // [Advanced]
+    // [Behaviour] - Advanced (这些选项实际在Behaviour节中)
     public bool AdvancedEnableTranslationScoping { get; set; } = true;
     public bool AdvancedHandleRichText { get; set; } = true;
     public int AdvancedMaxTextParserRecursion { get; set; } = 10;
     public bool AdvancedHtmlEntityPreprocessing { get; set; } = true;
+
+    // [Behaviour] - Additional options
+    /// <summary>
+    /// 批量翻译请求以减少API调用
+    /// </summary>
+    public bool BehaviourEnableBatching { get; set; } = true;
+
+    /// <summary>
+    /// 使用静态翻译（缓存的翻译）
+    /// </summary>
+    public bool BehaviourUseStaticTranslations { get; set; } = true;
+
+    /// <summary>
+    /// 忽略以指定字符开头的文本
+    /// </summary>
+    public string BehaviourIgnoreTextStartingWith { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 输出无法翻译的文本到日志
+    /// </summary>
+    public bool BehaviourOutputUntranslatableText { get; set; } = false;
+
+    /// <summary>
+    /// 翻译延迟（毫秒）
+    /// </summary>
+    public int BehaviourDelay { get; set; } = 0;
+
+    // [Http]
+    /// <summary>
+    /// HTTP User-Agent字符串
+    /// </summary>
+    public string HttpUserAgent { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 禁用SSL证书验证
+    /// </summary>
+    public bool HttpDisableCertificateChecks { get; set; } = false;
+
+    // [Debug]
+    /// <summary>
+    /// 启用调试控制台
+    /// </summary>
+    public bool DebugEnableConsole { get; set; } = false;
+
+    /// <summary>
+    /// 启用调试日志
+    /// </summary>
+    public bool DebugEnableLog { get; set; } = false;
+
+    // [Optimization]
+    /// <summary>
+    /// 启用翻译缓存
+    /// </summary>
+    public bool OptimizationEnableCache { get; set; } = true;
+
+    /// <summary>
+    /// 缓存最大条目数
+    /// </summary>
+    public int OptimizationMaxCacheEntries { get; set; } = 5000;
+
+    // [Integration]
+    /// <summary>
+    /// 文本获取器兼容模式（用于某些游戏的兼容性）
+    /// </summary>
+    public bool IntegrationTextGetterCompatibilityMode { get; set; } = false;
+
+    // [ResourceRedirector]
+    /// <summary>
+    /// 启用资源重定向
+    /// </summary>
+    public bool ResourceRedirectorEnableRedirector { get; set; } = true;
+
+    /// <summary>
+    /// 检测重复资源
+    /// </summary>
+    public bool ResourceRedirectorDetectDuplicateResources { get; set; } = false;
 
     // [Authentication]
     public string AuthenticationGoogleAPIKey { get; set; } = string.Empty;
@@ -52,6 +128,17 @@ public class XUnityConfig
     public string AuthenticationBaiduAppId { get; set; } = string.Empty;
     public string AuthenticationBaiduAppSecret { get; set; } = string.Empty;
     public string AuthenticationYandexAPIKey { get; set; } = string.Empty;
+
+    // Additional Authentication Services
+    /// <summary>
+    /// Watson翻译服务认证
+    /// </summary>
+    public string AuthenticationWatsonAPIKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 彩云小译API Token
+    /// </summary>
+    public string AuthenticationLingoCloudToken { get; set; } = string.Empty;
 
     /// <summary>
     /// 创建推荐配置（中文翻译）

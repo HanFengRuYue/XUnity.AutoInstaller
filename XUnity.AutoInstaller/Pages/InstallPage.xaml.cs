@@ -268,7 +268,9 @@ namespace XUnity.AutoInstaller.Pages
                     BackupExisting = BackupCheckBox.IsChecked == true,
                     CleanOldVersion = CleanInstallCheckBox.IsChecked == true,
                     CreateShortcut = CreateShortcutCheckBox.IsChecked == true,
-                    UseRecommendedConfig = AutoConfigCheckBox.IsChecked == true
+                    UseRecommendedConfig = AutoConfigCheckBox.IsChecked == true,
+                    LaunchGameToGenerateConfig = LaunchGameCheckBox.IsChecked == true,
+                    ConfigGenerationTimeout = (int)ConfigTimeoutNumberBox.Value
                 };
 
                 // 如果是手动选择模式，设置版本
@@ -310,6 +312,11 @@ namespace XUnity.AutoInstaller.Pages
                 LogService.Instance.Log($"备份现有: {options.BackupExisting}", LogLevel.Info, "[安装]");
                 LogService.Instance.Log($"清理旧版本: {options.CleanOldVersion}", LogLevel.Info, "[安装]");
                 LogService.Instance.Log($"使用推荐配置: {options.UseRecommendedConfig}", LogLevel.Info, "[安装]");
+                LogService.Instance.Log($"启动游戏生成配置: {options.LaunchGameToGenerateConfig}", LogLevel.Info, "[安装]");
+                if (options.LaunchGameToGenerateConfig)
+                {
+                    LogService.Instance.Log($"配置生成超时: {options.ConfigGenerationTimeout}秒", LogLevel.Info, "[安装]");
+                }
 
                 // 创建日志记录器（现在内部使用LogService）
                 var logger = new LogWriter(null, DispatcherQueue);

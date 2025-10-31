@@ -39,4 +39,14 @@ public class InstallOptions
     /// XUnity 版本（null 表示自动选择最新版）
     /// </summary>
     public string? XUnityVersion { get; set; }
+
+    /// <summary>
+    /// 是否在安装后自动启动游戏生成配置文件
+    /// </summary>
+    public bool LaunchGameToGenerateConfig { get; set; } = true;
+
+    /// <summary>
+    /// 配置文件生成超时时间（秒）
+    /// </summary>
+    public int ConfigGenerationTimeout { get; set; } = 60;
 }

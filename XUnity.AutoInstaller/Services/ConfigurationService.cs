@@ -33,26 +33,47 @@ public class ConfigurationService
 
             var config = new BepInExConfig();
 
+            // [Caching]
+            config.CachingEnableAssemblyCache = IniParser.GetBool(data, "Caching", "EnableAssemblyCache", true);
+
+            // [Chainloader]
+            config.ChainloaderHideManagerGameObject = IniParser.GetBool(data, "Chainloader", "HideManagerGameObject", false);
+            config.ChainloaderLogLevels = IniParser.GetValue(data, "Chainloader", "LogLevels", "Info,Message,Warning,Error,Fatal");
+            config.ChainloaderLogUnityMessages = IniParser.GetBool(data, "Chainloader", "LogUnityMessages", true);
+
+            // [Harmony.Logger]
+            config.HarmonyLoggerLogChannels = IniParser.GetValue(data, "Harmony.Logger", "LogChannels", "Warn, Error");
+
+            // [Logging]
+            config.LoggingUnityLogListening = IniParser.GetBool(data, "Logging", "UnityLogListening", true);
+            config.LoggingLogConsoleToUnityLog = IniParser.GetBool(data, "Logging", "LogConsoleToUnityLog", false);
+
             // [Logging.Console]
             config.LoggingConsoleEnabled = IniParser.GetBool(data, "Logging.Console", "Enabled", false);
-            config.LoggingConsoleShiftJISCompatible = IniParser.GetBool(data, "Logging.Console", "ShiftJISCompatible", false);
+            config.LoggingConsolePreventClose = IniParser.GetBool(data, "Logging.Console", "PreventClose", false);
+            config.LoggingConsoleShiftJisEncoding = IniParser.GetBool(data, "Logging.Console", "ShiftJisEncoding", false);
+            config.LoggingConsoleStandardOutType = IniParser.GetValue(data, "Logging.Console", "StandardOutType", "Auto");
+            config.LoggingConsoleLogLevels = IniParser.GetValue(data, "Logging.Console", "LogLevels", "Fatal, Error, Warning, Message, Info");
             LogService.Instance.Log($"LoggingConsoleEnabled = {config.LoggingConsoleEnabled}", LogLevel.Debug, "[Config]");
 
             // [Logging.Disk]
+            config.LoggingDiskWriteUnityLog = IniParser.GetBool(data, "Logging.Disk", "WriteUnityLog", false);
+            config.LoggingDiskAppendLog = IniParser.GetBool(data, "Logging.Disk", "AppendLog", false);
             config.LoggingDiskEnabled = IniParser.GetBool(data, "Logging.Disk", "Enabled", true);
+            config.LoggingDiskLogLevels = IniParser.GetValue(data, "Logging.Disk", "LogLevels", "Fatal, Error, Warning, Message, Info");
+
+            // [Preloader]
+            config.PreloaderApplyRuntimePatches = IniParser.GetBool(data, "Preloader", "ApplyRuntimePatches", true);
+            config.PreloaderHarmonyBackend = IniParser.GetValue(data, "Preloader", "HarmonyBackend", "auto");
+            config.PreloaderDumpAssemblies = IniParser.GetBool(data, "Preloader", "DumpAssemblies", false);
+            config.PreloaderLoadDumpedAssemblies = IniParser.GetBool(data, "Preloader", "LoadDumpedAssemblies", false);
+            config.PreloaderBreakBeforeLoadAssemblies = IniParser.GetBool(data, "Preloader", "BreakBeforeLoadAssemblies", false);
+            config.PreloaderLogConsoleToUnityLog = IniParser.GetBool(data, "Preloader", "LogConsoleToUnityLog", false);
 
             // [Preloader.Entrypoint]
             config.PreloaderEntrypointAssembly = IniParser.GetValue(data, "Preloader.Entrypoint", "Assembly", "UnityEngine.CoreModule.dll");
             config.PreloaderEntrypointType = IniParser.GetValue(data, "Preloader.Entrypoint", "Type", "MonoBehaviour");
             config.PreloaderEntrypointMethod = IniParser.GetValue(data, "Preloader.Entrypoint", "Method", ".cctor");
-
-            // [Preloader]
-            config.PreloaderLogConsoleToUnityLog = IniParser.GetBool(data, "Preloader", "LogConsoleToUnityLog", false);
-            config.PreloaderDumpAssemblies = IniParser.GetBool(data, "Preloader", "DumpAssemblies", false);
-
-            // [Chainloader]
-            config.ChainloaderLoggerDisplayedLevels = IniParser.GetValue(data, "Chainloader", "LogLevels", "Info,Message,Warning,Error,Fatal");
-            config.ChainloaderLogUnityMessages = IniParser.GetBool(data, "Chainloader", "LogUnityMessages", true);
 
             LogService.Instance.Log($"BepInEx 配置加载成功", LogLevel.Debug, "[Config]");
             return config;
@@ -73,25 +94,46 @@ public class ConfigurationService
         var configPath = PathHelper.GetBepInExConfigFile(gamePath);
         var data = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string>>();
 
+        // [Caching]
+        IniParser.SetValue(data, "Caching", "EnableAssemblyCache", config.CachingEnableAssemblyCache.ToString().ToLower());
+
+        // [Chainloader]
+        IniParser.SetValue(data, "Chainloader", "HideManagerGameObject", config.ChainloaderHideManagerGameObject.ToString().ToLower());
+        IniParser.SetValue(data, "Chainloader", "LogLevels", config.ChainloaderLogLevels);
+        IniParser.SetValue(data, "Chainloader", "LogUnityMessages", config.ChainloaderLogUnityMessages.ToString().ToLower());
+
+        // [Harmony.Logger]
+        IniParser.SetValue(data, "Harmony.Logger", "LogChannels", config.HarmonyLoggerLogChannels);
+
+        // [Logging]
+        IniParser.SetValue(data, "Logging", "UnityLogListening", config.LoggingUnityLogListening.ToString().ToLower());
+        IniParser.SetValue(data, "Logging", "LogConsoleToUnityLog", config.LoggingLogConsoleToUnityLog.ToString().ToLower());
+
         // [Logging.Console]
         IniParser.SetValue(data, "Logging.Console", "Enabled", config.LoggingConsoleEnabled.ToString().ToLower());
-        IniParser.SetValue(data, "Logging.Console", "ShiftJISCompatible", config.LoggingConsoleShiftJISCompatible.ToString().ToLower());
+        IniParser.SetValue(data, "Logging.Console", "PreventClose", config.LoggingConsolePreventClose.ToString().ToLower());
+        IniParser.SetValue(data, "Logging.Console", "ShiftJisEncoding", config.LoggingConsoleShiftJisEncoding.ToString().ToLower());
+        IniParser.SetValue(data, "Logging.Console", "StandardOutType", config.LoggingConsoleStandardOutType);
+        IniParser.SetValue(data, "Logging.Console", "LogLevels", config.LoggingConsoleLogLevels);
 
         // [Logging.Disk]
+        IniParser.SetValue(data, "Logging.Disk", "WriteUnityLog", config.LoggingDiskWriteUnityLog.ToString().ToLower());
+        IniParser.SetValue(data, "Logging.Disk", "AppendLog", config.LoggingDiskAppendLog.ToString().ToLower());
         IniParser.SetValue(data, "Logging.Disk", "Enabled", config.LoggingDiskEnabled.ToString().ToLower());
+        IniParser.SetValue(data, "Logging.Disk", "LogLevels", config.LoggingDiskLogLevels);
+
+        // [Preloader]
+        IniParser.SetValue(data, "Preloader", "ApplyRuntimePatches", config.PreloaderApplyRuntimePatches.ToString().ToLower());
+        IniParser.SetValue(data, "Preloader", "HarmonyBackend", config.PreloaderHarmonyBackend);
+        IniParser.SetValue(data, "Preloader", "DumpAssemblies", config.PreloaderDumpAssemblies.ToString().ToLower());
+        IniParser.SetValue(data, "Preloader", "LoadDumpedAssemblies", config.PreloaderLoadDumpedAssemblies.ToString().ToLower());
+        IniParser.SetValue(data, "Preloader", "BreakBeforeLoadAssemblies", config.PreloaderBreakBeforeLoadAssemblies.ToString().ToLower());
+        IniParser.SetValue(data, "Preloader", "LogConsoleToUnityLog", config.PreloaderLogConsoleToUnityLog.ToString().ToLower());
 
         // [Preloader.Entrypoint]
         IniParser.SetValue(data, "Preloader.Entrypoint", "Assembly", config.PreloaderEntrypointAssembly);
         IniParser.SetValue(data, "Preloader.Entrypoint", "Type", config.PreloaderEntrypointType);
         IniParser.SetValue(data, "Preloader.Entrypoint", "Method", config.PreloaderEntrypointMethod);
-
-        // [Preloader]
-        IniParser.SetValue(data, "Preloader", "LogConsoleToUnityLog", config.PreloaderLogConsoleToUnityLog.ToString().ToLower());
-        IniParser.SetValue(data, "Preloader", "DumpAssemblies", config.PreloaderDumpAssemblies.ToString().ToLower());
-
-        // [Chainloader]
-        IniParser.SetValue(data, "Chainloader", "LogLevels", config.ChainloaderLoggerDisplayedLevels);
-        IniParser.SetValue(data, "Chainloader", "LogUnityMessages", config.ChainloaderLogUnityMessages.ToString().ToLower());
 
         IniParser.Write(configPath, data);
     }
@@ -158,8 +200,34 @@ public class ConfigurationService
             // [Behaviour] - 高级选项也在 Behaviour 节
             config.AdvancedEnableTranslationScoping = IniParser.GetBool(data, "Behaviour", "EnableTranslationScoping", true);
             config.AdvancedHandleRichText = IniParser.GetBool(data, "Behaviour", "HandleRichText", true);
-            config.AdvancedMaxTextParserRecursion = IniParser.GetInt(data, "Behaviour", "MaxTextParserRecursion", 1);
+            config.AdvancedMaxTextParserRecursion = IniParser.GetInt(data, "Behaviour", "MaxTextParserRecursion", 10);
             config.AdvancedHtmlEntityPreprocessing = IniParser.GetBool(data, "Behaviour", "HtmlEntityPreprocessing", true);
+
+            // [Behaviour] - Additional options
+            config.BehaviourEnableBatching = IniParser.GetBool(data, "Behaviour", "EnableBatching", true);
+            config.BehaviourUseStaticTranslations = IniParser.GetBool(data, "Behaviour", "UseStaticTranslations", true);
+            config.BehaviourIgnoreTextStartingWith = IniParser.GetValue(data, "Behaviour", "IgnoreTextStartingWith", "");
+            config.BehaviourOutputUntranslatableText = IniParser.GetBool(data, "Behaviour", "OutputUntranslatableText", false);
+            config.BehaviourDelay = IniParser.GetInt(data, "Behaviour", "Delay", 0);
+
+            // [Http]
+            config.HttpUserAgent = IniParser.GetValue(data, "Http", "UserAgent", "");
+            config.HttpDisableCertificateChecks = IniParser.GetBool(data, "Http", "DisableCertificateChecks", false);
+
+            // [Debug]
+            config.DebugEnableConsole = IniParser.GetBool(data, "Debug", "EnableConsole", false);
+            config.DebugEnableLog = IniParser.GetBool(data, "Debug", "EnableLog", false);
+
+            // [Optimization]
+            config.OptimizationEnableCache = IniParser.GetBool(data, "Optimization", "EnableCache", true);
+            config.OptimizationMaxCacheEntries = IniParser.GetInt(data, "Optimization", "MaxCacheEntries", 5000);
+
+            // [Integration]
+            config.IntegrationTextGetterCompatibilityMode = IniParser.GetBool(data, "Integration", "TextGetterCompatibilityMode", false);
+
+            // [ResourceRedirector]
+            config.ResourceRedirectorEnableRedirector = IniParser.GetBool(data, "ResourceRedirector", "EnableRedirector", true);
+            config.ResourceRedirectorDetectDuplicateResources = IniParser.GetBool(data, "ResourceRedirector", "DetectDuplicateResources", false);
 
             // [Authentication] - 各个翻译服务的认证信息在各自的节里
             config.AuthenticationGoogleAPIKey = IniParser.GetValue(data, "GoogleLegitimate", "GoogleAPIKey", "");
@@ -168,6 +236,8 @@ public class ConfigurationService
             config.AuthenticationBaiduAppId = IniParser.GetValue(data, "Baidu", "BaiduAppId", "");
             config.AuthenticationBaiduAppSecret = IniParser.GetValue(data, "Baidu", "BaiduAppSecret", "");
             config.AuthenticationYandexAPIKey = IniParser.GetValue(data, "Yandex", "YandexAPIKey", "");
+            config.AuthenticationWatsonAPIKey = IniParser.GetValue(data, "Watson", "ApiKey", "");
+            config.AuthenticationLingoCloudToken = IniParser.GetValue(data, "LingoCloud", "Token", "");
 
             LogService.Instance.Log($"XUnity 配置加载成功", LogLevel.Debug, "[Config]");
             return config;
@@ -230,6 +300,32 @@ public class ConfigurationService
         IniParser.SetValue(data, "Behaviour", "MaxTextParserRecursion", config.AdvancedMaxTextParserRecursion.ToString());
         IniParser.SetValue(data, "Behaviour", "HtmlEntityPreprocessing", config.AdvancedHtmlEntityPreprocessing.ToString());
 
+        // [Behaviour] - Additional options
+        IniParser.SetValue(data, "Behaviour", "EnableBatching", config.BehaviourEnableBatching.ToString());
+        IniParser.SetValue(data, "Behaviour", "UseStaticTranslations", config.BehaviourUseStaticTranslations.ToString());
+        IniParser.SetValue(data, "Behaviour", "IgnoreTextStartingWith", config.BehaviourIgnoreTextStartingWith);
+        IniParser.SetValue(data, "Behaviour", "OutputUntranslatableText", config.BehaviourOutputUntranslatableText.ToString());
+        IniParser.SetValue(data, "Behaviour", "Delay", config.BehaviourDelay.ToString());
+
+        // [Http]
+        IniParser.SetValue(data, "Http", "UserAgent", config.HttpUserAgent);
+        IniParser.SetValue(data, "Http", "DisableCertificateChecks", config.HttpDisableCertificateChecks.ToString());
+
+        // [Debug]
+        IniParser.SetValue(data, "Debug", "EnableConsole", config.DebugEnableConsole.ToString());
+        IniParser.SetValue(data, "Debug", "EnableLog", config.DebugEnableLog.ToString());
+
+        // [Optimization]
+        IniParser.SetValue(data, "Optimization", "EnableCache", config.OptimizationEnableCache.ToString());
+        IniParser.SetValue(data, "Optimization", "MaxCacheEntries", config.OptimizationMaxCacheEntries.ToString());
+
+        // [Integration]
+        IniParser.SetValue(data, "Integration", "TextGetterCompatibilityMode", config.IntegrationTextGetterCompatibilityMode.ToString());
+
+        // [ResourceRedirector]
+        IniParser.SetValue(data, "ResourceRedirector", "EnableRedirector", config.ResourceRedirectorEnableRedirector.ToString());
+        IniParser.SetValue(data, "ResourceRedirector", "DetectDuplicateResources", config.ResourceRedirectorDetectDuplicateResources.ToString());
+
         // [Authentication] - 各个翻译服务的认证信息在各自的节里
         IniParser.SetValue(data, "GoogleLegitimate", "GoogleAPIKey", config.AuthenticationGoogleAPIKey);
         IniParser.SetValue(data, "BingLegitimate", "OcpApimSubscriptionKey", config.AuthenticationBingSubscriptionKey);
@@ -237,6 +333,8 @@ public class ConfigurationService
         IniParser.SetValue(data, "Baidu", "BaiduAppId", config.AuthenticationBaiduAppId);
         IniParser.SetValue(data, "Baidu", "BaiduAppSecret", config.AuthenticationBaiduAppSecret);
         IniParser.SetValue(data, "Yandex", "YandexAPIKey", config.AuthenticationYandexAPIKey);
+        IniParser.SetValue(data, "Watson", "ApiKey", config.AuthenticationWatsonAPIKey);
+        IniParser.SetValue(data, "LingoCloud", "Token", config.AuthenticationLingoCloudToken);
 
         IniParser.Write(configPath, data);
     }

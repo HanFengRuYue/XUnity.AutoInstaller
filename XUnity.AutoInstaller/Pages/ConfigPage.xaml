@@ -67,6 +67,126 @@
                         Text="BepInEx 配置"
                         Style="{StaticResource SubtitleTextBlockStyle}"/>
 
+                    <!-- Caching 缓存配置 -->
+                    <Expander
+                        Header="Caching 缓存配置"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch">
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="0,0,8,8"
+                            Padding="20"
+                            HorizontalAlignment="Stretch">
+                            <StackPanel Spacing="16" HorizontalAlignment="Stretch">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="启用程序集缓存 (Enable Assembly Cache)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="启用此选项可加速插件发现"
+                                        FontSize="12"
+                                        Opacity="0.7"/>
+                                    <ToggleSwitch
+                                        x:Name="EnableAssemblyCacheToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="True"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Expander>
+
+                    <!-- Chainloader 链加载器配置 -->
+                    <Expander
+                        Header="Chainloader 链加载器配置"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch">
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="0,0,8,8"
+                            Padding="20"
+                            HorizontalAlignment="Stretch">
+                            <StackPanel Spacing="16" HorizontalAlignment="Stretch">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="隐藏管理器GameObject (Hide Manager GameObject)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="可修复某些游戏的加载问题"
+                                        FontSize="12"
+                                        Opacity="0.7"
+                                        TextWrapping="Wrap"/>
+                                    <ToggleSwitch
+                                        x:Name="HideManagerGameObjectToggle"
+                                        OnContent="已隐藏"
+                                        OffContent="显示"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="日志显示级别 (Chainloader Log Levels)" FontWeight="SemiBold"/>
+                                    <ComboBox
+                                        x:Name="ChainloaderLogLevelsComboBox"
+                                        HorizontalAlignment="Stretch"
+                                        SelectedIndex="5">
+                                        <ComboBoxItem Content="None - 无日志"/>
+                                        <ComboBoxItem Content="Fatal - 仅致命错误"/>
+                                        <ComboBoxItem Content="Error - 错误及以上"/>
+                                        <ComboBoxItem Content="Warning - 警告及以上"/>
+                                        <ComboBoxItem Content="Message - 消息及以上"/>
+                                        <ComboBoxItem Content="Info - 信息及以上（推荐）"/>
+                                        <ComboBoxItem Content="Debug - 调试及以上"/>
+                                        <ComboBoxItem Content="All - 全部日志"/>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="显示 Unity 日志消息" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="ChainloaderLogUnityMessagesToggle"
+                                        OnContent="显示"
+                                        OffContent="隐藏"
+                                        IsOn="True"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Expander>
+
+                    <!-- Harmony 补丁配置 -->
+                    <Expander
+                        Header="Harmony 补丁配置"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch">
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="0,0,8,8"
+                            Padding="20"
+                            HorizontalAlignment="Stretch">
+                            <StackPanel Spacing="16" HorizontalAlignment="Stretch">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Harmony 日志通道 (Log Channels)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="警告: IL通道会输出完整补丁方法，仅在需要时使用"
+                                        FontSize="12"
+                                        Opacity="0.7"
+                                        TextWrapping="Wrap"/>
+                                    <ComboBox
+                                        x:Name="HarmonyLogChannelsComboBox"
+                                        HorizontalAlignment="Stretch"
+                                        SelectedIndex="2">
+                                        <ComboBoxItem Content="None"/>
+                                        <ComboBoxItem Content="Info"/>
+                                        <ComboBoxItem Content="Warn, Error（推荐）"/>
+                                        <ComboBoxItem Content="Debug, Warning, Error"/>
+                                        <ComboBoxItem Content="All"/>
+                                    </ComboBox>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Expander>
+
                     <!-- Logging 日志配置 -->
                     <Expander
                         Header="Logging 日志配置"
@@ -82,6 +202,26 @@
                             HorizontalAlignment="Stretch">
                             <StackPanel Spacing="16" HorizontalAlignment="Stretch">
                                 <StackPanel Spacing="8">
+                                    <TextBlock Text="Unity日志监听 (Unity Log Listening)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="UnityLogListeningToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="True"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="日志输出到Unity (Log Console To Unity Log)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="LogConsoleToUnityLogToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <TextBlock Text="控制台配置" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,0"/>
+
+                                <StackPanel Spacing="8">
                                     <TextBlock Text="启用控制台 (Console)" FontWeight="SemiBold"/>
                                     <ToggleSwitch
                                         x:Name="ConsoleToggle"
@@ -91,9 +231,18 @@
                                 </StackPanel>
 
                                 <StackPanel Spacing="8">
-                                    <TextBlock Text="控制台 Shift-JIS 支持 (Console ShiftJIS)" FontWeight="SemiBold"/>
+                                    <TextBlock Text="防止关闭控制台 (Prevent Close)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="ConsolePreventCloseToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="控制台 Shift-JIS 编码" FontWeight="SemiBold"/>
                                     <TextBlock
-                                        Text="启用后支持日语字符显示（禁用时使用 UTF-8）"
+                                        Text="启用后使用Shift-JIS编码（否则使用UTF-8）"
                                         FontSize="12"
                                         Opacity="0.7"/>
                                     <ToggleSwitch
@@ -104,22 +253,21 @@
                                 </StackPanel>
 
                                 <StackPanel Spacing="8">
-                                    <TextBlock Text="预加载器详细日志 (Preloader LogConsole)" FontWeight="SemiBold"/>
-                                    <TextBlock
-                                        Text="启用后每次启动都创建详细的预加载器日志"
-                                        FontSize="12"
-                                        Opacity="0.7"/>
-                                    <ToggleSwitch
-                                        x:Name="PreloaderLogConsoleToggle"
-                                        OnContent="详细日志"
-                                        OffContent="仅错误时"
-                                        IsOn="False"/>
+                                    <TextBlock Text="标准输出类型 (Standard Out Type)" FontWeight="SemiBold"/>
+                                    <ComboBox
+                                        x:Name="ConsoleStandardOutTypeComboBox"
+                                        HorizontalAlignment="Stretch"
+                                        SelectedIndex="0">
+                                        <ComboBoxItem Content="Auto（自动）"/>
+                                        <ComboBoxItem Content="ConsoleOut"/>
+                                        <ComboBoxItem Content="StandardOut"/>
+                                    </ComboBox>
                                 </StackPanel>
 
                                 <StackPanel Spacing="8">
-                                    <TextBlock Text="日志显示级别 (Logger Displayed Levels)" FontWeight="SemiBold"/>
+                                    <TextBlock Text="控制台日志级别 (Console Log Levels)" FontWeight="SemiBold"/>
                                     <ComboBox
-                                        x:Name="LoggerDisplayedLevelsComboBox"
+                                        x:Name="ConsoleLogLevelsComboBox"
                                         HorizontalAlignment="Stretch"
                                         SelectedIndex="5">
                                         <ComboBoxItem Content="None - 无日志"/>
@@ -133,14 +281,56 @@
                                     </ComboBox>
                                 </StackPanel>
 
+                                <TextBlock Text="磁盘日志配置" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,0"/>
+
                                 <StackPanel Spacing="8">
-                                    <TextBlock Text="显示 Unity 日志消息 (Chainloader Log Unity Messages)" FontWeight="SemiBold"/>
+                                    <TextBlock Text="写入Unity日志 (Write Unity Log)" FontWeight="SemiBold"/>
                                     <ToggleSwitch
-                                        x:Name="ChainloaderLogUnityMessagesToggle"
-                                        OnContent="显示"
-                                        OffContent="隐藏"
+                                        x:Name="DiskWriteUnityLogToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
                                         IsOn="False"/>
                                 </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="追加日志 (Append Log)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="启动时追加而非覆盖日志文件"
+                                        FontSize="12"
+                                        Opacity="0.7"/>
+                                    <ToggleSwitch
+                                        x:Name="DiskAppendLogToggle"
+                                        OnContent="追加"
+                                        OffContent="覆盖"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="启用磁盘日志 (Disk Enabled)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="DiskEnabledToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="True"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="磁盘日志级别 (Disk Log Levels)" FontWeight="SemiBold"/>
+                                    <ComboBox
+                                        x:Name="DiskLogLevelsComboBox"
+                                        HorizontalAlignment="Stretch"
+                                        SelectedIndex="5">
+                                        <ComboBoxItem Content="None - 无日志"/>
+                                        <ComboBoxItem Content="Fatal - 仅致命错误"/>
+                                        <ComboBoxItem Content="Error - 错误及以上"/>
+                                        <ComboBoxItem Content="Warning - 警告及以上"/>
+                                        <ComboBoxItem Content="Message - 消息及以上"/>
+                                        <ComboBoxItem Content="Info - 信息及以上（推荐）"/>
+                                        <ComboBoxItem Content="Debug - 调试及以上"/>
+                                        <ComboBoxItem Content="All - 全部日志"/>
+                                    </ComboBox>
+                                </StackPanel>
+
                             </StackPanel>
                         </Border>
                     </Expander>
@@ -189,14 +379,82 @@
                                 </StackPanel>
 
                                 <StackPanel Spacing="8">
+                                    <TextBlock Text="启用运行时补丁 (Apply Runtime Patches)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="除非遇到Harmony问题，否则应始终为true"
+                                        FontSize="12"
+                                        Opacity="0.7"
+                                        TextWrapping="Wrap"/>
+                                    <ToggleSwitch
+                                        x:Name="ApplyRuntimePatchesToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="True"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Harmony后端类型 (Harmony Backend)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="用于开发调试，一般保持Auto即可"
+                                        FontSize="12"
+                                        Opacity="0.7"/>
+                                    <ComboBox
+                                        x:Name="HarmonyBackendComboBox"
+                                        HorizontalAlignment="Stretch"
+                                        SelectedIndex="0">
+                                        <ComboBoxItem Content="Auto（自动）"/>
+                                        <ComboBoxItem Content="DynamicMethod"/>
+                                        <ComboBoxItem Content="MethodBuilder"/>
+                                        <ComboBoxItem Content="Cecil"/>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
                                     <TextBlock Text="转储程序集 (Dump Assemblies)" FontWeight="SemiBold"/>
                                     <TextBlock
-                                        Text="启用后会将修补后的程序集保存到 BepInEx/DumpedAssemblies 用于调试"
+                                        Text="保存修补后的程序集到 BepInEx/DumpedAssemblies 用于调试"
                                         FontSize="12"
                                         Opacity="0.7"
                                         TextWrapping="Wrap"/>
                                     <ToggleSwitch
                                         x:Name="DumpAssembliesToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="加载转储的程序集 (Load Dumped Assemblies)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="从DumpedAssemblies加载程序集，用于调试"
+                                        FontSize="12"
+                                        Opacity="0.7"
+                                        TextWrapping="Wrap"/>
+                                    <ToggleSwitch
+                                        x:Name="LoadDumpedAssembliesToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="加载前断点 (Break Before Load Assemblies)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="在加载前调用Debugger.Break()，用于dnSpy等调试器"
+                                        FontSize="12"
+                                        Opacity="0.7"
+                                        TextWrapping="Wrap"/>
+                                    <ToggleSwitch
+                                        x:Name="BreakBeforeLoadAssembliesToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="预加载器日志到Unity (Preloader Log Console To Unity Log)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="PreloaderLogConsoleToUnityLogToggle"
                                         OnContent="已启用"
                                         OffContent="已禁用"
                                         IsOn="False"/>
@@ -579,6 +837,76 @@
                         </Border>
                     </Expander>
 
+                    <!-- Behaviour 行为配置（扩展） -->
+                    <Expander
+                        Header="Behaviour 行为配置（扩展）"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch">
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="0,0,8,8"
+                            Padding="20"
+                            HorizontalAlignment="Stretch">
+                            <StackPanel Spacing="16" HorizontalAlignment="Stretch">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="启用批量翻译 (Enable Batching)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="批量处理翻译请求以减少API调用"
+                                        FontSize="12"
+                                        Opacity="0.7"/>
+                                    <ToggleSwitch
+                                        x:Name="EnableBatchingToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="True"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="使用静态翻译 (Use Static Translations)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="使用缓存的翻译文件"
+                                        FontSize="12"
+                                        Opacity="0.7"/>
+                                    <ToggleSwitch
+                                        x:Name="UseStaticTranslationsToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="True"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="忽略文本开头字符 (Ignore Text Starting With)" FontWeight="SemiBold"/>
+                                    <TextBox
+                                        x:Name="IgnoreTextStartingWithTextBox"
+                                        PlaceholderText="例如: [、【"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="输出无法翻译的文本 (Output Untranslatable Text)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="OutputUntranslatableTextToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="翻译延迟（毫秒）(Delay)" FontWeight="SemiBold"/>
+                                    <NumberBox
+                                        x:Name="TranslationDelayNumber"
+                                        Value="0"
+                                        Minimum="0"
+                                        Maximum="5000"
+                                        SpinButtonPlacementMode="Inline"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Expander>
+
                     <!-- Advanced 高级配置 -->
                     <Expander
                         Header="Advanced 高级配置"
@@ -632,6 +960,177 @@
                                         OnContent="已启用"
                                         OffContent="已禁用"
                                         IsOn="True"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Expander>
+
+                    <!-- Http 网络配置 -->
+                    <Expander
+                        Header="Http 网络配置"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch">
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="0,0,8,8"
+                            Padding="20"
+                            HorizontalAlignment="Stretch">
+                            <StackPanel Spacing="16" HorizontalAlignment="Stretch">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="User-Agent" FontWeight="SemiBold"/>
+                                    <TextBox
+                                        x:Name="HttpUserAgentTextBox"
+                                        PlaceholderText="留空使用默认值"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="禁用证书验证 (Disable Certificate Checks)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="⚠️ 警告: 可能导致安全风险"
+                                        Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                                        FontSize="12"/>
+                                    <ToggleSwitch
+                                        x:Name="DisableCertificateChecksToggle"
+                                        OnContent="已禁用"
+                                        OffContent="已启用"
+                                        IsOn="False"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Expander>
+
+                    <!-- Debug 调试配置 -->
+                    <Expander
+                        Header="Debug 调试配置"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch">
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="0,0,8,8"
+                            Padding="20"
+                            HorizontalAlignment="Stretch">
+                            <StackPanel Spacing="16" HorizontalAlignment="Stretch">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="启用调试控制台 (Enable Console)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="DebugEnableConsoleToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="启用调试日志 (Enable Log)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="DebugEnableLogToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Expander>
+
+                    <!-- Optimization 优化配置 -->
+                    <Expander
+                        Header="Optimization 优化配置"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch">
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="0,0,8,8"
+                            Padding="20"
+                            HorizontalAlignment="Stretch">
+                            <StackPanel Spacing="16" HorizontalAlignment="Stretch">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="启用翻译缓存 (Enable Cache)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="EnableCacheToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="True"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="最大缓存条目数 (Max Cache Entries)" FontWeight="SemiBold"/>
+                                    <NumberBox
+                                        x:Name="MaxCacheEntriesNumber"
+                                        Value="5000"
+                                        Minimum="100"
+                                        Maximum="50000"
+                                        SpinButtonPlacementMode="Inline"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Expander>
+
+                    <!-- Integration 集成配置 -->
+                    <Expander
+                        Header="Integration 集成配置"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch">
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="0,0,8,8"
+                            Padding="20"
+                            HorizontalAlignment="Stretch">
+                            <StackPanel Spacing="16" HorizontalAlignment="Stretch">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="文本获取器兼容模式 (TextGetter Compatibility Mode)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="用于某些使用文本内容做逻辑判断的游戏"
+                                        FontSize="12"
+                                        Opacity="0.7"
+                                        TextWrapping="Wrap"/>
+                                    <ToggleSwitch
+                                        x:Name="TextGetterCompatibilityModeToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Expander>
+
+                    <!-- ResourceRedirector 资源重定向配置 -->
+                    <Expander
+                        Header="ResourceRedirector 资源重定向配置"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch">
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="0,0,8,8"
+                            Padding="20"
+                            HorizontalAlignment="Stretch">
+                            <StackPanel Spacing="16" HorizontalAlignment="Stretch">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="启用资源重定向 (Enable Redirector)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="EnableRedirectorToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="True"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="检测重复资源 (Detect Duplicate Resources)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="DetectDuplicateResourcesToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -701,6 +1200,22 @@
                                     <TextBox
                                         x:Name="YandexAPIKeyTextBox"
                                         PlaceholderText="输入Yandex翻译API密钥"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Watson API Key" FontWeight="SemiBold"/>
+                                    <TextBox
+                                        x:Name="WatsonAPIKeyTextBox"
+                                        PlaceholderText="输入IBM Watson Translation API密钥"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="LingoCloud Token (彩云小译)" FontWeight="SemiBold"/>
+                                    <TextBox
+                                        x:Name="LingoCloudTokenTextBox"
+                                        PlaceholderText="输入彩云小译API Token"
                                         HorizontalAlignment="Stretch"/>
                                 </StackPanel>
                             </StackPanel>

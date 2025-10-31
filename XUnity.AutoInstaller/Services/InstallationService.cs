@@ -72,14 +72,42 @@ public class InstallationService
             // 7. 应用推荐配置
             if (options.UseRecommendedConfig)
             {
-                progress?.Report((90, "应用推荐配置..."));
+                progress?.Report((85, "应用推荐配置..."));
                 ApplyRecommendedConfiguration(gamePath);
             }
 
-            // 8. 创建快捷方式
+            // 8. 启动游戏生成配置文件
+            if (options.LaunchGameToGenerateConfig)
+            {
+                progress?.Report((87, "启动游戏生成配置文件..."));
+                _logger?.Info("准备启动游戏生成BepInEx配置文件");
+
+                var gameLauncher = new GameLauncherService(_logger);
+                bool configGenerated = await gameLauncher.LaunchGameAndWaitForConfigGenerationAsync(
+                    gamePath,
+                    options.ConfigGenerationTimeout,
+                    new Progress<(int percentage, string message)>(p =>
+                    {
+                        // 将配置生成进度映射到总进度的87-95%区间
+                        int mappedProgress = 87 + (int)(p.percentage * 0.08);
+                        progress?.Report((mappedProgress, p.message));
+                    }));
+
+                if (configGenerated)
+                {
+                    _logger?.Success("配置文件生成成功");
+                }
+                else
+                {
+                    _logger?.Warning("配置文件生成失败或超时，您可能需要手动运行游戏一次");
+                    // 不阻止安装流程继续
+                }
+            }
+
+            // 9. 创建快捷方式
             if (options.CreateShortcut && !string.IsNullOrEmpty(gameInfo.ExecutablePath))
             {
-                progress?.Report((95, "创建快捷方式..."));
+                progress?.Report((96, "创建快捷方式..."));
                 try
                 {
                     FileSystemService.CreateDesktopShortcut(gameInfo.ExecutablePath, gameInfo.Name);

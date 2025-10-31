@@ -117,6 +117,40 @@
                             x:Name="AutoConfigCheckBox"
                             Content="使用推荐配置"
                             IsChecked="True"/>
+                        <CheckBox
+                            x:Name="LaunchGameCheckBox"
+                            Content="安装后启动游戏生成配置文件（推荐）"
+                            IsChecked="True">
+                            <ToolTipService.ToolTip>
+                                <ToolTip Content="BepInEx首次运行需要启动游戏才能生成配置文件，建议启用此选项自动完成"/>
+                            </ToolTipService.ToolTip>
+                        </CheckBox>
+
+                        <!-- 配置生成高级选项 -->
+                        <Expander
+                            x:Name="ConfigGenerationExpander"
+                            Header="高级选项"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch"
+                            IsExpanded="False">
+                            <StackPanel Spacing="12" Margin="0,8,0,0" HorizontalAlignment="Stretch">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="配置生成超时时间（秒）" FontSize="12"/>
+                                    <NumberBox
+                                        x:Name="ConfigTimeoutNumberBox"
+                                        Value="60"
+                                        Minimum="10"
+                                        Maximum="300"
+                                        SpinButtonPlacementMode="Inline"
+                                        HorizontalAlignment="Stretch"/>
+                                    <TextBlock
+                                        Text="如果游戏启动较慢，可适当增加超时时间"
+                                        FontSize="11"
+                                        Opacity="0.7"
+                                        TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Expander>
                     </StackPanel>
                 </Border>
             </StackPanel>
