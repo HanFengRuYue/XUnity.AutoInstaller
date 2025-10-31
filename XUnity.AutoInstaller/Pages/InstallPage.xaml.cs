@@ -41,6 +41,8 @@ namespace XUnity.AutoInstaller.Pages
             _versionCacheService.VersionsUpdated += OnVersionsUpdated;
 
             // 设置默认值
+            // FIX: WinUI3中RadioButton的IsChecked不会自动设置RadioButtons的SelectedIndex
+            VersionModeRadio.SelectedIndex = 0; // 自动推荐模式
             PlatformComboBox.SelectedIndex = 0; // x64
             BackupCheckBox.IsChecked = true;
             AutoConfigCheckBox.IsChecked = true;
@@ -70,6 +72,26 @@ namespace XUnity.AutoInstaller.Pages
             {
                 LogService.Instance.Log("警告: 未设置游戏路径，请先在首页选择游戏目录", LogLevel.Warning, "[安装]");
             }
+
+            // 使用DispatcherQueue延迟执行，确保UI完全加载后再加载推荐版本
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal, async () =>
+            {
+                LogService.Instance.Log("页面导航完成，准备加载推荐版本...", LogLevel.Info, "[安装]");
+
+                // 给UI一点时间完成渲染
+                await Task.Delay(100);
+
+                // 检查是否为自动推荐模式
+                if (VersionModeRadio?.SelectedIndex == 0)
+                {
+                    LogService.Instance.Log("检测到自动推荐模式，开始加载推荐版本", LogLevel.Info, "[安装]");
+                    await LoadAndDisplayRecommendedVersionsAsync();
+                }
+                else
+                {
+                    LogService.Instance.Log($"当前为手动选择模式 (SelectedIndex={VersionModeRadio?.SelectedIndex})", LogLevel.Debug, "[安装]");
+                }
+            });
         }
 
         private async void VersionModeRadio_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -79,12 +101,17 @@ namespace XUnity.AutoInstaller.Pages
                 // 自动推荐模式
                 BepInExVersionComboBox.IsEnabled = false;
                 XUnityVersionComboBox.IsEnabled = false;
+                PlatformComboBox.IsEnabled = false; // 自动模式下锁定平台
+
+                // 加载并显示推荐版本
+                await LoadAndDisplayRecommendedVersionsAsync();
             }
             else
             {
                 // 手动选择模式
                 BepInExVersionComboBox.IsEnabled = true;
                 XUnityVersionComboBox.IsEnabled = true;
+                PlatformComboBox.IsEnabled = true; // 手动模式下允许选择平台
 
                 // 如果版本列表为空，加载版本列表
                 if (_bepinexVersions.Count == 0 || _xunityVersions.Count == 0)
@@ -96,9 +123,14 @@ namespace XUnity.AutoInstaller.Pages
 
         private async void PlatformComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // 如果是手动模式，重新加载BepInEx版本列表（因为平台改变）
-            if (VersionModeRadio.SelectedIndex == 1 && _bepinexVersions.Count > 0)
+            if (VersionModeRadio.SelectedIndex == 0)
             {
+                // 自动推荐模式：平台改变时重新加载推荐版本
+                await LoadAndDisplayRecommendedVersionsAsync();
+            }
+            else if (_bepinexVersions.Count > 0)
+            {
+                // 手动模式：重新过滤BepInEx版本列表
                 UpdateBepInExVersionComboBox();
             }
         }
@@ -234,6 +266,132 @@ namespace XUnity.AutoInstaller.Pages
             }
         }
 
+        /// <summary>
+        /// 加载并显示推荐版本（自动推荐模式）
+        /// </summary>
+        private async Task LoadAndDisplayRecommendedVersionsAsync()
+        {
+            try
+            {
+                LogService.Instance.Log("开始加载推荐版本...", LogLevel.Info, "[安装]");
+
+                // 显示加载指示器
+                BepInExVersionLoadingRing.IsActive = true;
+                BepInExVersionLoadingRing.Visibility = Visibility.Visible;
+                XUnityVersionLoadingRing.IsActive = true;
+                XUnityVersionLoadingRing.Visibility = Visibility.Visible;
+
+                // 检查版本缓存是否已初始化
+                var versionCounts = _versionCacheService.GetVersionCounts();
+                LogService.Instance.Log($"版本缓存状态: 已初始化={_versionCacheService.IsInitialized}, BepInEx={versionCounts.BepInExCount}, XUnity={versionCounts.XUnityCount}", LogLevel.Info, "[安装]");
+
+                // 如果缓存尚未初始化，等待初始化完成（最多10秒）
+                if (!_versionCacheService.IsInitialized)
+                {
+                    LogService.Instance.Log("版本缓存尚未初始化，等待初始化完成...", LogLevel.Info, "[安装]");
+
+                    var startTime = DateTime.Now;
+                    while (!_versionCacheService.IsInitialized && (DateTime.Now - startTime).TotalSeconds < 10)
+                    {
+                        await Task.Delay(500);
+                    }
+
+                    if (!_versionCacheService.IsInitialized)
+                    {
+                        LogService.Instance.Log("等待版本缓存初始化超时", LogLevel.Warning, "[安装]");
+                        BepInExVersionComboBox.PlaceholderText = "版本缓存初始化中，请稍后刷新";
+                        XUnityVersionComboBox.PlaceholderText = "版本缓存初始化中，请稍后刷新";
+                        return;
+                    }
+
+                    versionCounts = _versionCacheService.GetVersionCounts();
+                    LogService.Instance.Log($"版本缓存已初始化: BepInEx={versionCounts.BepInExCount}, XUnity={versionCounts.XUnityCount}", LogLevel.Info, "[安装]");
+                }
+
+                // 如果缓存为空，说明可能网络有问题或尚未刷新
+                if (versionCounts.BepInExCount == 0)
+                {
+                    LogService.Instance.Log("版本缓存为空，请在版本管理页面手动刷新", LogLevel.Warning, "[安装]");
+                    BepInExVersionComboBox.PlaceholderText = "缓存为空，请在版本管理页面刷新";
+                    XUnityVersionComboBox.PlaceholderText = "缓存为空，请在版本管理页面刷新";
+                    return;
+                }
+
+                // 获取当前选择的平台
+                var selectedPlatform = PlatformComboBox.SelectedIndex switch
+                {
+                    0 => Platform.x64,
+                    1 => Platform.x86,
+                    2 => Platform.IL2CPP_x64,
+                    3 => Platform.IL2CPP_x86,
+                    _ => Platform.x64
+                };
+
+                LogService.Instance.Log($"当前选择平台: {selectedPlatform}", LogLevel.Debug, "[安装]");
+
+                // 从缓存获取推荐版本
+                var bepinexRecommended = _versionCacheService.GetLatestBepInExVersion(selectedPlatform, includePrerelease: selectedPlatform == Platform.IL2CPP_x64 || selectedPlatform == Platform.IL2CPP_x86);
+                var xunityRecommended = _versionCacheService.GetLatestXUnityVersion(includePrerelease: false);
+
+                LogService.Instance.Log($"推荐版本: BepInEx={bepinexRecommended?.Version ?? "null"}, XUnity={xunityRecommended?.Version ?? "null"}", LogLevel.Info, "[安装]");
+
+                // 显示推荐的BepInEx版本
+                if (bepinexRecommended != null)
+                {
+                    var bepinexDisplayItem = new VersionDisplayItem
+                    {
+                        VersionInfo = bepinexRecommended,
+                        Display = $"{bepinexRecommended.Version} ({bepinexRecommended.ReleaseDate:yyyy-MM-dd}) [推荐]"
+                    };
+                    BepInExVersionComboBox.ItemsSource = new[] { bepinexDisplayItem };
+                    BepInExVersionComboBox.SelectedIndex = 0;
+                    LogService.Instance.Log($"已设置BepInEx ComboBox: {bepinexDisplayItem.Display}", LogLevel.Info, "[安装]");
+                }
+                else
+                {
+                    BepInExVersionComboBox.ItemsSource = null;
+                    BepInExVersionComboBox.PlaceholderText = $"未找到{selectedPlatform}平台的版本";
+                    LogService.Instance.Log($"未找到{selectedPlatform}平台的BepInEx版本", LogLevel.Warning, "[安装]");
+                }
+
+                // 显示推荐的XUnity版本
+                if (xunityRecommended != null)
+                {
+                    var xunityDisplayItem = new VersionDisplayItem
+                    {
+                        VersionInfo = xunityRecommended,
+                        Display = $"{xunityRecommended.Version} ({xunityRecommended.ReleaseDate:yyyy-MM-dd}) [推荐]"
+                    };
+                    XUnityVersionComboBox.ItemsSource = new[] { xunityDisplayItem };
+                    XUnityVersionComboBox.SelectedIndex = 0;
+                    LogService.Instance.Log($"已设置XUnity ComboBox: {xunityDisplayItem.Display}", LogLevel.Info, "[安装]");
+                }
+                else
+                {
+                    XUnityVersionComboBox.ItemsSource = null;
+                    XUnityVersionComboBox.PlaceholderText = "未找到XUnity版本";
+                    LogService.Instance.Log("未找到XUnity版本", LogLevel.Warning, "[安装]");
+                }
+
+                LogService.Instance.Log("推荐版本加载完成", LogLevel.Info, "[安装]");
+            }
+            catch (Exception ex)
+            {
+                LogService.Instance.Log($"加载推荐版本时发生异常: {ex.Message}", LogLevel.Error, "[安装]");
+                LogService.Instance.Log($"异常堆栈: {ex.StackTrace}", LogLevel.Debug, "[安装]");
+                BepInExVersionComboBox.PlaceholderText = "加载失败";
+                XUnityVersionComboBox.PlaceholderText = "加载失败";
+            }
+            finally
+            {
+                // 隐藏加载指示器
+                BepInExVersionLoadingRing.IsActive = false;
+                BepInExVersionLoadingRing.Visibility = Visibility.Collapsed;
+                XUnityVersionLoadingRing.IsActive = false;
+                XUnityVersionLoadingRing.Visibility = Visibility.Collapsed;
+            }
+        }
+
         private async void StartInstallButton_Click(object sender, RoutedEventArgs e)
         {
             if (_isInstalling)
@@ -267,7 +425,6 @@ namespace XUnity.AutoInstaller.Pages
                     },
                     BackupExisting = BackupCheckBox.IsChecked == true,
                     CleanOldVersion = CleanInstallCheckBox.IsChecked == true,
-                    CreateShortcut = CreateShortcutCheckBox.IsChecked == true,
                     UseRecommendedConfig = AutoConfigCheckBox.IsChecked == true,
                     LaunchGameToGenerateConfig = LaunchGameCheckBox.IsChecked == true,
                     ConfigGenerationTimeout = (int)ConfigTimeoutNumberBox.Value

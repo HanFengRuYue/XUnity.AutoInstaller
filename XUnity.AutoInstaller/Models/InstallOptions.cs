@@ -16,11 +16,6 @@ public class InstallOptions
     public bool CleanOldVersion { get; set; }
 
     /// <summary>
-    /// 是否创建桌面快捷方式
-    /// </summary>
-    public bool CreateShortcut { get; set; }
-
-    /// <summary>
     /// 是否使用推荐配置
     /// </summary>
     public bool UseRecommendedConfig { get; set; } = true;

@@ -116,8 +116,17 @@ The backend follows a service-oriented architecture organized into three main la
 - Card-style UI using `CardBackgroundFillColorDefaultBrush` and `CornerRadius="8"`
 
 **C# Code-Behind**:
-- Page constructors: `InitializeComponent()` → subscribe to events → use `Loaded` event for XAML control access
+- Page constructors: `InitializeComponent()` → subscribe to events → explicitly set control properties → use `Loaded` event for deferred XAML control access
 - **CRITICAL**: Never access XAML controls in constructor before `Loaded` event fires (causes NullReferenceException)
+- **CRITICAL**: WinUI3 RadioButtons - Setting `IsChecked="True"` on a RadioButton does NOT set `RadioButtons.SelectedIndex`. Always explicitly set `SelectedIndex` in constructor:
+  ```csharp
+  public InstallPage()
+  {
+      this.InitializeComponent();
+      // WinUI3 requires explicit SelectedIndex initialization
+      VersionModeRadio.SelectedIndex = 0;  // Even if XAML has IsChecked="True"
+  }
+  ```
 - Use `this.Loaded += OnPageLoaded` pattern to access controls safely after XAML initialization
 - Add null checks in all methods that access XAML controls for defensive programming
 - **Always use `GameStateService.Instance.CurrentGamePath`** for game path access
@@ -133,10 +142,24 @@ The backend follows a service-oriented architecture organized into three main la
 
 **Version Management Pattern**:
 - **Never call GitHub API directly in pages** - always use `VersionCacheService.Instance`
+- **CRITICAL**: Pages must NEVER call `VersionCacheService.RefreshAsync()` - only read from cache
+  - ✅ CORRECT: `_versionCacheService.GetBepInExVersions()` (read from cache)
+  - ❌ WRONG: `await _versionCacheService.RefreshAsync()` (triggers network call)
 - Pages read from cache via `GetBepInExVersions()`, `GetXUnityVersions()`, or helper methods
 - Subscribe to `VersionCacheService.VersionsUpdated` event in page constructors
-- Only `VersionManagementPage` can trigger refresh via `VersionCacheService.RefreshAsync()`
+- **Only `VersionManagementPage` can trigger refresh** via `VersionCacheService.RefreshAsync()` (manual "刷新" button)
 - Cache initialized once in `App.OnLaunched()` via background `InitializeVersionCacheAsync()`
+- If cache not initialized on page load, wait for initialization (max 10s), don't trigger refresh:
+  ```csharp
+  if (!_versionCacheService.IsInitialized)
+  {
+      var startTime = DateTime.Now;
+      while (!_versionCacheService.IsInitialized && (DateTime.Now - startTime).TotalSeconds < 10)
+      {
+          await Task.Delay(500);
+      }
+  }
+  ```
 - **Atom Feed vs API**:
   - Default: `GitHubAtomFeedClient` (no rate limits, no auth required)
   - Token mode: `GitHubApiClient` when user configures GitHub Token (more detailed info)
@@ -276,6 +299,58 @@ private void OnPageLoaded(object sender, RoutedEventArgs e)
 ```
 - Add null checks in all methods accessing XAML controls
 
+**WinUI3 RadioButtons SelectedIndex**:
+- **Problem**: Setting `IsChecked="True"` in XAML doesn't set `RadioButtons.SelectedIndex`, causing conditional logic to fail
+- **Root Cause**: In WinUI3, individual RadioButton's `IsChecked` property is independent of the parent `RadioButtons` container's `SelectedIndex`
+- **Solution**: Always explicitly set `SelectedIndex` in constructor after `InitializeComponent()`
+- **Example**:
+```csharp
+// XAML has: <RadioButton Content="Option 1" IsChecked="True"/>
+// But this is NOT enough!
+
+public MyPage()
+{
+    this.InitializeComponent();
+
+    // REQUIRED: Explicitly set SelectedIndex
+    MyRadioButtons.SelectedIndex = 0;  // Now SelectedIndex == 0
+}
+```
+- **Symptom**: Logs show `SelectedIndex=-1` even with `IsChecked="True"` in XAML
+- **Impact**: Conditional checks like `if (MyRadioButtons.SelectedIndex == 0)` will fail
+
+**Version Cache Refresh in Pages**:
+- **Problem**: Page triggers network refresh on every navigation by calling `VersionCacheService.RefreshAsync()`
+- **Root Cause**: Attempting to ensure data availability, but violates single-refresh architectural principle
+- **Solution**: Pages should only read from cache and wait for initialization, never trigger refresh
+- **Wrong Pattern**:
+```csharp
+// ❌ DO NOT DO THIS in any page except VersionManagementPage
+if (!_versionCacheService.IsInitialized || versionCounts.BepInExCount == 0)
+{
+    await _versionCacheService.RefreshAsync();  // WRONG! Triggers network call
+}
+```
+- **Correct Pattern**:
+```csharp
+// ✅ CORRECT: Wait for initialization, don't trigger refresh
+if (!_versionCacheService.IsInitialized)
+{
+    var startTime = DateTime.Now;
+    while (!_versionCacheService.IsInitialized && (DateTime.Now - startTime).TotalSeconds < 10)
+    {
+        await Task.Delay(500);
+    }
+}
+
+// If still empty after waiting, show message
+if (versionCounts.BepInExCount == 0)
+{
+    ComboBox.PlaceholderText = "缓存为空，请在版本管理页面刷新";
+    return;
+}
+```
+
 **GameStateService Initialization**:
 - `GameStateService.Instance.Initialize()` must be called in `App.OnLaunched()` before window activation
 - Use property assignment (not field) in `Initialize()` to trigger `GamePathChanged` event
@@ -307,31 +382,40 @@ private void OnPageLoaded(object sender, RoutedEventArgs e)
 - `ProgressRing` and `ProgressBar` for loading states
 
 ### Recent Architectural Changes
-1. **Atom Feed Integration** (Latest): Eliminated GitHub API rate limit issues
+1. **WinUI3 RadioButtons Fix** (Latest): Fixed auto-recommended version not displaying in InstallPage
+   - Root cause: `IsChecked="True"` in XAML doesn't set `RadioButtons.SelectedIndex`
+   - Solution: Explicitly set `VersionModeRadio.SelectedIndex = 0` in constructor
+   - Added comprehensive documentation in "Common Pitfalls" section
+2. **Version Cache Refresh Prevention** (Latest): Fixed unwanted network calls on page navigation
+   - Removed `VersionCacheService.RefreshAsync()` call from InstallPage
+   - Pages now only wait for initialization (max 10s), never trigger refresh
+   - Only VersionManagementPage can manually refresh
+   - Enforces single-refresh architectural principle
+3. **Atom Feed Integration**: Eliminated GitHub API rate limit issues
    - New `GitHubAtomFeedClient` fetches from `releases.atom` (no authentication, no limits)
    - Smart mode switching in `VersionService`: Atom feed by default, API when Token configured
    - Automatic fallback: Atom → API on failure
    - Download URL construction from version tags
    - **Result**: Users without Token can refresh versions unlimited times
-2. **Auto-Launch Game for Config Generation**: New `GameLauncherService` automates first-run config generation
+4. **Auto-Launch Game for Config Generation**: New `GameLauncherService` automates first-run config generation
    - Launches game after installation, monitors for BepInEx.cfg and AutoTranslatorConfig.ini
    - Polls every 500ms with file size verification
    - Auto-closes game gracefully or force-kills after 3s
    - Configurable timeout (10-300s) with diagnostic logging on failure
    - Integrated into step 9 of installation flow
-3. **Comprehensive Configuration Editor**: Expanded from basic to complete config coverage
+5. **Comprehensive Configuration Editor**: Expanded from basic to complete config coverage
    - BepInEx: 11→30 properties across 8 sections (Caching, Chainloader, Harmony, Logging, Preloader)
    - XUnity: 34→50+ properties across 12 sections (added Http, Debug, Optimization, Integration, ResourceRedirector, Watson/LingoCloud auth)
    - All UI controls properly wired with correct property names and type mappings
-4. **Version Caching System**: Introduced `VersionCacheService` singleton for global version list caching
+6. **Version Caching System**: Introduced `VersionCacheService` singleton for global version list caching
    - Initialized once at app startup in background (non-blocking)
    - All pages read from cache, preventing redundant fetches
    - Manual refresh only in VersionManagementPage
    - Reduces fetch frequency by 90%+, improves page navigation speed 10x
-5. **Unified Logging System**: All output routed through LogService to dedicated LogPage
-6. **GitHub Token Support**: Optional token configuration switches to API mode (more metadata)
-7. **Translation Services**: Expanded from 6 to 17 endpoints with Tag-based mapping
-8. **IL2CPP Optimization**: Reduced fetch from 5 builds to 1 for faster loading
-9. **Page Initialization**: Fixed NullReferenceException with Loaded event pattern
-10. **Layout Redesign**: VersionManagementPage changed to vertical layout with larger fonts/controls
-11. **ARM64 Removal**: Discontinued from UI (platform filter) due to plugin incompatibility
+7. **Unified Logging System**: All output routed through LogService to dedicated LogPage
+8. **GitHub Token Support**: Optional token configuration switches to API mode (more metadata)
+9. **Translation Services**: Expanded from 6 to 17 endpoints with Tag-based mapping
+10. **IL2CPP Optimization**: Reduced fetch from 5 builds to 1 for faster loading
+11. **Page Initialization**: Fixed NullReferenceException with Loaded event pattern
+12. **Layout Redesign**: VersionManagementPage changed to vertical layout with larger fonts/controls
+13. **ARM64 Removal**: Discontinued from UI (platform filter) due to plugin incompatibility

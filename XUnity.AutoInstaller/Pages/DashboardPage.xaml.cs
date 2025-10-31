@@ -4,7 +4,9 @@ using Windows.Storage.Pickers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
+using XUnity.AutoInstaller.Models;
 using XUnity.AutoInstaller.Services;
 using XUnity.AutoInstaller.Utils;
 
@@ -95,7 +97,7 @@ namespace XUnity.AutoInstaller.Pages
         }
 
 
-        private void QuickInstallButton_Click(object sender, RoutedEventArgs e)
+        private async void QuickInstallButton_Click(object sender, RoutedEventArgs e)
         {
             var gamePath = _gameStateService.CurrentGamePath;
             if (string.IsNullOrEmpty(gamePath))
@@ -107,8 +109,89 @@ namespace XUnity.AutoInstaller.Pages
                 return;
             }
 
-            // 导航到安装页面（不再需要传递参数）
-            Frame.Navigate(typeof(InstallPage));
+            // 直接使用默认选项开始安装
+            await PerformQuickInstallAsync(gamePath);
+        }
+
+        private async Task PerformQuickInstallAsync(string gamePath)
+        {
+            try
+            {
+                // 禁用一键安装按钮，显示进度UI
+                QuickInstallButton.IsEnabled = false;
+                InstallProgressPanel.Visibility = Visibility.Visible;
+                InstallProgressRing.IsActive = true;
+
+                LogService.Instance.Log($"开始一键安装到: {gamePath}", LogLevel.Info, "[首页]");
+
+                // 检测游戏引擎并自动选择平台
+                var gameInfo = GameDetectionService.GetGameInfo(gamePath);
+                var targetPlatform = gameInfo.Engine == GameEngine.UnityIL2CPP ? Platform.IL2CPP_x64 : Platform.x64;
+
+                LogService.Instance.Log($"检测到游戏引擎: {gameInfo.Engine}，目标平台: {targetPlatform}", LogLevel.Info, "[首页]");
+
+                // 创建默认安装选项（自动推荐版本）
+                var options = new InstallOptions
+                {
+                    TargetPlatform = targetPlatform,
+                    BackupExisting = true,
+                    CleanOldVersion = false,
+                    UseRecommendedConfig = true,
+                    LaunchGameToGenerateConfig = true,
+                    ConfigGenerationTimeout = 60,
+                    BepInExVersion = null, // null表示自动选择最新版
+                    XUnityVersion = null
+                };
+
+                // 创建日志记录器
+                var logger = new LogWriter(null, DispatcherQueue);
+
+                // 创建安装服务
+                var installService = new InstallationService(logger);
+
+                // 创建进度报告
+                var progress = new Progress<(int percentage, string message)>(p =>
+                {
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        InstallProgressBar.Value = p.percentage;
+                        ProgressText.Text = p.message;
+                        ProgressPercentText.Text = $"{p.percentage}%";
+                    });
+                });
+
+                // 执行安装
+                var success = await installService.InstallAsync(gamePath, options, progress);
+
+                if (success)
+                {
+                    LogService.Instance.Log("一键安装成功完成！", LogLevel.Info, "[首页]");
+
+                    StatusInfoBar.Severity = InfoBarSeverity.Success;
+                    StatusInfoBar.Title = "成功";
+                    StatusInfoBar.Message = "一键安装完成！您现在可以启动游戏并享受自动翻译功能。";
+                    StatusInfoBar.IsOpen = true;
+
+                    // 刷新状态显示
+                    RefreshStatus();
+                }
+            }
+            catch (Exception ex)
+            {
+                LogService.Instance.Log($"一键安装失败: {ex.Message}", LogLevel.Error, "[首页]");
+
+                StatusInfoBar.Severity = InfoBarSeverity.Error;
+                StatusInfoBar.Title = "错误";
+                StatusInfoBar.Message = $"一键安装失败: {ex.Message}";
+                StatusInfoBar.IsOpen = true;
+            }
+            finally
+            {
+                // 恢复UI状态
+                QuickInstallButton.IsEnabled = true;
+                InstallProgressRing.IsActive = false;
+                // 保持进度面板可见以便用户查看完成状态
+            }
         }
 
         private void OpenGameFolderButton_Click(object sender, RoutedEventArgs e)

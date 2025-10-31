@@ -167,7 +167,10 @@ namespace XUnity.AutoInstaller.Services
                 foreach (var (arch, platform) in architectures)
                 {
                     var fileName = $"BepInEx-Unity.IL2CPP-{arch}-{version}.zip";
-                    var downloadUrl = $"{BuildsBaseUrl}/projects/bepinex_be/{buildNumber}/{Uri.EscapeDataString(fileName)}";
+                    // 不使用 Uri.EscapeDataString，因为 builds.bepinex.dev 期望原始文件名
+                    // 只需要对空格进行编码（如果有的话）
+                    var encodedFileName = fileName.Replace(" ", "%20");
+                    var downloadUrl = $"{BuildsBaseUrl}/projects/bepinex_be/{buildNumber}/{encodedFileName}";
 
                     // 尝试获取文件大小（通过 HEAD 请求）
                     long fileSize = 0;

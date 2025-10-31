@@ -117,31 +117,73 @@ public class GameDetectionService
     {
         try
         {
-            // 方法 1: 从 BepInEx.dll 读取文件版本
-            var bepinexDll = Path.Combine(PathHelper.GetBepInExCorePath(gamePath), "BepInEx.dll");
+            var bepinexPath = PathHelper.GetBepInExPath(gamePath);
+            var corePath = PathHelper.GetBepInExCorePath(gamePath);
+
+            LogService.Instance.Log($"开始检测BepInEx版本，路径: {bepinexPath}", LogLevel.Debug, "[GameDetection]");
+
+            // 检测游戏引擎类型以判断是否为IL2CPP
+            var gameEngine = DetectGameEngine(gamePath);
+            LogService.Instance.Log($"检测到游戏引擎: {gameEngine}", LogLevel.Debug, "[GameDetection]");
+
+            // IL2CPP版本：搜索IL2CPP特征文件
+            if (gameEngine == GameEngine.UnityIL2CPP)
+            {
+                LogService.Instance.Log("检测为IL2CPP游戏，搜索IL2CPP BepInEx文件...", LogLevel.Debug, "[GameDetection]");
+
+                // 搜索多个可能的位置
+                var il2cppPossiblePaths = new[]
+                {
+                    Path.Combine(corePath, "BepInEx.IL2CPP.dll"),
+                    Path.Combine(corePath, "BepInEx.Unity.IL2CPP.dll"),
+                    Path.Combine(bepinexPath, "unity-libs", "BepInEx.IL2CPP.dll"),
+                    Path.Combine(bepinexPath, "BepInEx.IL2CPP.dll")
+                };
+
+                foreach (var il2cppPath in il2cppPossiblePaths)
+                {
+                    if (File.Exists(il2cppPath))
+                    {
+                        LogService.Instance.Log($"找到IL2CPP DLL: {il2cppPath}", LogLevel.Info, "[GameDetection]");
+                        return "IL2CPP (Bleeding Edge)";
+                    }
+                }
+
+                LogService.Instance.Log("未找到IL2CPP DLL文件", LogLevel.Warning, "[GameDetection]");
+            }
+
+            // Mono版本：从 BepInEx.dll 读取文件版本
+            var bepinexDll = Path.Combine(corePath, "BepInEx.dll");
+            LogService.Instance.Log($"检查Mono DLL: {bepinexDll}", LogLevel.Debug, "[GameDetection]");
+
             if (File.Exists(bepinexDll))
             {
                 var versionInfo = FileVersionInfo.GetVersionInfo(bepinexDll);
                 if (!string.IsNullOrEmpty(versionInfo.ProductVersion))
                 {
+                    LogService.Instance.Log($"从DLL读取到版本: {versionInfo.ProductVersion}", LogLevel.Info, "[GameDetection]");
                     return versionInfo.ProductVersion;
                 }
             }
 
-            // 方法 2: 从 changelog.txt 读取版本
-            var changelogPath = Path.Combine(PathHelper.GetBepInExPath(gamePath), "changelog.txt");
+            // 从 changelog.txt 读取版本（备用方法）
+            var changelogPath = Path.Combine(bepinexPath, "changelog.txt");
             if (File.Exists(changelogPath))
             {
                 var firstLine = File.ReadLines(changelogPath).FirstOrDefault();
                 if (!string.IsNullOrEmpty(firstLine))
                 {
+                    LogService.Instance.Log($"从changelog读取到版本: {firstLine.Trim()}", LogLevel.Info, "[GameDetection]");
                     return firstLine.Trim();
                 }
             }
+
+            LogService.Instance.Log("所有检测方法均未找到版本信息", LogLevel.Warning, "[GameDetection]");
         }
-        catch
+        catch (Exception ex)
         {
-            // 忽略错误
+            LogService.Instance.Log($"检测BepInEx版本时发生异常: {ex.Message}", LogLevel.Error, "[GameDetection]");
+            LogService.Instance.Log($"异常堆栈: {ex.StackTrace}", LogLevel.Debug, "[GameDetection]");
         }
 
         return "Unknown";

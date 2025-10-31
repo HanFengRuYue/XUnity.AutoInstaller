@@ -12,7 +12,7 @@
         <StackPanel Spacing="24" Margin="24">
             <!-- 页面标题 -->
             <TextBlock
-                Text="自动安装"
+                Text="安装配置"
                 Style="{StaticResource TitleTextBlockStyle}"/>
 
             <!-- 版本选择区 -->
@@ -110,9 +110,6 @@
                         <CheckBox
                             x:Name="CleanInstallCheckBox"
                             Content="清理旧版本后安装"/>
-                        <CheckBox
-                            x:Name="CreateShortcutCheckBox"
-                            Content="创建配置文件快捷方式"/>
                         <CheckBox
                             x:Name="AutoConfigCheckBox"
                             Content="使用推荐配置"

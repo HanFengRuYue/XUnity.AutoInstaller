@@ -39,14 +39,14 @@ namespace XUnity.AutoInstaller.Pages
         {
             base.OnNavigatedTo(e);
 
-            // Load from GameStateService and cache
-            if (_gameStateService.HasValidGamePath())
-            {
-                _ = LoadDataAsync();
-            }
-
             // 从缓存加载版本列表（不触发 API 调用）
             LoadVersionsFromCache();
+
+            // 加载已安装版本信息
+            if (_gameStateService.HasValidGamePath())
+            {
+                _ = RefreshInstalledVersions();
+            }
         }
 
         /// <summary>
@@ -79,15 +79,10 @@ namespace XUnity.AutoInstaller.Pages
             {
                 if (!string.IsNullOrEmpty(gamePath))
                 {
-                    _ = LoadDataAsync();
+                    // 只刷新已安装版本，不刷新可用版本列表（从缓存加载即可）
+                    _ = RefreshInstalledVersions();
                 }
             });
-        }
-
-        private async Task LoadDataAsync()
-        {
-            await RefreshInstalledVersions();
-            await RefreshAvailableVersions();
         }
 
         private async void RefreshInstalledButton_Click(object sender, RoutedEventArgs e)

@@ -57,16 +57,19 @@
                         </Button.Content>
                     </Button>
 
-                    <ComboBox x:Name="LogLevelFilterComboBox"
-                              Header="日志级别"
-                              Width="150"
-                              SelectionChanged="LogLevelFilterComboBox_SelectionChanged">
-                        <ComboBoxItem Content="全部" IsSelected="True"/>
-                        <ComboBoxItem Content="DEBUG"/>
-                        <ComboBoxItem Content="INFO"/>
-                        <ComboBoxItem Content="WARN"/>
-                        <ComboBoxItem Content="ERROR"/>
-                    </ComboBox>
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <TextBlock Text="日志级别:" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="LogLevelFilterComboBox"
+                                  Width="120"
+                                  VerticalAlignment="Center"
+                                  SelectionChanged="LogLevelFilterComboBox_SelectionChanged">
+                            <ComboBoxItem Content="全部" IsSelected="True"/>
+                            <ComboBoxItem Content="DEBUG"/>
+                            <ComboBoxItem Content="INFO"/>
+                            <ComboBoxItem Content="WARN"/>
+                            <ComboBoxItem Content="ERROR"/>
+                        </ComboBox>
+                    </StackPanel>
 
                     <CheckBox x:Name="AutoScrollCheckBox"
                               Content="自动滚动到底部"

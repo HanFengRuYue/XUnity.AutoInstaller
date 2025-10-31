@@ -104,20 +104,6 @@ public class InstallationService
                 }
             }
 
-            // 9. 创建快捷方式
-            if (options.CreateShortcut && !string.IsNullOrEmpty(gameInfo.ExecutablePath))
-            {
-                progress?.Report((96, "创建快捷方式..."));
-                try
-                {
-                    FileSystemService.CreateDesktopShortcut(gameInfo.ExecutablePath, gameInfo.Name);
-                }
-                catch (Exception ex)
-                {
-                    _logger?.Warning($"创建快捷方式失败: {ex.Message}");
-                }
-            }
-
             progress?.Report((100, "安装完成!"));
             _logger?.Success("安装流程完成");
             return true;
