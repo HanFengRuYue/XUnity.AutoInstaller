@@ -323,6 +323,83 @@ namespace XUnity.AutoInstaller.Pages
             OutputUntranslatableTextToggle.IsOn = config.BehaviourOutputUntranslatableText;
             TranslationDelayNumber.Value = config.BehaviourDelay;
 
+            // Behaviour扩展 - 新增项
+            OverrideFontTextMeshProTextBox.Text = config.BehaviourOverrideFontTextMeshPro;
+            FallbackFontTextMeshProTextBox.Text = config.BehaviourFallbackFontTextMeshPro;
+            MaxClipboardCopyCharactersNumber.Value = config.BehaviourMaxClipboardCopyCharacters;
+            ClipboardDebounceTimeNumber.Value = config.BehaviourClipboardDebounceTime;
+            ForceUIResizingToggle.IsOn = config.BehaviourForceUIResizing;
+            ResizeUILineSpacingScaleTextBox.Text = config.BehaviourResizeUILineSpacingScale;
+            ForceSplitTextAfterCharactersNumber.Value = config.BehaviourForceSplitTextAfterCharacters;
+            IgnoreWhitespaceInNGUIToggle.IsOn = config.BehaviourIgnoreWhitespaceInNGUI;
+
+            // Behaviour高级后处理
+            RomajiPostProcessingTextBox.Text = config.BehaviourRomajiPostProcessing;
+            TranslationPostProcessingTextBox.Text = config.BehaviourTranslationPostProcessing;
+            RegexPostProcessingTextBox.Text = config.BehaviourRegexPostProcessing;
+            GameLogTextPathsTextBox.Text = config.BehaviourGameLogTextPaths;
+            CacheRegexLookupsToggle.IsOn = config.BehaviourCacheRegexLookups;
+            CacheWhitespaceDifferencesToggle.IsOn = config.BehaviourCacheWhitespaceDifferences;
+            CacheRegexPatternResultsToggle.IsOn = config.BehaviourCacheRegexPatternResults;
+            GenerateStaticSubstitutionTranslationsToggle.IsOn = config.BehaviourGenerateStaticSubstitutionTranslations;
+            GeneratePartialTranslationsToggle.IsOn = config.BehaviourGeneratePartialTranslations;
+            EnableSilentModeToggle.IsOn = config.BehaviourEnableSilentMode;
+            BlacklistedIMGUIPluginsTextBox.Text = config.BehaviourBlacklistedIMGUIPlugins;
+            IgnoreVirtualTextSetterCallingRulesToggle.IsOn = config.BehaviourIgnoreVirtualTextSetterCallingRules;
+            OutputTooLongTextToggle.IsOn = config.BehaviourOutputTooLongText;
+
+            // PersistRichTextMode ComboBox
+            PersistRichTextModeComboBox.SelectedIndex = config.BehaviourPersistRichTextMode switch
+            {
+                "None" => 0,
+                "Restored" => 1,
+                "Final" => 2,
+                _ => 2
+            };
+
+            // Behaviour开发者选项
+            EnableTranslationHelperToggle.IsOn = config.BehaviourEnableTranslationHelper;
+            ForceMonoModHooksToggle.IsOn = config.BehaviourForceMonoModHooks;
+            InitializeHarmonyDetourBridgeToggle.IsOn = config.BehaviourInitializeHarmonyDetourBridge;
+            RedirectedResourceDetectionStrategyTextBox.Text = config.BehaviourRedirectedResourceDetectionStrategy;
+
+            // Texture扩展选项
+            EnableTextureTogglingToggle.IsOn = config.TextureEnableTextureToggling;
+            EnableTextureScanOnSceneLoadToggle.IsOn = config.TextureEnableTextureScanOnSceneLoad;
+            EnableSpriteRendererHookingToggle.IsOn = config.TextureEnableSpriteRendererHooking;
+            LoadUnmodifiedTexturesToggle.IsOn = config.TextureLoadUnmodifiedTextures;
+            DetectDuplicateTextureNamesToggle.IsOn = config.TextureDetectDuplicateTextureNames;
+            DuplicateTextureNamesTextBox.Text = config.TextureDuplicateTextureNames;
+            EnableLegacyTextureLoadingToggle.IsOn = config.TextureEnableLegacyTextureLoading;
+            CacheTexturesInMemoryToggle.IsOn = config.TextureCacheTexturesInMemory;
+
+            // ResourceRedirector扩展选项
+            PreferredStoragePathTextBox.Text = config.ResourceRedirectorPreferredStoragePath;
+            EnableTextAssetRedirectorToggle.IsOn = config.ResourceRedirectorEnableTextAssetRedirector;
+            LogAllLoadedResourcesToggle.IsOn = config.ResourceRedirectorLogAllLoadedResources;
+            ResourceRedirectorEnableDumpingToggle.IsOn = config.ResourceRedirectorEnableDumping;
+            CacheMetadataForAllFilesToggle.IsOn = config.ResourceRedirectorCacheMetadataForAllFiles;
+
+            // Authentication扩展
+            WatsonUrlTextBox.Text = config.WatsonUrl;
+            DeepLFreeToggle.IsOn = config.DeepLLegitimateFree;
+
+            // 翻译服务高级配置
+            GoogleServiceUrlTextBox.Text = config.GoogleServiceUrl;
+            DeepLMinDelayNumber.Value = config.DeepLMinDelay;
+            DeepLMaxDelayNumber.Value = config.DeepLMaxDelay;
+            CustomUrlTextBox.Text = config.CustomUrl;
+            LecPowerTranslator15InstallationPathTextBox.Text = config.LecPowerTranslator15InstallationPath;
+
+            // Translation Aggregator
+            TranslationAggregatorWidthNumber.Value = config.TranslationAggregatorWidth;
+            TranslationAggregatorHeightNumber.Value = config.TranslationAggregatorHeight;
+            EnabledTranslatorsTextBox.Text = config.TranslationAggregatorEnabledTranslators;
+
+            // Migrations
+            MigrationsEnableToggle.IsOn = config.MigrationsEnable;
+            MigrationsTagTextBox.Text = config.MigrationsTag;
+
             // Http
             HttpUserAgentTextBox.Text = config.HttpUserAgent;
             DisableCertificateChecksToggle.IsOn = config.HttpDisableCertificateChecks;
@@ -514,6 +591,83 @@ namespace XUnity.AutoInstaller.Pages
                 BehaviourOutputUntranslatableText = OutputUntranslatableTextToggle.IsOn,
                 BehaviourDelay = (int)TranslationDelayNumber.Value,
 
+                // Behaviour扩展 - 新增项
+                BehaviourOverrideFontTextMeshPro = OverrideFontTextMeshProTextBox.Text,
+                BehaviourFallbackFontTextMeshPro = FallbackFontTextMeshProTextBox.Text,
+                BehaviourMaxClipboardCopyCharacters = (int)MaxClipboardCopyCharactersNumber.Value,
+                BehaviourClipboardDebounceTime = (float)ClipboardDebounceTimeNumber.Value,
+                BehaviourForceUIResizing = ForceUIResizingToggle.IsOn,
+                BehaviourResizeUILineSpacingScale = ResizeUILineSpacingScaleTextBox.Text,
+                BehaviourForceSplitTextAfterCharacters = (int)ForceSplitTextAfterCharactersNumber.Value,
+                BehaviourIgnoreWhitespaceInNGUI = IgnoreWhitespaceInNGUIToggle.IsOn,
+
+                // Behaviour高级后处理
+                BehaviourRomajiPostProcessing = RomajiPostProcessingTextBox.Text,
+                BehaviourTranslationPostProcessing = TranslationPostProcessingTextBox.Text,
+                BehaviourRegexPostProcessing = RegexPostProcessingTextBox.Text,
+                BehaviourGameLogTextPaths = GameLogTextPathsTextBox.Text,
+                BehaviourCacheRegexLookups = CacheRegexLookupsToggle.IsOn,
+                BehaviourCacheWhitespaceDifferences = CacheWhitespaceDifferencesToggle.IsOn,
+                BehaviourCacheRegexPatternResults = CacheRegexPatternResultsToggle.IsOn,
+                BehaviourGenerateStaticSubstitutionTranslations = GenerateStaticSubstitutionTranslationsToggle.IsOn,
+                BehaviourGeneratePartialTranslations = GeneratePartialTranslationsToggle.IsOn,
+                BehaviourEnableSilentMode = EnableSilentModeToggle.IsOn,
+                BehaviourBlacklistedIMGUIPlugins = BlacklistedIMGUIPluginsTextBox.Text,
+                BehaviourIgnoreVirtualTextSetterCallingRules = IgnoreVirtualTextSetterCallingRulesToggle.IsOn,
+                BehaviourOutputTooLongText = OutputTooLongTextToggle.IsOn,
+
+                // PersistRichTextMode
+                BehaviourPersistRichTextMode = PersistRichTextModeComboBox.SelectedIndex switch
+                {
+                    0 => "None",
+                    1 => "Restored",
+                    2 => "Final",
+                    _ => "Final"
+                },
+
+                // Behaviour开发者选项
+                BehaviourEnableTranslationHelper = EnableTranslationHelperToggle.IsOn,
+                BehaviourForceMonoModHooks = ForceMonoModHooksToggle.IsOn,
+                BehaviourInitializeHarmonyDetourBridge = InitializeHarmonyDetourBridgeToggle.IsOn,
+                BehaviourRedirectedResourceDetectionStrategy = RedirectedResourceDetectionStrategyTextBox.Text,
+
+                // Texture扩展选项
+                TextureEnableTextureToggling = EnableTextureTogglingToggle.IsOn,
+                TextureEnableTextureScanOnSceneLoad = EnableTextureScanOnSceneLoadToggle.IsOn,
+                TextureEnableSpriteRendererHooking = EnableSpriteRendererHookingToggle.IsOn,
+                TextureLoadUnmodifiedTextures = LoadUnmodifiedTexturesToggle.IsOn,
+                TextureDetectDuplicateTextureNames = DetectDuplicateTextureNamesToggle.IsOn,
+                TextureDuplicateTextureNames = DuplicateTextureNamesTextBox.Text,
+                TextureEnableLegacyTextureLoading = EnableLegacyTextureLoadingToggle.IsOn,
+                TextureCacheTexturesInMemory = CacheTexturesInMemoryToggle.IsOn,
+
+                // ResourceRedirector扩展选项
+                ResourceRedirectorPreferredStoragePath = PreferredStoragePathTextBox.Text,
+                ResourceRedirectorEnableTextAssetRedirector = EnableTextAssetRedirectorToggle.IsOn,
+                ResourceRedirectorLogAllLoadedResources = LogAllLoadedResourcesToggle.IsOn,
+                ResourceRedirectorEnableDumping = ResourceRedirectorEnableDumpingToggle.IsOn,
+                ResourceRedirectorCacheMetadataForAllFiles = CacheMetadataForAllFilesToggle.IsOn,
+
+                // Authentication扩展
+                WatsonUrl = WatsonUrlTextBox.Text,
+                DeepLLegitimateFree = DeepLFreeToggle.IsOn,
+
+                // 翻译服务高级配置
+                GoogleServiceUrl = GoogleServiceUrlTextBox.Text,
+                DeepLMinDelay = (int)DeepLMinDelayNumber.Value,
+                DeepLMaxDelay = (int)DeepLMaxDelayNumber.Value,
+                CustomUrl = CustomUrlTextBox.Text,
+                LecPowerTranslator15InstallationPath = LecPowerTranslator15InstallationPathTextBox.Text,
+
+                // Translation Aggregator
+                TranslationAggregatorWidth = (int)TranslationAggregatorWidthNumber.Value,
+                TranslationAggregatorHeight = (int)TranslationAggregatorHeightNumber.Value,
+                TranslationAggregatorEnabledTranslators = EnabledTranslatorsTextBox.Text,
+
+                // Migrations
+                MigrationsEnable = MigrationsEnableToggle.IsOn,
+                MigrationsTag = MigrationsTagTextBox.Text,
+
                 // Http
                 HttpUserAgent = HttpUserAgentTextBox.Text,
                 HttpDisableCertificateChecks = DisableCertificateChecksToggle.IsOn,
@@ -680,6 +834,29 @@ namespace XUnity.AutoInstaller.Pages
                 if (folder != null)
                 {
                     TextureDirectoryTextBox.Text = folder.Path;
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError($"选择文件夹失败: {ex.Message}");
+            }
+        }
+
+        private async void BrowseLecPathButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var picker = new FolderPicker();
+                picker.SuggestedStartLocation = PickerLocationId.ComputerFolder;
+                picker.FileTypeFilter.Add("*");
+
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+                WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+                var folder = await picker.PickSingleFolderAsync();
+                if (folder != null)
+                {
+                    LecPowerTranslator15InstallationPathTextBox.Text = folder.Path;
                 }
             }
             catch (Exception ex)

@@ -833,6 +833,93 @@
                                         <ComboBoxItem Content="FromImageData"/>
                                     </ComboBox>
                                 </StackPanel>
+
+                                <!-- 纹理扩展选项 -->
+                                <TextBlock Text="纹理扩展选项" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,0"/>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="启用纹理切换 (Enable Texture Toggling)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="允许运行时切换原始纹理和翻译纹理"
+                                        FontSize="12"
+                                        Opacity="0.7"
+                                        TextWrapping="Wrap"/>
+                                    <ToggleSwitch
+                                        x:Name="EnableTextureTogglingToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="场景加载时扫描纹理 (Enable Texture Scan On Scene Load)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="EnableTextureScanOnSceneLoadToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="启用 SpriteRenderer 钩子 (Enable SpriteRenderer Hooking)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="EnableSpriteRendererHookingToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="加载未修改的纹理 (Load Unmodified Textures)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="LoadUnmodifiedTexturesToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="检测重复纹理名称 (Detect Duplicate Texture Names)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="DetectDuplicateTextureNamesToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="重复纹理名称列表 (Duplicate Texture Names)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="分号分隔的纹理名称"
+                                        FontSize="12"
+                                        Opacity="0.7"/>
+                                    <TextBox
+                                        x:Name="DuplicateTextureNamesTextBox"
+                                        PlaceholderText="texture1;texture2"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="启用旧版纹理加载 (Enable Legacy Texture Loading)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="EnableLegacyTextureLoadingToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="在内存中缓存纹理 (Cache Textures In Memory)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="提高性能但会占用更多内存"
+                                        FontSize="12"
+                                        Opacity="0.7"/>
+                                    <ToggleSwitch
+                                        x:Name="CacheTexturesInMemoryToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="True"/>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
                     </Expander>
@@ -901,6 +988,307 @@
                                         Minimum="0"
                                         Maximum="5000"
                                         SpinButtonPlacementMode="Inline"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <!-- 字体配置 -->
+                                <TextBlock Text="字体配置" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,0"/>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="TextMeshPro 字体覆盖 (Override Font TextMeshPro)" FontWeight="SemiBold"/>
+                                    <TextBox
+                                        x:Name="OverrideFontTextMeshProTextBox"
+                                        PlaceholderText="例如: Arial SDF"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="TextMeshPro 备用字体 (Fallback Font TextMeshPro)" FontWeight="SemiBold"/>
+                                    <TextBox
+                                        x:Name="FallbackFontTextMeshProTextBox"
+                                        PlaceholderText="例如: LiberationSans SDF"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <!-- 剪贴板配置 -->
+                                <TextBlock Text="剪贴板配置" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,0"/>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="剪贴板最大字符数 (Max Clipboard Copy Characters)" FontWeight="SemiBold"/>
+                                    <NumberBox
+                                        x:Name="MaxClipboardCopyCharactersNumber"
+                                        Value="450"
+                                        Minimum="1"
+                                        Maximum="10000"
+                                        SpinButtonPlacementMode="Inline"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="剪贴板防抖延迟（秒）(Clipboard Debounce Time)" FontWeight="SemiBold"/>
+                                    <NumberBox
+                                        x:Name="ClipboardDebounceTimeNumber"
+                                        Value="1.25"
+                                        Minimum="0"
+                                        Maximum="10"
+                                        SpinButtonPlacementMode="Inline"
+                                        SmallChange="0.1"
+                                        LargeChange="0.5"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <!-- UI调整配置 -->
+                                <TextBlock Text="UI 调整配置" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,0"/>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="强制 UI 调整 (Force UI Resizing)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="ForceUIResizingToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="True"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="行间距缩放比例 (Resize UI Line Spacing Scale)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="留空使用默认值"
+                                        FontSize="12"
+                                        Opacity="0.7"/>
+                                    <TextBox
+                                        x:Name="ResizeUILineSpacingScaleTextBox"
+                                        PlaceholderText="例如: 1.1"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="指定字符后强制换行 (Force Split Text After Characters)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="0 表示禁用"
+                                        FontSize="12"
+                                        Opacity="0.7"/>
+                                    <NumberBox
+                                        x:Name="ForceSplitTextAfterCharactersNumber"
+                                        Value="0"
+                                        Minimum="0"
+                                        Maximum="1000"
+                                        SpinButtonPlacementMode="Inline"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <!-- NGUI配置 -->
+                                <TextBlock Text="NGUI 配置" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,0"/>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="NGUI 中忽略空格 (Ignore Whitespace In NGUI)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="IgnoreWhitespaceInNGUIToggle"
+                                        OnContent="忽略"
+                                        OffContent="保留"
+                                        IsOn="True"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Expander>
+
+                    <!-- Behaviour 高级后处理和缓存（开发者选项） -->
+                    <Expander
+                        Header="Behaviour 高级后处理和缓存（开发者选项）"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch">
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="0,0,8,8"
+                            Padding="20"
+                            HorizontalAlignment="Stretch">
+                            <StackPanel Spacing="16" HorizontalAlignment="Stretch">
+                                <TextBlock
+                                    Text="⚠️ 这些是高级后处理选项，通常不需要修改"
+                                    Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                                    FontSize="12"
+                                    TextWrapping="Wrap"/>
+
+                                <!-- 后处理规则 -->
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="罗马字后处理 (Romaji Post Processing)" FontWeight="SemiBold"/>
+                                    <TextBox
+                                        x:Name="RomajiPostProcessingTextBox"
+                                        PlaceholderText="默认: ReplaceMacronWithCircumflex;RemoveApostrophes;ReplaceHtmlEntities"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="翻译后处理 (Translation Post Processing)" FontWeight="SemiBold"/>
+                                    <TextBox
+                                        x:Name="TranslationPostProcessingTextBox"
+                                        PlaceholderText="默认: ReplaceMacronWithCircumflex;ReplaceHtmlEntities"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="正则表达式后处理 (Regex Post Processing)" FontWeight="SemiBold"/>
+                                    <TextBox
+                                        x:Name="RegexPostProcessingTextBox"
+                                        PlaceholderText="默认: None"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="游戏日志组件路径 (Game Log Text Paths)" FontWeight="SemiBold"/>
+                                    <TextBox
+                                        x:Name="GameLogTextPathsTextBox"
+                                        PlaceholderText="分号分隔的组件路径"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <!-- 缓存选项 -->
+                                <TextBlock Text="缓存选项" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,0"/>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="缓存正则表达式查询 (Cache Regex Lookups)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="CacheRegexLookupsToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="缓存空格差异 (Cache Whitespace Differences)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="CacheWhitespaceDifferencesToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="缓存正则表达式模式结果 (Cache Regex Pattern Results)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="CacheRegexPatternResultsToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <!-- 生成选项 -->
+                                <TextBlock Text="生成选项" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,0"/>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="生成静态替换翻译 (Generate Static Substitution Translations)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="GenerateStaticSubstitutionTranslationsToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="生成部分翻译 (Generate Partial Translations)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="GeneratePartialTranslationsToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <!-- 其他高级选项 -->
+                                <TextBlock Text="其他高级选项" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,0"/>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="富文本持久化模式 (Persist Rich Text Mode)" FontWeight="SemiBold"/>
+                                    <ComboBox
+                                        x:Name="PersistRichTextModeComboBox"
+                                        HorizontalAlignment="Stretch"
+                                        SelectedIndex="2">
+                                        <ComboBoxItem Content="None"/>
+                                        <ComboBoxItem Content="Restored"/>
+                                        <ComboBoxItem Content="Final（推荐）"/>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="静默模式 (Enable Silent Mode)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="减少日志输出"
+                                        FontSize="12"
+                                        Opacity="0.7"/>
+                                    <ToggleSwitch
+                                        x:Name="EnableSilentModeToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="IMGUI 黑名单插件 (Blacklisted IMGUI Plugins)" FontWeight="SemiBold"/>
+                                    <TextBox
+                                        x:Name="BlacklistedIMGUIPluginsTextBox"
+                                        PlaceholderText="分号分隔的插件名称"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="忽略虚拟文本设置器调用规则 (Ignore Virtual Text Setter Calling Rules)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="IgnoreVirtualTextSetterCallingRulesToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="输出过长文本 (Output Too Long Text)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="OutputTooLongTextToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <!-- 开发者调试选项 -->
+                                <TextBlock Text="开发者调试选项" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,0"/>
+
+                                <TextBlock
+                                    Text="⚠️ 警告: 以下选项仅供插件开发者使用，不当使用可能导致游戏崩溃"
+                                    Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                                    FontSize="12"
+                                    TextWrapping="Wrap"/>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="启用翻译助手日志 (Enable Translation Helper)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="EnableTranslationHelperToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="强制使用 MonoMod 钩子 (Force MonoMod Hooks)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="ForceMonoModHooksToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="初始化 Harmony 迂回网桥 (Initialize Harmony Detour Bridge)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="InitializeHarmonyDetourBridgeToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="重定向资源检测策略 (Redirected Resource Detection Strategy)" FontWeight="SemiBold"/>
+                                    <TextBox
+                                        x:Name="RedirectedResourceDetectionStrategyTextBox"
+                                        PlaceholderText="默认: AppendMongolianVowelSeparatorAndRemoveAll"
                                         HorizontalAlignment="Stretch"/>
                                 </StackPanel>
                             </StackPanel>
@@ -1132,6 +1520,57 @@
                                         OffContent="已禁用"
                                         IsOn="False"/>
                                 </StackPanel>
+
+                                <!-- ResourceRedirector 扩展选项 -->
+                                <TextBlock Text="资源重定向扩展选项" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,0"/>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="重定向资源存储路径 (Preferred Storage Path)" FontWeight="SemiBold"/>
+                                    <TextBox
+                                        x:Name="PreferredStoragePathTextBox"
+                                        PlaceholderText="Translation\{Lang}\RedirectedResources"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="启用 TextAsset 重定向 (Enable TextAsset Redirector)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="EnableTextAssetRedirectorToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="记录所有加载的资源 (Log All Loaded Resources)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="用于调试，会产生大量日志"
+                                        FontSize="12"
+                                        Opacity="0.7"/>
+                                    <ToggleSwitch
+                                        x:Name="LogAllLoadedResourcesToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="启用资源导出 (Enable Dumping)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="ResourceRedirectorEnableDumpingToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="False"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="缓存所有文件的元数据 (Cache Metadata For All Files)" FontWeight="SemiBold"/>
+                                    <ToggleSwitch
+                                        x:Name="CacheMetadataForAllFilesToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="True"/>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
                     </Expander>
@@ -1216,6 +1655,207 @@
                                     <TextBox
                                         x:Name="LingoCloudTokenTextBox"
                                         PlaceholderText="输入彩云小译API Token"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Watson URL" FontWeight="SemiBold"/>
+                                    <TextBox
+                                        x:Name="WatsonUrlTextBox"
+                                        PlaceholderText="输入IBM Watson Translation服务URL"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="DeepL 免费计划 (DeepL Free)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="使用DeepL免费API而非专业版"
+                                        FontSize="12"
+                                        Opacity="0.7"/>
+                                    <ToggleSwitch
+                                        x:Name="DeepLFreeToggle"
+                                        OnContent="免费版"
+                                        OffContent="专业版"
+                                        IsOn="False"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Expander>
+
+                    <!-- 翻译服务高级配置 -->
+                    <Expander
+                        Header="翻译服务高级配置"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch">
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="0,0,8,8"
+                            Padding="20"
+                            HorizontalAlignment="Stretch">
+                            <StackPanel Spacing="16" HorizontalAlignment="Stretch">
+                                <!-- Google配置 -->
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Google 自定义服务 URL" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="自定义Google翻译API端点（留空使用默认）"
+                                        FontSize="12"
+                                        Opacity="0.7"
+                                        TextWrapping="Wrap"/>
+                                    <TextBox
+                                        x:Name="GoogleServiceUrlTextBox"
+                                        PlaceholderText="例如: https://translate.googleapis.com"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <!-- DeepL延迟配置 -->
+                                <TextBlock Text="DeepL 速率限制配置" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,0"/>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="DeepL 最小延迟（秒）(Min Delay)" FontWeight="SemiBold"/>
+                                    <NumberBox
+                                        x:Name="DeepLMinDelayNumber"
+                                        Value="2"
+                                        Minimum="0"
+                                        Maximum="60"
+                                        SpinButtonPlacementMode="Inline"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="DeepL 最大延迟（秒）(Max Delay)" FontWeight="SemiBold"/>
+                                    <NumberBox
+                                        x:Name="DeepLMaxDelayNumber"
+                                        Value="7"
+                                        Minimum="0"
+                                        Maximum="60"
+                                        SpinButtonPlacementMode="Inline"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <!-- Custom翻译服务 -->
+                                <TextBlock Text="自定义翻译服务" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,0"/>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="自定义翻译服务 URL (Custom URL)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="使用CustomTranslate端点时需要配置"
+                                        FontSize="12"
+                                        Opacity="0.7"/>
+                                    <TextBox
+                                        x:Name="CustomUrlTextBox"
+                                        PlaceholderText="输入自定义翻译API地址"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <!-- LecPowerTranslator15 -->
+                                <TextBlock Text="本地翻译软件配置" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,0"/>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="LecPowerTranslator15 安装路径" FontWeight="SemiBold"/>
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox
+                                            x:Name="LecPowerTranslator15InstallationPathTextBox"
+                                            Grid.Column="0"
+                                            PlaceholderText="C:\Program Files\LecPowerTranslator15"
+                                            HorizontalAlignment="Stretch"/>
+                                        <Button
+                                            Grid.Column="1"
+                                            Content="浏览"
+                                            Click="BrowseLecPathButton_Click"/>
+                                    </Grid>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Expander>
+
+                    <!-- Translation Aggregator 翻译聚合器 -->
+                    <Expander
+                        Header="Translation Aggregator 翻译聚合器配置"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch">
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="0,0,8,8"
+                            Padding="20"
+                            HorizontalAlignment="Stretch">
+                            <StackPanel Spacing="16" HorizontalAlignment="Stretch">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="窗口宽度 (Width)" FontWeight="SemiBold"/>
+                                    <NumberBox
+                                        x:Name="TranslationAggregatorWidthNumber"
+                                        Value="400"
+                                        Minimum="200"
+                                        Maximum="2000"
+                                        SpinButtonPlacementMode="Inline"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="窗口高度 (Height)" FontWeight="SemiBold"/>
+                                    <NumberBox
+                                        x:Name="TranslationAggregatorHeightNumber"
+                                        Value="100"
+                                        Minimum="50"
+                                        Maximum="1000"
+                                        SpinButtonPlacementMode="Inline"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="启用的翻译器 (Enabled Translators)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="分号分隔的翻译器ID列表"
+                                        FontSize="12"
+                                        Opacity="0.7"/>
+                                    <TextBox
+                                        x:Name="EnabledTranslatorsTextBox"
+                                        PlaceholderText="translator1;translator2"
+                                        HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Expander>
+
+                    <!-- Migrations 迁移配置 -->
+                    <Expander
+                        Header="Migrations 迁移配置"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch">
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="0,0,8,8"
+                            Padding="20"
+                            HorizontalAlignment="Stretch">
+                            <StackPanel Spacing="16" HorizontalAlignment="Stretch">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="启用自动迁移 (Enable)" FontWeight="SemiBold"/>
+                                    <TextBlock
+                                        Text="自动迁移配置文件到新版本格式"
+                                        FontSize="12"
+                                        Opacity="0.7"
+                                        TextWrapping="Wrap"/>
+                                    <ToggleSwitch
+                                        x:Name="MigrationsEnableToggle"
+                                        OnContent="已启用"
+                                        OffContent="已禁用"
+                                        IsOn="True"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="迁移版本标签 (Tag)" FontWeight="SemiBold"/>
+                                    <TextBox
+                                        x:Name="MigrationsTagTextBox"
+                                        PlaceholderText="4.15.0"
                                         HorizontalAlignment="Stretch"/>
                                 </StackPanel>
                             </StackPanel>

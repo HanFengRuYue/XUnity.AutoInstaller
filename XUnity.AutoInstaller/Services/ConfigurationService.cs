@@ -197,6 +197,16 @@ public class ConfigurationService
             config.TextureEnableDumping = IniParser.GetBool(data, "Texture", "EnableTextureDumping", false);
             config.TextureHashGenerationStrategy = IniParser.GetValue(data, "Texture", "TextureHashGenerationStrategy", "FromImageName");
 
+            // [Texture] - Extended options
+            config.TextureEnableTextureToggling = IniParser.GetBool(data, "Texture", "EnableTextureToggling", false);
+            config.TextureEnableTextureScanOnSceneLoad = IniParser.GetBool(data, "Texture", "EnableTextureScanOnSceneLoad", false);
+            config.TextureEnableSpriteRendererHooking = IniParser.GetBool(data, "Texture", "EnableSpriteRendererHooking", false);
+            config.TextureLoadUnmodifiedTextures = IniParser.GetBool(data, "Texture", "LoadUnmodifiedTextures", false);
+            config.TextureDuplicateTextureNames = IniParser.GetValue(data, "Texture", "DuplicateTextureNames", "");
+            config.TextureDetectDuplicateTextureNames = IniParser.GetBool(data, "Texture", "DetectDuplicateTextureNames", false);
+            config.TextureEnableLegacyTextureLoading = IniParser.GetBool(data, "Texture", "EnableLegacyTextureLoading", false);
+            config.TextureCacheTexturesInMemory = IniParser.GetBool(data, "Texture", "CacheTexturesInMemory", true);
+
             // [Behaviour] - 高级选项也在 Behaviour 节
             config.AdvancedEnableTranslationScoping = IniParser.GetBool(data, "Behaviour", "EnableTranslationScoping", true);
             config.AdvancedHandleRichText = IniParser.GetBool(data, "Behaviour", "HandleRichText", true);
@@ -209,6 +219,34 @@ public class ConfigurationService
             config.BehaviourIgnoreTextStartingWith = IniParser.GetValue(data, "Behaviour", "IgnoreTextStartingWith", "");
             config.BehaviourOutputUntranslatableText = IniParser.GetBool(data, "Behaviour", "OutputUntranslatableText", false);
             config.BehaviourDelay = IniParser.GetInt(data, "Behaviour", "Delay", 0);
+
+            // [Behaviour] - Extended options
+            config.BehaviourIgnoreWhitespaceInNGUI = IniParser.GetBool(data, "Behaviour", "IgnoreWhitespaceInNGUI", true);
+            config.BehaviourForceSplitTextAfterCharacters = IniParser.GetInt(data, "Behaviour", "ForceSplitTextAfterCharacters", 0);
+            config.BehaviourMaxClipboardCopyCharacters = IniParser.GetInt(data, "Behaviour", "MaxClipboardCopyCharacters", 450);
+            config.BehaviourClipboardDebounceTime = IniParser.GetFloat(data, "Behaviour", "ClipboardDebounceTime", 1.25f);
+            config.BehaviourOverrideFontTextMeshPro = IniParser.GetValue(data, "Behaviour", "OverrideFontTextMeshPro", "");
+            config.BehaviourFallbackFontTextMeshPro = IniParser.GetValue(data, "Behaviour", "FallbackFontTextMeshPro", "");
+            config.BehaviourResizeUILineSpacingScale = IniParser.GetValue(data, "Behaviour", "ResizeUILineSpacingScale", "");
+            config.BehaviourForceUIResizing = IniParser.GetBool(data, "Behaviour", "ForceUIResizing", true);
+            config.BehaviourGameLogTextPaths = IniParser.GetValue(data, "Behaviour", "GameLogTextPaths", "");
+            config.BehaviourRomajiPostProcessing = IniParser.GetValue(data, "Behaviour", "RomajiPostProcessing", "ReplaceMacronWithCircumflex;RemoveApostrophes;ReplaceHtmlEntities");
+            config.BehaviourTranslationPostProcessing = IniParser.GetValue(data, "Behaviour", "TranslationPostProcessing", "ReplaceMacronWithCircumflex;ReplaceHtmlEntities");
+            config.BehaviourRegexPostProcessing = IniParser.GetValue(data, "Behaviour", "RegexPostProcessing", "None");
+            config.BehaviourCacheRegexLookups = IniParser.GetBool(data, "Behaviour", "CacheRegexLookups", false);
+            config.BehaviourCacheWhitespaceDifferences = IniParser.GetBool(data, "Behaviour", "CacheWhitespaceDifferences", false);
+            config.BehaviourCacheRegexPatternResults = IniParser.GetBool(data, "Behaviour", "CacheRegexPatternResults", false);
+            config.BehaviourGenerateStaticSubstitutionTranslations = IniParser.GetBool(data, "Behaviour", "GenerateStaticSubstitutionTranslations", false);
+            config.BehaviourGeneratePartialTranslations = IniParser.GetBool(data, "Behaviour", "GeneratePartialTranslations", false);
+            config.BehaviourEnableSilentMode = IniParser.GetBool(data, "Behaviour", "EnableSilentMode", false);
+            config.BehaviourBlacklistedIMGUIPlugins = IniParser.GetValue(data, "Behaviour", "BlacklistedIMGUIPlugins", "");
+            config.BehaviourIgnoreVirtualTextSetterCallingRules = IniParser.GetBool(data, "Behaviour", "IgnoreVirtualTextSetterCallingRules", false);
+            config.BehaviourPersistRichTextMode = IniParser.GetValue(data, "Behaviour", "PersistRichTextMode", "Final");
+            config.BehaviourEnableTranslationHelper = IniParser.GetBool(data, "Behaviour", "EnableTranslationHelper", false);
+            config.BehaviourForceMonoModHooks = IniParser.GetBool(data, "Behaviour", "ForceMonoModHooks", false);
+            config.BehaviourInitializeHarmonyDetourBridge = IniParser.GetBool(data, "Behaviour", "InitializeHarmonyDetourBridge", false);
+            config.BehaviourRedirectedResourceDetectionStrategy = IniParser.GetValue(data, "Behaviour", "RedirectedResourceDetectionStrategy", "AppendMongolianVowelSeparatorAndRemoveAll");
+            config.BehaviourOutputTooLongText = IniParser.GetBool(data, "Behaviour", "OutputTooLongText", false);
 
             // [Http]
             config.HttpUserAgent = IniParser.GetValue(data, "Http", "UserAgent", "");
@@ -229,6 +267,13 @@ public class ConfigurationService
             config.ResourceRedirectorEnableRedirector = IniParser.GetBool(data, "ResourceRedirector", "EnableRedirector", true);
             config.ResourceRedirectorDetectDuplicateResources = IniParser.GetBool(data, "ResourceRedirector", "DetectDuplicateResources", false);
 
+            // [ResourceRedirector] - Extended options
+            config.ResourceRedirectorPreferredStoragePath = IniParser.GetValue(data, "ResourceRedirector", "PreferredStoragePath", "Translation\\{Lang}\\RedirectedResources");
+            config.ResourceRedirectorEnableTextAssetRedirector = IniParser.GetBool(data, "ResourceRedirector", "EnableTextAssetRedirector", false);
+            config.ResourceRedirectorLogAllLoadedResources = IniParser.GetBool(data, "ResourceRedirector", "LogAllLoadedResources", false);
+            config.ResourceRedirectorEnableDumping = IniParser.GetBool(data, "ResourceRedirector", "EnableDumping", false);
+            config.ResourceRedirectorCacheMetadataForAllFiles = IniParser.GetBool(data, "ResourceRedirector", "CacheMetadataForAllFiles", true);
+
             // [Authentication] - 各个翻译服务的认证信息在各自的节里
             config.AuthenticationGoogleAPIKey = IniParser.GetValue(data, "GoogleLegitimate", "GoogleAPIKey", "");
             config.AuthenticationBingSubscriptionKey = IniParser.GetValue(data, "BingLegitimate", "OcpApimSubscriptionKey", "");
@@ -238,6 +283,34 @@ public class ConfigurationService
             config.AuthenticationYandexAPIKey = IniParser.GetValue(data, "Yandex", "YandexAPIKey", "");
             config.AuthenticationWatsonAPIKey = IniParser.GetValue(data, "Watson", "ApiKey", "");
             config.AuthenticationLingoCloudToken = IniParser.GetValue(data, "LingoCloud", "Token", "");
+
+            // [Google] - Google特定配置
+            config.GoogleServiceUrl = IniParser.GetValue(data, "Google", "ServiceUrl", "");
+
+            // [DeepL] - DeepL特定配置
+            config.DeepLMinDelay = IniParser.GetInt(data, "DeepL", "MinDelay", 2);
+            config.DeepLMaxDelay = IniParser.GetInt(data, "DeepL", "MaxDelay", 7);
+
+            // [DeepLLegitimate] - DeepL API扩展
+            config.DeepLLegitimateFree = IniParser.GetBool(data, "DeepLLegitimate", "Free", false);
+
+            // [Custom] - 自定义翻译服务
+            config.CustomUrl = IniParser.GetValue(data, "Custom", "Url", "");
+
+            // [LecPowerTranslator15]
+            config.LecPowerTranslator15InstallationPath = IniParser.GetValue(data, "LecPowerTranslator15", "InstallationPath", "");
+
+            // [TranslationAggregator]
+            config.TranslationAggregatorWidth = IniParser.GetInt(data, "TranslationAggregator", "Width", 400);
+            config.TranslationAggregatorHeight = IniParser.GetInt(data, "TranslationAggregator", "Height", 100);
+            config.TranslationAggregatorEnabledTranslators = IniParser.GetValue(data, "TranslationAggregator", "EnabledTranslators", "");
+
+            // [Migrations]
+            config.MigrationsEnable = IniParser.GetBool(data, "Migrations", "Enable", true);
+            config.MigrationsTag = IniParser.GetValue(data, "Migrations", "Tag", "4.15.0");
+
+            // [Watson] - Watson扩展配置
+            config.WatsonUrl = IniParser.GetValue(data, "Watson", "Url", "");
 
             LogService.Instance.Log($"XUnity 配置加载成功", LogLevel.Debug, "[Config]");
             return config;
@@ -294,6 +367,16 @@ public class ConfigurationService
         IniParser.SetValue(data, "Texture", "EnableTextureDumping", config.TextureEnableDumping.ToString());
         IniParser.SetValue(data, "Texture", "TextureHashGenerationStrategy", config.TextureHashGenerationStrategy);
 
+        // [Texture] - Extended options
+        IniParser.SetValue(data, "Texture", "EnableTextureToggling", config.TextureEnableTextureToggling.ToString());
+        IniParser.SetValue(data, "Texture", "EnableTextureScanOnSceneLoad", config.TextureEnableTextureScanOnSceneLoad.ToString());
+        IniParser.SetValue(data, "Texture", "EnableSpriteRendererHooking", config.TextureEnableSpriteRendererHooking.ToString());
+        IniParser.SetValue(data, "Texture", "LoadUnmodifiedTextures", config.TextureLoadUnmodifiedTextures.ToString());
+        IniParser.SetValue(data, "Texture", "DuplicateTextureNames", config.TextureDuplicateTextureNames);
+        IniParser.SetValue(data, "Texture", "DetectDuplicateTextureNames", config.TextureDetectDuplicateTextureNames.ToString());
+        IniParser.SetValue(data, "Texture", "EnableLegacyTextureLoading", config.TextureEnableLegacyTextureLoading.ToString());
+        IniParser.SetValue(data, "Texture", "CacheTexturesInMemory", config.TextureCacheTexturesInMemory.ToString());
+
         // [Behaviour] - 高级选项也在 Behaviour 节
         IniParser.SetValue(data, "Behaviour", "EnableTranslationScoping", config.AdvancedEnableTranslationScoping.ToString());
         IniParser.SetValue(data, "Behaviour", "HandleRichText", config.AdvancedHandleRichText.ToString());
@@ -306,6 +389,34 @@ public class ConfigurationService
         IniParser.SetValue(data, "Behaviour", "IgnoreTextStartingWith", config.BehaviourIgnoreTextStartingWith);
         IniParser.SetValue(data, "Behaviour", "OutputUntranslatableText", config.BehaviourOutputUntranslatableText.ToString());
         IniParser.SetValue(data, "Behaviour", "Delay", config.BehaviourDelay.ToString());
+
+        // [Behaviour] - Extended options
+        IniParser.SetValue(data, "Behaviour", "IgnoreWhitespaceInNGUI", config.BehaviourIgnoreWhitespaceInNGUI.ToString());
+        IniParser.SetValue(data, "Behaviour", "ForceSplitTextAfterCharacters", config.BehaviourForceSplitTextAfterCharacters.ToString());
+        IniParser.SetValue(data, "Behaviour", "MaxClipboardCopyCharacters", config.BehaviourMaxClipboardCopyCharacters.ToString());
+        IniParser.SetValue(data, "Behaviour", "ClipboardDebounceTime", config.BehaviourClipboardDebounceTime.ToString("0.00"));
+        IniParser.SetValue(data, "Behaviour", "OverrideFontTextMeshPro", config.BehaviourOverrideFontTextMeshPro);
+        IniParser.SetValue(data, "Behaviour", "FallbackFontTextMeshPro", config.BehaviourFallbackFontTextMeshPro);
+        IniParser.SetValue(data, "Behaviour", "ResizeUILineSpacingScale", config.BehaviourResizeUILineSpacingScale);
+        IniParser.SetValue(data, "Behaviour", "ForceUIResizing", config.BehaviourForceUIResizing.ToString());
+        IniParser.SetValue(data, "Behaviour", "GameLogTextPaths", config.BehaviourGameLogTextPaths);
+        IniParser.SetValue(data, "Behaviour", "RomajiPostProcessing", config.BehaviourRomajiPostProcessing);
+        IniParser.SetValue(data, "Behaviour", "TranslationPostProcessing", config.BehaviourTranslationPostProcessing);
+        IniParser.SetValue(data, "Behaviour", "RegexPostProcessing", config.BehaviourRegexPostProcessing);
+        IniParser.SetValue(data, "Behaviour", "CacheRegexLookups", config.BehaviourCacheRegexLookups.ToString());
+        IniParser.SetValue(data, "Behaviour", "CacheWhitespaceDifferences", config.BehaviourCacheWhitespaceDifferences.ToString());
+        IniParser.SetValue(data, "Behaviour", "CacheRegexPatternResults", config.BehaviourCacheRegexPatternResults.ToString());
+        IniParser.SetValue(data, "Behaviour", "GenerateStaticSubstitutionTranslations", config.BehaviourGenerateStaticSubstitutionTranslations.ToString());
+        IniParser.SetValue(data, "Behaviour", "GeneratePartialTranslations", config.BehaviourGeneratePartialTranslations.ToString());
+        IniParser.SetValue(data, "Behaviour", "EnableSilentMode", config.BehaviourEnableSilentMode.ToString());
+        IniParser.SetValue(data, "Behaviour", "BlacklistedIMGUIPlugins", config.BehaviourBlacklistedIMGUIPlugins);
+        IniParser.SetValue(data, "Behaviour", "IgnoreVirtualTextSetterCallingRules", config.BehaviourIgnoreVirtualTextSetterCallingRules.ToString());
+        IniParser.SetValue(data, "Behaviour", "PersistRichTextMode", config.BehaviourPersistRichTextMode);
+        IniParser.SetValue(data, "Behaviour", "EnableTranslationHelper", config.BehaviourEnableTranslationHelper.ToString());
+        IniParser.SetValue(data, "Behaviour", "ForceMonoModHooks", config.BehaviourForceMonoModHooks.ToString());
+        IniParser.SetValue(data, "Behaviour", "InitializeHarmonyDetourBridge", config.BehaviourInitializeHarmonyDetourBridge.ToString());
+        IniParser.SetValue(data, "Behaviour", "RedirectedResourceDetectionStrategy", config.BehaviourRedirectedResourceDetectionStrategy);
+        IniParser.SetValue(data, "Behaviour", "OutputTooLongText", config.BehaviourOutputTooLongText.ToString());
 
         // [Http]
         IniParser.SetValue(data, "Http", "UserAgent", config.HttpUserAgent);
@@ -326,6 +437,13 @@ public class ConfigurationService
         IniParser.SetValue(data, "ResourceRedirector", "EnableRedirector", config.ResourceRedirectorEnableRedirector.ToString());
         IniParser.SetValue(data, "ResourceRedirector", "DetectDuplicateResources", config.ResourceRedirectorDetectDuplicateResources.ToString());
 
+        // [ResourceRedirector] - Extended options
+        IniParser.SetValue(data, "ResourceRedirector", "PreferredStoragePath", config.ResourceRedirectorPreferredStoragePath);
+        IniParser.SetValue(data, "ResourceRedirector", "EnableTextAssetRedirector", config.ResourceRedirectorEnableTextAssetRedirector.ToString());
+        IniParser.SetValue(data, "ResourceRedirector", "LogAllLoadedResources", config.ResourceRedirectorLogAllLoadedResources.ToString());
+        IniParser.SetValue(data, "ResourceRedirector", "EnableDumping", config.ResourceRedirectorEnableDumping.ToString());
+        IniParser.SetValue(data, "ResourceRedirector", "CacheMetadataForAllFiles", config.ResourceRedirectorCacheMetadataForAllFiles.ToString());
+
         // [Authentication] - 各个翻译服务的认证信息在各自的节里
         IniParser.SetValue(data, "GoogleLegitimate", "GoogleAPIKey", config.AuthenticationGoogleAPIKey);
         IniParser.SetValue(data, "BingLegitimate", "OcpApimSubscriptionKey", config.AuthenticationBingSubscriptionKey);
@@ -335,6 +453,34 @@ public class ConfigurationService
         IniParser.SetValue(data, "Yandex", "YandexAPIKey", config.AuthenticationYandexAPIKey);
         IniParser.SetValue(data, "Watson", "ApiKey", config.AuthenticationWatsonAPIKey);
         IniParser.SetValue(data, "LingoCloud", "Token", config.AuthenticationLingoCloudToken);
+
+        // [Google] - Google特定配置
+        IniParser.SetValue(data, "Google", "ServiceUrl", config.GoogleServiceUrl);
+
+        // [DeepL] - DeepL特定配置
+        IniParser.SetValue(data, "DeepL", "MinDelay", config.DeepLMinDelay.ToString());
+        IniParser.SetValue(data, "DeepL", "MaxDelay", config.DeepLMaxDelay.ToString());
+
+        // [DeepLLegitimate] - DeepL API扩展
+        IniParser.SetValue(data, "DeepLLegitimate", "Free", config.DeepLLegitimateFree.ToString());
+
+        // [Custom] - 自定义翻译服务
+        IniParser.SetValue(data, "Custom", "Url", config.CustomUrl);
+
+        // [LecPowerTranslator15]
+        IniParser.SetValue(data, "LecPowerTranslator15", "InstallationPath", config.LecPowerTranslator15InstallationPath);
+
+        // [TranslationAggregator]
+        IniParser.SetValue(data, "TranslationAggregator", "Width", config.TranslationAggregatorWidth.ToString());
+        IniParser.SetValue(data, "TranslationAggregator", "Height", config.TranslationAggregatorHeight.ToString());
+        IniParser.SetValue(data, "TranslationAggregator", "EnabledTranslators", config.TranslationAggregatorEnabledTranslators);
+
+        // [Migrations]
+        IniParser.SetValue(data, "Migrations", "Enable", config.MigrationsEnable.ToString());
+        IniParser.SetValue(data, "Migrations", "Tag", config.MigrationsTag);
+
+        // [Watson] - Watson扩展配置
+        IniParser.SetValue(data, "Watson", "Url", config.WatsonUrl);
 
         IniParser.Write(configPath, data);
     }

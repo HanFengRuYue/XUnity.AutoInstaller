@@ -162,4 +162,10 @@ public class IniParser
         var value = GetValue(data, section, key);
         return int.TryParse(value, out var result) ? result : defaultValue;
     }
+
+    public static float GetFloat(Dictionary<string, Dictionary<string, string>> data, string section, string key, float defaultValue = 0f)
+    {
+        var value = GetValue(data, section, key);
+        return float.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var result) ? result : defaultValue;
+    }
 }

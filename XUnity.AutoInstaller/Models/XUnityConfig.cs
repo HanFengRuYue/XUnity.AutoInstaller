@@ -39,6 +39,47 @@ public class XUnityConfig
     public bool TextureEnableDumping { get; set; } = false;
     public string TextureHashGenerationStrategy { get; set; } = "FromImageName";
 
+    // [Texture] - Extended options
+    /// <summary>
+    /// 启用纹理切换（运行时切换原始/翻译纹理）
+    /// </summary>
+    public bool TextureEnableTextureToggling { get; set; } = false;
+
+    /// <summary>
+    /// 场景加载时扫描纹理
+    /// </summary>
+    public bool TextureEnableTextureScanOnSceneLoad { get; set; } = false;
+
+    /// <summary>
+    /// 启用SpriteRenderer钩子
+    /// </summary>
+    public bool TextureEnableSpriteRendererHooking { get; set; } = false;
+
+    /// <summary>
+    /// 加载未修改的原始纹理
+    /// </summary>
+    public bool TextureLoadUnmodifiedTextures { get; set; } = false;
+
+    /// <summary>
+    /// 重复纹理名称列表（分号分隔）
+    /// </summary>
+    public string TextureDuplicateTextureNames { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 检测重复纹理名称
+    /// </summary>
+    public bool TextureDetectDuplicateTextureNames { get; set; } = false;
+
+    /// <summary>
+    /// 启用旧版纹理加载
+    /// </summary>
+    public bool TextureEnableLegacyTextureLoading { get; set; } = false;
+
+    /// <summary>
+    /// 在内存中缓存纹理
+    /// </summary>
+    public bool TextureCacheTexturesInMemory { get; set; } = true;
+
     // [Behaviour] - Advanced (这些选项实际在Behaviour节中)
     public bool AdvancedEnableTranslationScoping { get; set; } = true;
     public bool AdvancedHandleRichText { get; set; } = true;
@@ -70,6 +111,137 @@ public class XUnityConfig
     /// 翻译延迟（毫秒）
     /// </summary>
     public int BehaviourDelay { get; set; } = 0;
+
+    // [Behaviour] - Extended options (从官方文档补充)
+    /// <summary>
+    /// NGUI中忽略空格
+    /// </summary>
+    public bool BehaviourIgnoreWhitespaceInNGUI { get; set; } = true;
+
+    /// <summary>
+    /// 指定字符后强制换行（0=禁用）
+    /// </summary>
+    public int BehaviourForceSplitTextAfterCharacters { get; set; } = 0;
+
+    /// <summary>
+    /// 剪贴板最大字符数
+    /// </summary>
+    public int BehaviourMaxClipboardCopyCharacters { get; set; } = 450;
+
+    /// <summary>
+    /// 剪贴板防抖延迟（秒）
+    /// </summary>
+    public float BehaviourClipboardDebounceTime { get; set; } = 1.25f;
+
+    /// <summary>
+    /// TextMeshPro字体覆盖
+    /// </summary>
+    public string BehaviourOverrideFontTextMeshPro { get; set; } = string.Empty;
+
+    /// <summary>
+    /// TextMeshPro备用字体
+    /// </summary>
+    public string BehaviourFallbackFontTextMeshPro { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 行间距缩放比例（可选，空=不设置）
+    /// </summary>
+    public string BehaviourResizeUILineSpacingScale { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 强制UI调整
+    /// </summary>
+    public bool BehaviourForceUIResizing { get; set; } = true;
+
+    /// <summary>
+    /// 游戏日志组件路径列表
+    /// </summary>
+    public string BehaviourGameLogTextPaths { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 罗马字后处理规则
+    /// </summary>
+    public string BehaviourRomajiPostProcessing { get; set; } = "ReplaceMacronWithCircumflex;RemoveApostrophes;ReplaceHtmlEntities";
+
+    /// <summary>
+    /// 翻译后处理规则
+    /// </summary>
+    public string BehaviourTranslationPostProcessing { get; set; } = "ReplaceMacronWithCircumflex;ReplaceHtmlEntities";
+
+    /// <summary>
+    /// 正则表达式后处理
+    /// </summary>
+    public string BehaviourRegexPostProcessing { get; set; } = "None";
+
+    /// <summary>
+    /// 缓存正则表达式查询结果
+    /// </summary>
+    public bool BehaviourCacheRegexLookups { get; set; } = false;
+
+    /// <summary>
+    /// 缓存空格差异
+    /// </summary>
+    public bool BehaviourCacheWhitespaceDifferences { get; set; } = false;
+
+    /// <summary>
+    /// 缓存正则表达式模式结果
+    /// </summary>
+    public bool BehaviourCacheRegexPatternResults { get; set; } = false;
+
+    /// <summary>
+    /// 生成静态替换翻译
+    /// </summary>
+    public bool BehaviourGenerateStaticSubstitutionTranslations { get; set; } = false;
+
+    /// <summary>
+    /// 生成部分翻译
+    /// </summary>
+    public bool BehaviourGeneratePartialTranslations { get; set; } = false;
+
+    /// <summary>
+    /// 静默模式（减少日志输出）
+    /// </summary>
+    public bool BehaviourEnableSilentMode { get; set; } = false;
+
+    /// <summary>
+    /// IMGUI黑名单插件列表（分号分隔）
+    /// </summary>
+    public string BehaviourBlacklistedIMGUIPlugins { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 忽略虚拟文本设置器调用规则
+    /// </summary>
+    public bool BehaviourIgnoreVirtualTextSetterCallingRules { get; set; } = false;
+
+    /// <summary>
+    /// 富文本持久化模式（None, Restored, Final）
+    /// </summary>
+    public string BehaviourPersistRichTextMode { get; set; } = "Final";
+
+    /// <summary>
+    /// 启用翻译助手日志（开发者选项）
+    /// </summary>
+    public bool BehaviourEnableTranslationHelper { get; set; } = false;
+
+    /// <summary>
+    /// 强制使用MonoMod钩子（开发者选项）
+    /// </summary>
+    public bool BehaviourForceMonoModHooks { get; set; } = false;
+
+    /// <summary>
+    /// 初始化Harmony迂回网桥（开发者选项）
+    /// </summary>
+    public bool BehaviourInitializeHarmonyDetourBridge { get; set; } = false;
+
+    /// <summary>
+    /// 重定向资源检测策略
+    /// </summary>
+    public string BehaviourRedirectedResourceDetectionStrategy { get; set; } = "AppendMongolianVowelSeparatorAndRemoveAll";
+
+    /// <summary>
+    /// 输出过长文本
+    /// </summary>
+    public bool BehaviourOutputTooLongText { get; set; } = false;
 
     // [Http]
     /// <summary>
@@ -121,6 +293,32 @@ public class XUnityConfig
     /// </summary>
     public bool ResourceRedirectorDetectDuplicateResources { get; set; } = false;
 
+    // [ResourceRedirector] - Extended options
+    /// <summary>
+    /// 重定向资源存储路径
+    /// </summary>
+    public string ResourceRedirectorPreferredStoragePath { get; set; } = "Translation\\{Lang}\\RedirectedResources";
+
+    /// <summary>
+    /// 启用TextAsset重定向
+    /// </summary>
+    public bool ResourceRedirectorEnableTextAssetRedirector { get; set; } = false;
+
+    /// <summary>
+    /// 记录所有加载的资源
+    /// </summary>
+    public bool ResourceRedirectorLogAllLoadedResources { get; set; } = false;
+
+    /// <summary>
+    /// 启用资源导出
+    /// </summary>
+    public bool ResourceRedirectorEnableDumping { get; set; } = false;
+
+    /// <summary>
+    /// 缓存所有文件的元数据
+    /// </summary>
+    public bool ResourceRedirectorCacheMetadataForAllFiles { get; set; } = true;
+
     // [Authentication]
     public string AuthenticationGoogleAPIKey { get; set; } = string.Empty;
     public string AuthenticationBingSubscriptionKey { get; set; } = string.Empty;
@@ -139,6 +337,74 @@ public class XUnityConfig
     /// 彩云小译API Token
     /// </summary>
     public string AuthenticationLingoCloudToken { get; set; } = string.Empty;
+
+    // [Google] - Google翻译特定配置
+    /// <summary>
+    /// 自定义Google翻译API URL
+    /// </summary>
+    public string GoogleServiceUrl { get; set; } = string.Empty;
+
+    // [DeepL] - DeepL特定配置
+    /// <summary>
+    /// DeepL最小请求延迟（秒）
+    /// </summary>
+    public int DeepLMinDelay { get; set; } = 2;
+
+    /// <summary>
+    /// DeepL最大请求延迟（秒）
+    /// </summary>
+    public int DeepLMaxDelay { get; set; } = 7;
+
+    // [DeepLLegitimate] - DeepL API扩展配置
+    /// <summary>
+    /// 使用DeepL免费API计划
+    /// </summary>
+    public bool DeepLLegitimateFree { get; set; } = false;
+
+    // [Custom] - 自定义翻译服务
+    /// <summary>
+    /// 自定义翻译服务端点URL
+    /// </summary>
+    public string CustomUrl { get; set; } = string.Empty;
+
+    // [LecPowerTranslator15] - LecPowerTranslator配置
+    /// <summary>
+    /// LecPowerTranslator15安装路径
+    /// </summary>
+    public string LecPowerTranslator15InstallationPath { get; set; } = string.Empty;
+
+    // [TranslationAggregator] - 翻译聚合器配置
+    /// <summary>
+    /// 翻译聚合器窗口宽度
+    /// </summary>
+    public int TranslationAggregatorWidth { get; set; } = 400;
+
+    /// <summary>
+    /// 翻译聚合器窗口高度
+    /// </summary>
+    public int TranslationAggregatorHeight { get; set; } = 100;
+
+    /// <summary>
+    /// 启用的翻译器ID列表（分号分隔）
+    /// </summary>
+    public string TranslationAggregatorEnabledTranslators { get; set; } = string.Empty;
+
+    // [Migrations] - 自动迁移配置
+    /// <summary>
+    /// 启用配置文件自动迁移
+    /// </summary>
+    public bool MigrationsEnable { get; set; } = true;
+
+    /// <summary>
+    /// 迁移版本标签
+    /// </summary>
+    public string MigrationsTag { get; set; } = "4.15.0";
+
+    // [Watson] - Watson翻译扩展配置
+    /// <summary>
+    /// Watson翻译服务URL
+    /// </summary>
+    public string WatsonUrl { get; set; } = string.Empty;
 
     /// <summary>
     /// 创建推荐配置（中文翻译）
