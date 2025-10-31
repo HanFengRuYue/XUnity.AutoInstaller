@@ -307,10 +307,9 @@ namespace XUnity.AutoInstaller.Pages
 
             foreach (var version in versions.Take(50)) // Limit display count
             {
-                var sizeText = PathHelper.FormatFileSize(version.FileSize);
                 var dateText = version.ReleaseDate.ToString("yyyy-MM-dd");
                 var platformText = GetPlatformDisplayName(version.TargetPlatform);
-                var displayText = $"{version.Version} - {platformText} - {dateText} ({sizeText})";
+                var displayText = $"{version.Version} - {platformText} - {dateText}";
 
                 // 创建包含DisplayText和VersionInfo的对象
                 var item = new VersionDisplayItem
@@ -352,9 +351,8 @@ namespace XUnity.AutoInstaller.Pages
 
             foreach (var version in versions.Take(50)) // Limit display count
             {
-                var sizeText = PathHelper.FormatFileSize(version.FileSize);
                 var dateText = version.ReleaseDate.ToString("yyyy-MM-dd");
-                var displayText = $"{version.Version} - {dateText} ({sizeText})";
+                var displayText = $"{version.Version} - {dateText}";
 
                 // 创建包含DisplayText和VersionInfo的对象
                 var item = new VersionDisplayItem

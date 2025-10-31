@@ -1,8 +1,12 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
+using System.IO;
 using System.Linq;
 using System.Text;
+using Windows.Storage;
+using Windows.Storage.Pickers;
+using Windows.Storage.Provider;
 using XUnity.AutoInstaller.Services;
 
 namespace XUnity.AutoInstaller.Pages
@@ -144,6 +148,112 @@ namespace XUnity.AutoInstaller.Pages
             };
 
             RefreshLogDisplay();
+        }
+
+        private async void ExportButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Create a file picker
+                var savePicker = new FileSavePicker();
+
+                // Retrieve the window handle (HWND) of the current WinUI 3 window
+                var window = App.MainWindow;
+                var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+
+                // Initialize the file picker with the window handle (HWND)
+                WinRT.Interop.InitializeWithWindow.Initialize(savePicker, hWnd);
+
+                // Set options for your file picker
+                savePicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+                savePicker.FileTypeChoices.Add("文本文件", new System.Collections.Generic.List<string>() { ".txt" });
+                savePicker.FileTypeChoices.Add("日志文件", new System.Collections.Generic.List<string>() { ".log" });
+                savePicker.SuggestedFileName = $"XUnityInstaller_Log_{DateTime.Now:yyyyMMdd_HHmmss}";
+
+                // Open the picker for the user to pick a file
+                StorageFile file = await savePicker.PickSaveFileAsync();
+                if (file != null)
+                {
+                    // Prevent updates to the remote version of the file until we finish making changes
+                    CachedFileManager.DeferUpdates(file);
+
+                    // Get logs with current filter applied
+                    var logs = _logService.GetAllLogs();
+                    if (_currentFilter != null)
+                    {
+                        logs = logs.Where(log => log.Level == _currentFilter);
+                    }
+
+                    // Build export content
+                    var sb = new StringBuilder();
+                    sb.AppendLine("=".PadRight(80, '='));
+                    sb.AppendLine($"XUnity.AutoInstaller 运行日志");
+                    sb.AppendLine($"导出时间: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                    sb.AppendLine($"日志级别: {(_currentFilter == null ? "全部" : _currentFilter.ToString())}");
+                    sb.AppendLine($"日志条数: {logs.Count()}");
+                    sb.AppendLine("=".PadRight(80, '='));
+                    sb.AppendLine();
+
+                    foreach (var log in logs)
+                    {
+                        sb.AppendLine(log.FormattedMessage);
+                    }
+
+                    // Write to file
+                    using (var stream = await file.OpenStreamForWriteAsync())
+                    {
+                        using (var writer = new StreamWriter(stream, System.Text.Encoding.UTF8))
+                        {
+                            await writer.WriteAsync(sb.ToString());
+                        }
+                    }
+
+                    // Let Windows know that we're finished changing the file
+                    FileUpdateStatus status = await CachedFileManager.CompleteUpdatesAsync(file);
+                    if (status == FileUpdateStatus.Complete)
+                    {
+                        LogService.Instance.Log($"日志已成功导出到: {file.Path}", LogLevel.Info, "[日志]");
+
+                        // Show success message
+                        if (this.XamlRoot != null)
+                        {
+                            var dialog = new ContentDialog
+                            {
+                                Title = "导出成功",
+                                Content = $"日志已成功导出到:\n{file.Path}",
+                                CloseButtonText = "确定",
+                                XamlRoot = this.XamlRoot
+                            };
+                            await dialog.ShowAsync();
+                        }
+                    }
+                    else
+                    {
+                        LogService.Instance.Log($"日志导出失败，文件状态: {status}", LogLevel.Warning, "[日志]");
+                    }
+                }
+                else
+                {
+                    LogService.Instance.Log("日志导出已取消", LogLevel.Info, "[日志]");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogService.Instance.Log($"导出日志时发生错误: {ex.Message}", LogLevel.Error, "[日志]");
+
+                // Show error message
+                if (this.XamlRoot != null)
+                {
+                    var dialog = new ContentDialog
+                    {
+                        Title = "导出失败",
+                        Content = $"导出日志时发生错误:\n{ex.Message}",
+                        CloseButtonText = "确定",
+                        XamlRoot = this.XamlRoot
+                    };
+                    await dialog.ShowAsync();
+                }
+            }
         }
     }
 }

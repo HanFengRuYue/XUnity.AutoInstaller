@@ -48,6 +48,15 @@
                         </Button.Content>
                     </Button>
 
+                    <Button Click="ExportButton_Click">
+                        <Button.Content>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE74E;" FontSize="16"/>
+                                <TextBlock Text="导出日志"/>
+                            </StackPanel>
+                        </Button.Content>
+                    </Button>
+
                     <ComboBox x:Name="LogLevelFilterComboBox"
                               Header="日志级别"
                               Width="150"
