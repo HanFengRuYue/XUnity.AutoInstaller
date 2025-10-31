@@ -91,12 +91,11 @@ namespace XUnity.AutoInstaller.Services
 
             foreach (var pattern in patterns)
             {
-                LogService.Instance.Log($"尝试正则: {pattern}", LogLevel.Debug, "[IL2CPP]");
                 var matches = Regex.Matches(html, pattern, RegexOptions.IgnoreCase | RegexOptions.Multiline);
-                LogService.Instance.Log($"匹配到 {matches.Count} 个结果", LogLevel.Debug, "[IL2CPP]");
 
                 if (matches.Count > 0)
                 {
+                    LogService.Instance.Log($"使用正则匹配到 {matches.Count} 个构建", LogLevel.Debug, "[IL2CPP]");
                     foreach (Match match in matches)
                     {
                         try
@@ -129,8 +128,6 @@ namespace XUnity.AutoInstaller.Services
                                 BuildNumber = buildNumber,
                                 Version = version
                             });
-
-                            LogService.Instance.Log($"找到构建: #{buildNumber} - {version}", LogLevel.Debug, "[IL2CPP]");
                         }
                         catch (Exception ex)
                         {
@@ -172,8 +169,6 @@ namespace XUnity.AutoInstaller.Services
                     var fileName = $"BepInEx-Unity.IL2CPP-{arch}-{version}.zip";
                     var downloadUrl = $"{BuildsBaseUrl}/projects/bepinex_be/{buildNumber}/{Uri.EscapeDataString(fileName)}";
 
-                    LogService.Instance.Log($"检查文件: {downloadUrl}", LogLevel.Debug, "[IL2CPP]");
-
                     // 尝试获取文件大小（通过 HEAD 请求）
                     long fileSize = 0;
                     try
@@ -181,14 +176,12 @@ namespace XUnity.AutoInstaller.Services
                         var headRequest = new HttpRequestMessage(HttpMethod.Head, downloadUrl);
                         var headResponse = await _httpClient.SendAsync(headRequest);
 
-                        LogService.Instance.Log($"HEAD 响应: {headResponse.StatusCode}", LogLevel.Debug, "[IL2CPP]");
-
                         if (headResponse.IsSuccessStatusCode)
                         {
                             if (headResponse.Content.Headers.ContentLength.HasValue)
                             {
                                 fileSize = headResponse.Content.Headers.ContentLength.Value;
-                                LogService.Instance.Log($"文件大小: {fileSize} 字节", LogLevel.Debug, "[IL2CPP]");
+                                LogService.Instance.Log($"找到 {arch} 制品 ({fileSize / 1024.0 / 1024.0:F1} MB)", LogLevel.Debug, "[IL2CPP]");
                             }
                             else
                             {

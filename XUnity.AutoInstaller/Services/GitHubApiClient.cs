@@ -73,12 +73,14 @@ public class GitHubApiClient
                         continue;
                     }
 
-                    // 识别 Mono 平台
-                    if (name.Contains("x64") || name.Contains("win_x64"))
+                    // 识别 Mono 平台 - 只选择Windows版本
+                    if ((name.Contains("win_x64") || name.Contains("windows_x64")) ||
+                        (name.Contains("x64") && name.Contains("win")))
                     {
                         platform = Platform.x64;
                     }
-                    else if (name.Contains("x86") || name.Contains("win_x86"))
+                    else if ((name.Contains("win_x86") || name.Contains("windows_x86")) ||
+                             (name.Contains("x86") && name.Contains("win")))
                     {
                         platform = Platform.x86;
                     }
