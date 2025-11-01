@@ -42,6 +42,7 @@ namespace XUnity.AutoInstaller
         /// </summary>
         public App()
         {
+            // For unpackaged apps, Bootstrap.Initialize is called in Program.cs Main() before this
             InitializeComponent();
 
             // 添加全局异常处理器

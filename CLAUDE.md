@@ -33,8 +33,11 @@ dotnet run --project XUnity.AutoInstaller/XUnity.AutoInstaller.csproj -c Release
 
 ### Publishing
 ```bash
-# Self-contained deployment with trimming and AOT
+# Self-contained deployment with trimming and single-file exe
 dotnet publish -p:Platform=x64 -c Release
+
+# Automated Release Build (generates single exe in Release/)
+powershell.exe -ExecutionPolicy Bypass -File Build-Release.ps1
 ```
 
 ## Architecture
@@ -64,8 +67,39 @@ All pages use `GameStateService.Instance.CurrentGamePath` for global path access
 - **Octokit.NET 14.0.0** for GitHub API integration
 - **SharpCompress 0.41.0** for ZIP extraction
 - **Minimum OS**: Windows 10 17763 (October 2018 Update)
-- **MSIX packaging** enabled for deployment
+- **Deployment Mode**: Unpackaged (WindowsPackageType=None, WindowsAppSDKSelfContained=true)
 - **Nullable reference types** enabled
+
+### Unpackaged App Configuration
+This application uses **unpackaged deployment** mode with self-contained Windows App SDK:
+
+**Project Settings (XUnity.AutoInstaller.csproj)**:
+- `<WindowsPackageType>None</WindowsPackageType>` - Disables MSIX packaging
+- `<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>` - Enables self-contained deployment with **automatic Bootstrap initialization**
+- `<EnableMsixTooling>true</EnableMsixTooling>` - Kept enabled for resources.pri generation
+- `<PublishSingleFile>true</PublishSingleFile>` - Generates single-file executable in Release builds
+
+**Critical Implementation Details**:
+1. **Bootstrap Initialization**: When `WindowsAppSDKSelfContained=true` and `WindowsPackageType=None` are set, the Windows App SDK **automatically** performs Bootstrap initialization. **DO NOT** manually call `Bootstrap.Initialize()` or `DeploymentManager.Initialize()` - this causes fast-fail crashes (0xc0000602).
+
+2. **Settings Storage**: Unpackaged apps cannot use `ApplicationData.Current` (requires package identity). This app uses **Windows Registry** at `HKCU\SOFTWARE\XUnity.AutoInstaller` via `SettingsService.cs`.
+
+3. **Version Retrieval**: Cannot use `Package.Current.Id.Version`. Use `Assembly.GetExecutingAssembly().GetName().Version` instead (see `SettingsService.GetAppVersion()`).
+
+4. **App.xaml.cs Entry Point**: No custom `Main()` entry point needed. The app relies on default WinUI3 initialization with auto-Bootstrap:
+```csharp
+public App()
+{
+    // Bootstrap.Initialize is called automatically by WindowsAppSDKSelfContained=true
+    InitializeComponent();
+    this.UnhandledException += App_UnhandledException;
+}
+```
+
+**Build Output**:
+- Debug builds: Standard multi-file output in `bin/`
+- Release builds: Single-file exe (~143 MB) with trimming and ReadyToRun compilation
+- `Build-Release.ps1`: PowerShell script that automates Release build and copies exe to `Release/` folder
 
 ### Backend Architecture
 
@@ -90,7 +124,7 @@ The backend follows a service-oriented architecture organized into three main la
 - `ConfigurationService`: Parses INI files with correct section mappings for XUnity config
 - `InstallationService`: Orchestrates installation pipeline using `LogWriter` which internally uses `LogService`
 - `GameLauncherService`: Launches game, monitors config file generation (BepInEx.cfg, AutoTranslatorConfig.ini), auto-closes game when configs are detected. Includes timeout handling and diagnostic capabilities
-- `SettingsService`: Manages settings persistence including GitHub Token
+- `SettingsService`: Manages settings persistence via Windows Registry (HKCU\SOFTWARE\XUnity.AutoInstaller) for unpackaged app compatibility. Stores GitHub Token, theme, path memory, and other user preferences
 
 **Utils/** - Shared utilities:
 - `IniParser`: INI file parser with type conversion helpers
@@ -374,10 +408,12 @@ if (versionCounts.BepInExCount == 0)
 **WinUI3 ContentDialog**:
 - Must set `XamlRoot` property to page's `XamlRoot` before calling `ShowAsync()`
 
-**Settings Persistence**:
-- `SettingsService` uses `ApplicationData.Current.LocalSettings`
-- GitHub Token stored securely in local settings
+**Settings Persistence (Unpackaged App)**:
+- `SettingsService` uses **Windows Registry** at `HKCU\SOFTWARE\XUnity.AutoInstaller` (not ApplicationData - unpackaged apps don't have package identity)
+- Registry values: AppTheme (DWord), RememberLastGamePath (DWord), LastGamePath (String), ShowDetailedProgress (DWord), DefaultBackupExisting (DWord), DefaultUseRecommendedConfig (DWord), GitHubToken (String)
+- GitHub Token stored securely in registry (deleted when set to null)
 - Theme changes applied immediately via `SettingsService.ApplyTheme()`
+- **DO NOT** use `ApplicationData.Current` anywhere - this will throw `System.InvalidOperationException` (HResult=0x80073D54) in unpackaged apps
 
 **Configuration Accuracy**:
 - ConfigPage options must match official documentation
@@ -393,45 +429,52 @@ if (versionCounts.BepInExCount == 0)
 - `ProgressRing` and `ProgressBar` for loading states
 
 ### Recent Architectural Changes
-1. **Uninstallation Service Refactoring** (Latest): Removed automatic backup from uninstallation flow
+1. **Unpackaged App Deployment** (Latest): Converted from MSIX packaged app to unpackaged deployment
+   - Added `WindowsPackageType=None` and `WindowsAppSDKSelfContained=true` to .csproj
+   - Migrated settings storage from ApplicationData to Windows Registry (SettingsService.cs)
+   - Changed version retrieval from Package.Current to Assembly.GetExecutingAssembly()
+   - Removed manual Bootstrap initialization (auto-initialized by WindowsAppSDKSelfContained)
+   - Created Build-Release.ps1 automation script for single-file exe generation
+   - **Critical**: Manual Bootstrap.Initialize() or DeploymentManager.Initialize() calls cause fast-fail crashes (0xc0000602)
+2. **Uninstallation Service Refactoring**: Removed automatic backup from uninstallation flow
    - Deleted `UninstallOptions.BackupBeforeUninstall` property
    - Removed `UninstallationService.BackupBeforeUninstall()` method and backup check logic
    - Updated DashboardPage confirmation dialog to remove backup messaging
    - Uninstallation now directly deletes files without creating backups
-2. **WinUI3 RadioButtons Fix**: Fixed auto-recommended version not displaying in InstallPage
+3. **WinUI3 RadioButtons Fix**: Fixed auto-recommended version not displaying in InstallPage
    - Root cause: `IsChecked="True"` in XAML doesn't set `RadioButtons.SelectedIndex`
    - Solution: Explicitly set `VersionModeRadio.SelectedIndex = 0` in constructor
    - Added comprehensive documentation in "Common Pitfalls" section
-3. **Version Cache Refresh Prevention**: Fixed unwanted network calls on page navigation
+4. **Version Cache Refresh Prevention**: Fixed unwanted network calls on page navigation
    - Removed `VersionCacheService.RefreshAsync()` call from InstallPage
    - Pages now only wait for initialization (max 10s), never trigger refresh
    - Only VersionManagementPage can manually refresh
    - Enforces single-refresh architectural principle
-4. **Atom Feed Integration**: Eliminated GitHub API rate limit issues
+5. **Atom Feed Integration**: Eliminated GitHub API rate limit issues
    - New `GitHubAtomFeedClient` fetches from `releases.atom` (no authentication, no limits)
    - Smart mode switching in `VersionService`: Atom feed by default, API when Token configured
    - Automatic fallback: Atom → API on failure
    - Download URL construction from version tags
    - **Result**: Users without Token can refresh versions unlimited times
-5. **Auto-Launch Game for Config Generation**: New `GameLauncherService` automates first-run config generation
+6. **Auto-Launch Game for Config Generation**: New `GameLauncherService` automates first-run config generation
    - Launches game after installation, monitors for BepInEx.cfg and AutoTranslatorConfig.ini
    - Polls every 500ms with file size verification
    - Auto-closes game gracefully or force-kills after 3s
    - Configurable timeout (10-300s) with diagnostic logging on failure
    - Integrated into step 9 of installation flow
-6. **Comprehensive Configuration Editor**: Expanded from basic to complete config coverage
+7. **Comprehensive Configuration Editor**: Expanded from basic to complete config coverage
    - BepInEx: 11→30 properties across 8 sections (Caching, Chainloader, Harmony, Logging, Preloader)
    - XUnity: 34→50+ properties across 12 sections (added Http, Debug, Optimization, Integration, ResourceRedirector, Watson/LingoCloud auth)
    - All UI controls properly wired with correct property names and type mappings
-7. **Version Caching System**: Introduced `VersionCacheService` singleton for global version list caching
+8. **Version Caching System**: Introduced `VersionCacheService` singleton for global version list caching
    - Initialized once at app startup in background (non-blocking)
    - All pages read from cache, preventing redundant fetches
    - Manual refresh only in VersionManagementPage
    - Reduces fetch frequency by 90%+, improves page navigation speed 10x
-8. **Unified Logging System**: All output routed through LogService to dedicated LogPage
-9. **GitHub Token Support**: Optional token configuration switches to API mode (more metadata)
-10. **Translation Services**: Expanded from 6 to 17 endpoints with Tag-based mapping
-11. **IL2CPP Optimization**: Reduced fetch from 5 builds to 1 for faster loading
-12. **Page Initialization**: Fixed NullReferenceException with Loaded event pattern
-13. **Layout Redesign**: VersionManagementPage changed to vertical layout with larger fonts/controls
-14. **ARM64 Removal**: Discontinued from UI (platform filter) due to plugin incompatibility
+9. **Unified Logging System**: All output routed through LogService to dedicated LogPage
+10. **GitHub Token Support**: Optional token configuration switches to API mode (more metadata)
+11. **Translation Services**: Expanded from 6 to 17 endpoints with Tag-based mapping
+12. **IL2CPP Optimization**: Reduced fetch from 5 builds to 1 for faster loading
+13. **Page Initialization**: Fixed NullReferenceException with Loaded event pattern
+14. **Layout Redesign**: VersionManagementPage changed to vertical layout with larger fonts/controls
+15. **ARM64 Removal**: Discontinued from UI (platform filter) due to plugin incompatibility

@@ -1,14 +1,16 @@
 using Microsoft.UI.Xaml;
 using System;
+using System.IO;
 using System.Text.Json;
-using Windows.Storage;
 using XUnity.AutoInstaller.Models;
+using System.Reflection;
+using Microsoft.Win32;
 
 namespace XUnity.AutoInstaller.Services;
 
 /// <summary>
 /// 设置服务
-/// 负责加载和保存应用程序设置
+/// 负责加载和保存应用程序设置 (使用注册表存储，适用于 unpackaged 应用)
 /// </summary>
 public class SettingsService
 {
@@ -20,11 +22,17 @@ public class SettingsService
     private static readonly string DEFAULT_RECOMMENDED_CONFIG_KEY = "DefaultUseRecommendedConfig";
     private static readonly string GITHUB_TOKEN_KEY = "GitHubToken";
 
-    private readonly ApplicationDataContainer _localSettings;
+    // Registry path for unpackaged app settings
+    private const string REGISTRY_PATH = @"SOFTWARE\XUnity.AutoInstaller";
+
+    private readonly RegistryKey _settingsKey;
 
     public SettingsService()
     {
-        _localSettings = ApplicationData.Current.LocalSettings;
+        // For unpackaged apps, use registry to store settings
+        // Create or open registry key for application settings
+        _settingsKey = Registry.CurrentUser.CreateSubKey(REGISTRY_PATH, true)
+            ?? throw new InvalidOperationException("Failed to create registry key for settings");
     }
 
     /// <summary>
@@ -63,12 +71,10 @@ public class SettingsService
     /// </summary>
     private ElementTheme LoadTheme()
     {
-        if (_localSettings.Values.TryGetValue(THEME_KEY, out var value))
+        var value = _settingsKey.GetValue(THEME_KEY);
+        if (value is int themeInt && Enum.IsDefined(typeof(ElementTheme), themeInt))
         {
-            if (value is int themeInt && Enum.IsDefined(typeof(ElementTheme), themeInt))
-            {
-                return (ElementTheme)themeInt;
-            }
+            return (ElementTheme)themeInt;
         }
         return ElementTheme.Default;
     }
@@ -78,7 +84,7 @@ public class SettingsService
     /// </summary>
     private void SaveTheme(ElementTheme theme)
     {
-        _localSettings.Values[THEME_KEY] = (int)theme;
+        _settingsKey.SetValue(THEME_KEY, (int)theme, RegistryValueKind.DWord);
     }
 
     /// <summary>
@@ -86,12 +92,10 @@ public class SettingsService
     /// </summary>
     private bool LoadBool(string key, bool defaultValue)
     {
-        if (_localSettings.Values.TryGetValue(key, out var value))
+        var value = _settingsKey.GetValue(key);
+        if (value is int intValue)
         {
-            if (value is bool boolValue)
-            {
-                return boolValue;
-            }
+            return intValue != 0;
         }
         return defaultValue;
     }
@@ -101,7 +105,7 @@ public class SettingsService
     /// </summary>
     private void SaveBool(string key, bool value)
     {
-        _localSettings.Values[key] = value;
+        _settingsKey.SetValue(key, value ? 1 : 0, RegistryValueKind.DWord);
     }
 
     /// <summary>
@@ -109,11 +113,8 @@ public class SettingsService
     /// </summary>
     private string? LoadString(string key)
     {
-        if (_localSettings.Values.TryGetValue(key, out var value))
-        {
-            return value as string;
-        }
-        return null;
+        var value = _settingsKey.GetValue(key);
+        return value as string;
     }
 
     /// <summary>
@@ -123,11 +124,11 @@ public class SettingsService
     {
         if (value != null)
         {
-            _localSettings.Values[key] = value;
+            _settingsKey.SetValue(key, value, RegistryValueKind.String);
         }
         else
         {
-            _localSettings.Values.Remove(key);
+            _settingsKey.DeleteValue(key, false);
         }
     }
 
@@ -147,7 +148,9 @@ public class SettingsService
     /// </summary>
     public static string GetAppVersion()
     {
-        var version = Windows.ApplicationModel.Package.Current.Id.Version;
-        return $"{version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
+        // For unpackaged apps, use Assembly version instead of Package.Current
+        var assembly = Assembly.GetExecutingAssembly();
+        var version = assembly.GetName().Version;
+        return version != null ? $"{version.Major}.{version.Minor}.{version.Build}.{version.Revision}" : "1.0.0.0";
     }
 }
