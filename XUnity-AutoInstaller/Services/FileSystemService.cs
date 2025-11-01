@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -152,6 +153,8 @@ public class FileSystemService
     /// <summary>
     /// 创建桌面快捷方式（Windows）
     /// </summary>
+    [UnconditionalSuppressMessage("Trimming", "IL2072:Target parameter argument does not satisfy 'DynamicallyAccessedMembersAttribute' in call to target method. The return value of the source method does not have matching annotations.", Justification = "COM interop with WScript.Shell requires dynamic type creation from ProgID. This functionality is guaranteed to be available on Windows.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Using member which has 'RequiresUnreferencedCodeAttribute' can break functionality when trimming application code.", Justification = "COM interop requires dynamic access via RuntimeBinder for WScript.Shell automation. This is intentional and tested for Windows desktop scenarios.")]
     public static void CreateDesktopShortcut(string targetPath, string shortcutName)
     {
         try

@@ -35,12 +35,8 @@ public class SettingsService
     // Legacy registry path for migration
     private const string LEGACY_REGISTRY_PATH = @"SOFTWARE\XUnity-AutoInstaller";
 
-    // JSON serialization options
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNameCaseInsensitive = true
-    };
+    // Note: JSON serialization now uses AppJsonSerializerContext for source generation
+    // This eliminates trimming warnings (IL2026) by avoiding reflection
 
     public SettingsService()
     {
@@ -64,7 +60,7 @@ public class SettingsService
             if (File.Exists(SettingsFilePath))
             {
                 var json = File.ReadAllText(SettingsFilePath);
-                var settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
+                var settings = JsonSerializer.Deserialize(json, AppJsonSerializerContext.Default.AppSettings);
                 return settings ?? new AppSettings();
             }
         }
@@ -85,7 +81,7 @@ public class SettingsService
         {
             // Write to temporary file first for atomic operation
             var tempPath = SettingsFilePath + ".tmp";
-            var json = JsonSerializer.Serialize(settings, JsonOptions);
+            var json = JsonSerializer.Serialize(settings, AppJsonSerializerContext.Default.AppSettings);
             File.WriteAllText(tempPath, json);
 
             // Replace old file with new one atomically

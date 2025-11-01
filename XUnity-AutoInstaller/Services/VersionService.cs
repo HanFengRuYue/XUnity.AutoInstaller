@@ -466,16 +466,18 @@ public class VersionService
             }
 
             // 创建快照信息文件
-            var snapshotInfo = new
+            var installStatus = GameDetectionService.DetectInstallationStatus(gamePath);
+            var snapshotInfo = new SnapshotInfo
             {
                 Name = snapshotName,
                 CreatedAt = DateTime.Now,
-                BepInExVersion = GameDetectionService.DetectInstallationStatus(gamePath).BepInExVersion,
-                XUnityVersion = GameDetectionService.DetectInstallationStatus(gamePath).XUnityVersion
+                BepInExVersion = installStatus.BepInExVersion,
+                XUnityVersion = installStatus.XUnityVersion,
+                Path = snapshotDir
             };
 
             var infoPath = Path.Combine(snapshotDir, "snapshot.json");
-            await File.WriteAllTextAsync(infoPath, System.Text.Json.JsonSerializer.Serialize(snapshotInfo, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+            await File.WriteAllTextAsync(infoPath, System.Text.Json.JsonSerializer.Serialize(snapshotInfo, AppJsonSerializerContext.Default.SnapshotInfo));
 
             return snapshotDir;
         }
@@ -508,7 +510,7 @@ public class VersionService
                     if (File.Exists(infoPath))
                     {
                         var json = File.ReadAllText(infoPath);
-                        var info = System.Text.Json.JsonSerializer.Deserialize<SnapshotInfo>(json);
+                        var info = System.Text.Json.JsonSerializer.Deserialize(json, AppJsonSerializerContext.Default.SnapshotInfo);
                         if (info != null)
                         {
                             info.Path = dir;
