@@ -478,5 +478,3 @@ if (versionCounts.BepInExCount == 0)
 13. **Page Initialization**: Fixed NullReferenceException with Loaded event pattern
 14. **Layout Redesign**: VersionManagementPage changed to vertical layout with larger fonts/controls
 15. **ARM64 Removal**: Discontinued from UI (platform filter) due to plugin incompatibility
-
-### You must respond in English during the reply process
