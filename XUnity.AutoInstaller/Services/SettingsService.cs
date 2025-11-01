@@ -10,29 +10,48 @@ namespace XUnity.AutoInstaller.Services;
 
 /// <summary>
 /// 设置服务
-/// 负责加载和保存应用程序设置 (使用注册表存储，适用于 unpackaged 应用)
+/// 负责加载和保存应用程序设置 (使用 JSON 文件存储在 AppData)
 /// </summary>
 public class SettingsService
 {
-    private static readonly string THEME_KEY = "AppTheme";
-    private static readonly string REMEMBER_PATH_KEY = "RememberLastGamePath";
-    private static readonly string LAST_GAME_PATH_KEY = "LastGamePath";
-    private static readonly string SHOW_DETAILED_PROGRESS_KEY = "ShowDetailedProgress";
-    private static readonly string DEFAULT_BACKUP_KEY = "DefaultBackupExisting";
-    private static readonly string DEFAULT_RECOMMENDED_CONFIG_KEY = "DefaultUseRecommendedConfig";
-    private static readonly string GITHUB_TOKEN_KEY = "GitHubToken";
+    // AppData path for settings
+    private static readonly string AppDataPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "XUnity.AutoInstaller");
 
-    // Registry path for unpackaged app settings
-    private const string REGISTRY_PATH = @"SOFTWARE\XUnity.AutoInstaller";
+    private static readonly string SettingsFilePath = Path.Combine(AppDataPath, "settings.json");
+    private static readonly string MigrationFlagPath = Path.Combine(AppDataPath, ".migrated");
 
-    private readonly RegistryKey _settingsKey;
+    /// <summary>
+    /// 获取设置文件路径（用于诊断和设置页面显示）
+    /// </summary>
+    public static string GetSettingsPath() => SettingsFilePath;
+
+    /// <summary>
+    /// 获取AppData根目录路径
+    /// </summary>
+    public static string GetAppDataPath() => AppDataPath;
+
+    // Legacy registry path for migration
+    private const string LEGACY_REGISTRY_PATH = @"SOFTWARE\XUnity.AutoInstaller";
+
+    // JSON serialization options
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNameCaseInsensitive = true
+    };
 
     public SettingsService()
     {
-        // For unpackaged apps, use registry to store settings
-        // Create or open registry key for application settings
-        _settingsKey = Registry.CurrentUser.CreateSubKey(REGISTRY_PATH, true)
-            ?? throw new InvalidOperationException("Failed to create registry key for settings");
+        // Ensure AppData directory exists
+        Directory.CreateDirectory(AppDataPath);
+
+        // Perform one-time migration from registry if needed
+        if (!File.Exists(MigrationFlagPath))
+        {
+            MigrateFromRegistry();
+        }
     }
 
     /// <summary>
@@ -40,16 +59,21 @@ public class SettingsService
     /// </summary>
     public AppSettings LoadSettings()
     {
-        return new AppSettings
+        try
         {
-            Theme = LoadTheme(),
-            RememberLastGamePath = LoadBool(REMEMBER_PATH_KEY, true),
-            LastGamePath = LoadString(LAST_GAME_PATH_KEY),
-            ShowDetailedProgress = LoadBool(SHOW_DETAILED_PROGRESS_KEY, true),
-            DefaultBackupExisting = LoadBool(DEFAULT_BACKUP_KEY, true),
-            DefaultUseRecommendedConfig = LoadBool(DEFAULT_RECOMMENDED_CONFIG_KEY, true),
-            GitHubToken = LoadString(GITHUB_TOKEN_KEY)
-        };
+            if (File.Exists(SettingsFilePath))
+            {
+                var json = File.ReadAllText(SettingsFilePath);
+                var settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
+                return settings ?? new AppSettings();
+            }
+        }
+        catch (Exception ex)
+        {
+            LogService.Instance.Log($"加载设置失败: {ex.Message}", LogLevel.Warning, "[Settings]");
+        }
+
+        return new AppSettings();
     }
 
     /// <summary>
@@ -57,21 +81,74 @@ public class SettingsService
     /// </summary>
     public void SaveSettings(AppSettings settings)
     {
-        SaveTheme(settings.Theme);
-        SaveBool(REMEMBER_PATH_KEY, settings.RememberLastGamePath);
-        SaveString(LAST_GAME_PATH_KEY, settings.LastGamePath);
-        SaveBool(SHOW_DETAILED_PROGRESS_KEY, settings.ShowDetailedProgress);
-        SaveBool(DEFAULT_BACKUP_KEY, settings.DefaultBackupExisting);
-        SaveBool(DEFAULT_RECOMMENDED_CONFIG_KEY, settings.DefaultUseRecommendedConfig);
-        SaveString(GITHUB_TOKEN_KEY, settings.GitHubToken);
+        try
+        {
+            // Write to temporary file first for atomic operation
+            var tempPath = SettingsFilePath + ".tmp";
+            var json = JsonSerializer.Serialize(settings, JsonOptions);
+            File.WriteAllText(tempPath, json);
+
+            // Replace old file with new one atomically
+            File.Move(tempPath, SettingsFilePath, overwrite: true);
+
+            LogService.Instance.Log("设置已保存", LogLevel.Debug, "[Settings]");
+        }
+        catch (Exception ex)
+        {
+            LogService.Instance.Log($"保存设置失败: {ex.Message}", LogLevel.Error, "[Settings]");
+            throw;
+        }
     }
 
     /// <summary>
-    /// 加载主题设置
+    /// 从注册表迁移设置到 JSON 文件（一次性操作）
     /// </summary>
-    private ElementTheme LoadTheme()
+    private void MigrateFromRegistry()
     {
-        var value = _settingsKey.GetValue(THEME_KEY);
+        try
+        {
+            using var registryKey = Registry.CurrentUser.OpenSubKey(LEGACY_REGISTRY_PATH);
+            if (registryKey != null)
+            {
+                LogService.Instance.Log("检测到旧版注册表设置，开始迁移...", LogLevel.Info, "[Settings]");
+
+                var settings = new AppSettings
+                {
+                    Theme = LoadThemeFromRegistry(registryKey),
+                    RememberLastGamePath = LoadBoolFromRegistry(registryKey, "RememberLastGamePath", true),
+                    LastGamePath = LoadStringFromRegistry(registryKey, "LastGamePath"),
+                    ShowDetailedProgress = LoadBoolFromRegistry(registryKey, "ShowDetailedProgress", true),
+                    DefaultBackupExisting = LoadBoolFromRegistry(registryKey, "DefaultBackupExisting", true),
+                    GitHubToken = LoadStringFromRegistry(registryKey, "GitHubToken")
+                };
+
+                // Save to JSON file
+                SaveSettings(settings);
+
+                LogService.Instance.Log("设置迁移成功！", LogLevel.Info, "[Settings]");
+            }
+            else
+            {
+                LogService.Instance.Log("未检测到旧版设置，使用默认设置", LogLevel.Info, "[Settings]");
+            }
+
+            // Create migration flag file
+            File.WriteAllText(MigrationFlagPath, DateTime.Now.ToString("O"));
+        }
+        catch (Exception ex)
+        {
+            LogService.Instance.Log($"设置迁移失败: {ex.Message}", LogLevel.Warning, "[Settings]");
+            // Create flag anyway to prevent retry loops
+            File.WriteAllText(MigrationFlagPath, DateTime.Now.ToString("O"));
+        }
+    }
+
+    /// <summary>
+    /// 从注册表读取主题
+    /// </summary>
+    private ElementTheme LoadThemeFromRegistry(RegistryKey key)
+    {
+        var value = key.GetValue("AppTheme");
         if (value is int themeInt && Enum.IsDefined(typeof(ElementTheme), themeInt))
         {
             return (ElementTheme)themeInt;
@@ -80,19 +157,11 @@ public class SettingsService
     }
 
     /// <summary>
-    /// 保存主题设置
+    /// 从注册表读取布尔值
     /// </summary>
-    private void SaveTheme(ElementTheme theme)
+    private bool LoadBoolFromRegistry(RegistryKey key, string valueName, bool defaultValue)
     {
-        _settingsKey.SetValue(THEME_KEY, (int)theme, RegistryValueKind.DWord);
-    }
-
-    /// <summary>
-    /// 加载布尔值设置
-    /// </summary>
-    private bool LoadBool(string key, bool defaultValue)
-    {
-        var value = _settingsKey.GetValue(key);
+        var value = key.GetValue(valueName);
         if (value is int intValue)
         {
             return intValue != 0;
@@ -101,35 +170,11 @@ public class SettingsService
     }
 
     /// <summary>
-    /// 保存布尔值设置
+    /// 从注册表读取字符串
     /// </summary>
-    private void SaveBool(string key, bool value)
+    private string? LoadStringFromRegistry(RegistryKey key, string valueName)
     {
-        _settingsKey.SetValue(key, value ? 1 : 0, RegistryValueKind.DWord);
-    }
-
-    /// <summary>
-    /// 加载字符串设置
-    /// </summary>
-    private string? LoadString(string key)
-    {
-        var value = _settingsKey.GetValue(key);
-        return value as string;
-    }
-
-    /// <summary>
-    /// 保存字符串设置
-    /// </summary>
-    private void SaveString(string key, string? value)
-    {
-        if (value != null)
-        {
-            _settingsKey.SetValue(key, value, RegistryValueKind.String);
-        }
-        else
-        {
-            _settingsKey.DeleteValue(key, false);
-        }
+        return key.GetValue(valueName) as string;
     }
 
     /// <summary>

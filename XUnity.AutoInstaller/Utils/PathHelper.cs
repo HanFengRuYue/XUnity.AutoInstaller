@@ -132,13 +132,17 @@ public static class PathHelper
     }
 
     /// <summary>
-    /// 获取临时下载目录
+    /// 获取下载缓存目录（AppData）
     /// </summary>
     public static string GetTempDownloadDirectory()
     {
-        var tempPath = Path.Combine(Path.GetTempPath(), "XUnityAutoInstaller");
-        Directory.CreateDirectory(tempPath);
-        return tempPath;
+        // 使用 AppData 而非临时目录，便于管理和持久化
+        var cachePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "XUnity.AutoInstaller",
+            "Cache");
+        Directory.CreateDirectory(cachePath);
+        return cachePath;
     }
 
     /// <summary>

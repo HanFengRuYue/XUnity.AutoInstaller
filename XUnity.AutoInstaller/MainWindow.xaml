@@ -106,5 +106,42 @@
 
             <Frame x:Name="ContentFrame"/>
         </NavigationView>
+
+        <!-- 全局进度条（覆盖在底部） -->
+        <Grid
+            x:Name="GlobalProgressPanel"
+            Grid.Row="1"
+            VerticalAlignment="Bottom"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="0,1,0,0"
+            Padding="20,12"
+            Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Spacing="4">
+                <TextBlock
+                    x:Name="GlobalProgressText"
+                    Text="正在安装..."
+                    FontSize="14"
+                    FontWeight="SemiBold"/>
+                <ProgressBar
+                    x:Name="GlobalProgressBar"
+                    Height="6"
+                    Minimum="0"
+                    Maximum="100"/>
+            </StackPanel>
+
+            <TextBlock
+                Grid.Column="1"
+                x:Name="GlobalProgressPercentage"
+                Text="0%"
+                FontSize="14"
+                VerticalAlignment="Center"
+                Margin="16,0,0,0"/>
+        </Grid>
     </Grid>
 </Window>

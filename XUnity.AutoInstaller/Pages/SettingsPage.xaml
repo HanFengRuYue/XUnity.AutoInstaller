@@ -85,11 +85,102 @@
                             Content="默认备份现有文件"
                             Checked="SettingChanged"
                             Unchecked="SettingChanged"/>
-                        <CheckBox
-                            x:Name="DefaultRecommendedConfigCheckBox"
-                            Content="默认使用推荐配置"
-                            Checked="SettingChanged"
-                            Unchecked="SettingChanged"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- 下载缓存管理 -->
+            <StackPanel Spacing="16">
+                <TextBlock
+                    Text="下载缓存管理"
+                    Style="{StaticResource SubtitleTextBlockStyle}"/>
+
+                <Border
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="20">
+                    <StackPanel Spacing="16">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="缓存大小" FontWeight="SemiBold"/>
+                            <TextBlock
+                                x:Name="CacheSizeTextBlock"
+                                Text="计算中..."
+                                Opacity="0.7"/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="缓存位置" FontWeight="SemiBold"/>
+                            <TextBlock
+                                x:Name="CachePathTextBlock"
+                                Text="加载中..."
+                                Opacity="0.7"
+                                TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Button Click="OpenCacheFolderButton_Click">
+                                <Button.Content>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE8B7;" FontSize="14"/>
+                                        <TextBlock Text="打开缓存文件夹"/>
+                                    </StackPanel>
+                                </Button.Content>
+                            </Button>
+                            <Button Click="CleanCacheButton_Click">
+                                <Button.Content>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE74D;" FontSize="14"/>
+                                        <TextBlock Text="清理缓存"/>
+                                    </StackPanel>
+                                </Button.Content>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- 数据管理 -->
+            <StackPanel Spacing="16">
+                <TextBlock
+                    Text="数据管理"
+                    Style="{StaticResource SubtitleTextBlockStyle}"/>
+
+                <Border
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="20">
+                    <StackPanel Spacing="16">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="配置文件位置" FontWeight="SemiBold"/>
+                            <TextBlock
+                                x:Name="SettingsPathTextBlock"
+                                Text="加载中..."
+                                Opacity="0.7"
+                                TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Button Click="OpenSettingsFolderButton_Click">
+                                <Button.Content>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE8B7;" FontSize="14"/>
+                                        <TextBlock Text="打开配置文件夹"/>
+                                    </StackPanel>
+                                </Button.Content>
+                            </Button>
+                            <Button Click="ResetAllDataButton_Click">
+                                <Button.Content>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE7A7;" FontSize="14"/>
+                                        <TextBlock Text="重置所有数据"/>
+                                    </StackPanel>
+                                </Button.Content>
+                            </Button>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -162,10 +253,10 @@
                     Padding="20">
                     <StackPanel Spacing="16">
                         <StackPanel Spacing="8">
-                            <TextBlock Text="XUnity.AutoInstaller" FontWeight="SemiBold" FontSize="16"/>
+                            <TextBlock Text="XUnity 自动安装器" FontWeight="SemiBold" FontSize="16"/>
                             <TextBlock
                                 x:Name="VersionTextBlock"
-                                Text="版本 1.0.0.0"
+                                Text="版本 加载中..."
                                 Opacity="0.7"/>
                         </StackPanel>
 

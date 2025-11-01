@@ -15,18 +15,41 @@ namespace XUnity.AutoInstaller.Pages
     public sealed partial class DashboardPage : Page
     {
         private readonly GameStateService _gameStateService;
+        private readonly InstallationStateService _installationStateService;
 
         public DashboardPage()
         {
             this.InitializeComponent();
             _gameStateService = GameStateService.Instance;
+            _installationStateService = InstallationStateService.Instance;
             QuickInstallButton.IsEnabled = false;
 
             // Subscribe to GamePathChanged event
             _gameStateService.GamePathChanged += OnGamePathChanged;
 
+            // Subscribe to installation state events
+            _installationStateService.InstallationStarted += OnInstallationStarted;
+            _installationStateService.InstallationCompleted += OnInstallationCompleted;
+
             // Load current game path if available
             LoadCurrentGamePath();
+        }
+
+        private void OnInstallationStarted(object? sender, EventArgs e)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                QuickInstallButton.IsEnabled = false;
+                UninstallButton.IsEnabled = false;
+            });
+        }
+
+        private void OnInstallationCompleted(object? sender, bool success)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                RefreshStatus();
+            });
         }
 
         private void OnGamePathChanged(object? sender, string? gamePath)
@@ -136,7 +159,6 @@ namespace XUnity.AutoInstaller.Pages
                     TargetPlatform = targetPlatform,
                     BackupExisting = true,
                     CleanOldVersion = false,
-                    UseRecommendedConfig = true,
                     LaunchGameToGenerateConfig = true,
                     ConfigGenerationTimeout = 60,
                     BepInExVersion = null, // null表示自动选择最新版

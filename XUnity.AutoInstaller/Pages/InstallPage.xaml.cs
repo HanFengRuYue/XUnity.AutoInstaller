@@ -45,7 +45,6 @@ namespace XUnity.AutoInstaller.Pages
             VersionModeRadio.SelectedIndex = 0; // 自动推荐模式
             PlatformComboBox.SelectedIndex = 0; // x64
             BackupCheckBox.IsChecked = true;
-            AutoConfigCheckBox.IsChecked = true;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -394,8 +393,12 @@ namespace XUnity.AutoInstaller.Pages
 
         private async void StartInstallButton_Click(object sender, RoutedEventArgs e)
         {
-            if (_isInstalling)
+            var stateService = InstallationStateService.Instance;
+
+            // 检查是否已有安装进行中
+            if (stateService.IsInstalling || _isInstalling)
             {
+                await ShowErrorAsync("已有安装任务正在进行中，请稍候");
                 return;
             }
 
@@ -409,6 +412,9 @@ namespace XUnity.AutoInstaller.Pages
             _isInstalling = true;
             StartInstallButton.IsEnabled = false;
             ProgressPanel.Visibility = Visibility.Visible;
+
+            // 通知全局状态服务
+            stateService.StartInstallation();
 
             try
             {
@@ -425,7 +431,6 @@ namespace XUnity.AutoInstaller.Pages
                     },
                     BackupExisting = BackupCheckBox.IsChecked == true,
                     CleanOldVersion = CleanInstallCheckBox.IsChecked == true,
-                    UseRecommendedConfig = AutoConfigCheckBox.IsChecked == true,
                     LaunchGameToGenerateConfig = LaunchGameCheckBox.IsChecked == true,
                     ConfigGenerationTimeout = (int)ConfigTimeoutNumberBox.Value
                 };
@@ -468,7 +473,6 @@ namespace XUnity.AutoInstaller.Pages
                 }
                 LogService.Instance.Log($"备份现有: {options.BackupExisting}", LogLevel.Info, "[安装]");
                 LogService.Instance.Log($"清理旧版本: {options.CleanOldVersion}", LogLevel.Info, "[安装]");
-                LogService.Instance.Log($"使用推荐配置: {options.UseRecommendedConfig}", LogLevel.Info, "[安装]");
                 LogService.Instance.Log($"启动游戏生成配置: {options.LaunchGameToGenerateConfig}", LogLevel.Info, "[安装]");
                 if (options.LaunchGameToGenerateConfig)
                 {
@@ -481,7 +485,7 @@ namespace XUnity.AutoInstaller.Pages
                 // 创建安装服务
                 var installService = new InstallationService(logger);
 
-                // 创建进度报告
+                // 创建组合进度报告（同时更新本地和全局进度）
                 var progress = new Progress<(int percentage, string message)>(p =>
                 {
                     DispatcherQueue.TryEnqueue(() =>
@@ -490,6 +494,9 @@ namespace XUnity.AutoInstaller.Pages
                         ProgressText.Text = p.message;
                         ProgressPercentText.Text = $"{p.percentage}%";
                     });
+
+                    // 同时更新全局进度
+                    stateService.UpdateProgress(p.percentage, p.message);
                 });
 
                 // 执行安装
@@ -504,7 +511,12 @@ namespace XUnity.AutoInstaller.Pages
                     LogService.Instance.Log("你现在可以启动游戏并享受自动翻译功能。", LogLevel.Info, "[安装]");
                     LogService.Instance.Log("", LogLevel.Info, "[安装]");
 
+                    stateService.CompleteInstallation(true);
                     await ShowSuccessAsync("安装成功完成！");
+                }
+                else
+                {
+                    stateService.CompleteInstallation(false);
                 }
             }
             catch (Exception ex)
@@ -515,6 +527,7 @@ namespace XUnity.AutoInstaller.Pages
                 LogService.Instance.Log("========================================", LogLevel.Error, "[安装]");
                 LogService.Instance.Log("", LogLevel.Error, "[安装]");
 
+                stateService.CompleteInstallation(false);
                 await ShowErrorAsync($"安装失败: {ex.Message}");
             }
             finally

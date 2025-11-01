@@ -33,11 +33,6 @@ public class AppSettings
     public bool DefaultBackupExisting { get; set; } = true;
 
     /// <summary>
-    /// 默认使用推荐配置
-    /// </summary>
-    public bool DefaultUseRecommendedConfig { get; set; } = true;
-
-    /// <summary>
     /// GitHub Personal Access Token (可选，用于提高API速率限制)
     /// 未认证: 60次/小时，认证后: 5000次/小时
     /// </summary>

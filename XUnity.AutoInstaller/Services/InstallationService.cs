@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using XUnity.AutoInstaller.Models;
 using XUnity.AutoInstaller.Utils;
@@ -15,6 +16,7 @@ public class InstallationService
 {
     private readonly VersionService _versionService;
     private readonly LogWriter? _logger;
+    private static readonly SemaphoreSlim _installLock = new(1, 1);
 
     public InstallationService(LogWriter? logger = null)
     {
@@ -27,6 +29,13 @@ public class InstallationService
     /// </summary>
     public async Task<bool> InstallAsync(string gamePath, InstallOptions options, IProgress<(int percentage, string message)>? progress = null)
     {
+        // 防止并发安装
+        bool lockAcquired = await _installLock.WaitAsync(0);
+        if (!lockAcquired)
+        {
+            throw new InvalidOperationException("已有安装任务正在进行中，请稍候");
+        }
+
         try
         {
             progress?.Report((0, "开始安装..."));
@@ -69,14 +78,7 @@ public class InstallationService
             progress?.Report((60, "下载 XUnity.AutoTranslator..."));
             await InstallXUnityAsync(gamePath, options, progress);
 
-            // 7. 应用推荐配置
-            if (options.UseRecommendedConfig)
-            {
-                progress?.Report((85, "应用推荐配置..."));
-                ApplyRecommendedConfiguration(gamePath);
-            }
-
-            // 8. 启动游戏生成配置文件
+            // 7. 启动游戏生成配置文件
             if (options.LaunchGameToGenerateConfig)
             {
                 progress?.Report((87, "启动游戏生成配置文件..."));
@@ -113,6 +115,10 @@ public class InstallationService
             _logger?.Error($"安装失败: {ex.Message}");
             progress?.Report((0, $"安装失败: {ex.Message}"));
             throw;
+        }
+        finally
+        {
+            _installLock.Release();
         }
     }
 
@@ -341,31 +347,6 @@ public class InstallationService
         catch (Exception ex)
         {
             _logger?.Warning($"清理失败: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 应用推荐配置
-    /// </summary>
-    private void ApplyRecommendedConfiguration(string gamePath)
-    {
-        try
-        {
-            _logger?.Info("应用推荐配置...");
-
-            // BepInEx 默认配置
-            var bepinexConfig = BepInExConfig.CreateDefault();
-            ConfigurationService.SaveBepInExConfig(gamePath, bepinexConfig);
-
-            // XUnity 推荐配置
-            var xunityConfig = XUnityConfig.CreateRecommended();
-            ConfigurationService.SaveXUnityConfig(gamePath, xunityConfig);
-
-            _logger?.Success("配置已应用");
-        }
-        catch (Exception ex)
-        {
-            _logger?.Warning($"应用配置失败: {ex.Message}");
         }
     }
 }

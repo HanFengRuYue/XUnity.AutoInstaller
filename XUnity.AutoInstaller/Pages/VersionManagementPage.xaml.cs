@@ -16,10 +16,12 @@ namespace XUnity.AutoInstaller.Pages
         private readonly GameStateService _gameStateService;
         private readonly VersionCacheService _versionCacheService;
         private readonly VersionService _versionService;
+        private readonly InstallationStateService _installationStateService;
         private List<VersionInfo> _allBepInExVersions = new();
         private List<VersionInfo> _allXUnityVersions = new();
         private List<InstalledVersionInfo> _installedVersions = new();
         private List<SnapshotInfo> _snapshots = new();
+        private bool _isInstallationInProgress = false;
 
         public VersionManagementPage()
         {
@@ -27,12 +29,42 @@ namespace XUnity.AutoInstaller.Pages
             _gameStateService = GameStateService.Instance;
             _versionCacheService = VersionCacheService.Instance;
             _versionService = new VersionService();
+            _installationStateService = InstallationStateService.Instance;
 
             // Subscribe to game path changes
             _gameStateService.GamePathChanged += OnGamePathChanged;
 
             // Subscribe to version updates
             _versionCacheService.VersionsUpdated += OnVersionsUpdated;
+
+            // Subscribe to installation state events
+            _installationStateService.InstallationStarted += OnInstallationStarted;
+            _installationStateService.InstallationCompleted += OnInstallationCompleted;
+        }
+
+        private void OnInstallationStarted(object? sender, EventArgs e)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                _isInstallationInProgress = true;
+                UpdateDownloadButtonsState();
+            });
+        }
+
+        private void OnInstallationCompleted(object? sender, bool success)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                _isInstallationInProgress = false;
+                UpdateDownloadButtonsState();
+            });
+        }
+
+        private void UpdateDownloadButtonsState()
+        {
+            // Refresh the list views to update button states
+            // The buttons will check _isInstallationInProgress in their event handlers
+            ApplyFilters();
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -687,6 +719,13 @@ namespace XUnity.AutoInstaller.Pages
         {
             if (this.XamlRoot == null) return;
 
+            // 防止在安装过程中下载
+            if (_isInstallationInProgress)
+            {
+                await ShowErrorAsync("安装正在进行中，请稍后再试");
+                return;
+            }
+
             var button = sender as Button;
             // 从VersionDisplayItem中提取VersionInfo
             var displayItem = button?.Tag as VersionDisplayItem;
@@ -790,7 +829,7 @@ namespace XUnity.AutoInstaller.Pages
         /// <summary>
         /// 用于在ListView中显示版本信息的辅助类
         /// </summary>
-        private class VersionDisplayItem
+        public class VersionDisplayItem
         {
             public string DisplayText { get; set; } = string.Empty;
             public VersionInfo Version { get; set; } = null!;
@@ -799,7 +838,7 @@ namespace XUnity.AutoInstaller.Pages
         /// <summary>
         /// 已安装版本/快照显示项类型
         /// </summary>
-        private enum InstalledItemType
+        public enum InstalledItemType
         {
             Header,              // 标题行
             CurrentInstallation, // 当前安装的版本
@@ -809,7 +848,7 @@ namespace XUnity.AutoInstaller.Pages
         /// <summary>
         /// 用于在已安装版本ListView中显示的辅助类
         /// </summary>
-        private class InstalledVersionDisplayItem
+        public class InstalledVersionDisplayItem
         {
             public InstalledItemType ItemType { get; set; }
             public string DisplayText { get; set; } = string.Empty;
