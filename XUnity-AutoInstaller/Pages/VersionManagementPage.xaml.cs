@@ -339,7 +339,7 @@ namespace XUnity_AutoInstaller.Pages
                 var displayText = $"{version.Version} - {platformText} - {dateText}";
 
                 // 创建包含DisplayText和VersionInfo的对象
-                var item = new VersionDisplayItem
+                var item = new AvailableVersionItem
                 {
                     DisplayText = displayText,
                     Version = version
@@ -382,7 +382,7 @@ namespace XUnity_AutoInstaller.Pages
                 var displayText = $"{version.Version} - {dateText}";
 
                 // 创建包含DisplayText和VersionInfo的对象
-                var item = new VersionDisplayItem
+                var item = new AvailableVersionItem
                 {
                     DisplayText = displayText,
                     Version = version
@@ -727,8 +727,8 @@ namespace XUnity_AutoInstaller.Pages
             }
 
             var button = sender as Button;
-            // 从VersionDisplayItem中提取VersionInfo
-            var displayItem = button?.Tag as VersionDisplayItem;
+            // 从AvailableVersionItem中提取VersionInfo
+            var displayItem = button?.Tag as AvailableVersionItem;
             if (displayItem?.Version is VersionInfo version)
             {
                 var dialog = new ContentDialog
@@ -824,15 +824,6 @@ namespace XUnity_AutoInstaller.Pages
                 XamlRoot = this.XamlRoot
             };
             await dialog.ShowAsync();
-        }
-
-        /// <summary>
-        /// 用于在ListView中显示版本信息的辅助类
-        /// </summary>
-        public class VersionDisplayItem
-        {
-            public string DisplayText { get; set; } = string.Empty;
-            public VersionInfo Version { get; set; } = null!;
         }
 
         /// <summary>
