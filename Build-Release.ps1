@@ -19,12 +19,18 @@ Write-Host ""
 # Verify dotnet is available
 if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
     Write-Host "ERROR: dotnet CLI not found. Please install .NET SDK." -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Press Enter to close..." -ForegroundColor Yellow
+    Read-Host
     exit 1
 }
 
 # Verify project file exists
 if (-not (Test-Path $ProjectPath)) {
     Write-Host "ERROR: Project file not found at: $ProjectPath" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Press Enter to close..." -ForegroundColor Yellow
+    Read-Host
     exit 1
 }
 
@@ -64,6 +70,9 @@ try {
     Write-Host ""
     Write-Host "ERROR: Build failed!" -ForegroundColor Red
     Write-Host $_.Exception.Message -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Press Enter to close..." -ForegroundColor Yellow
+    Read-Host
     exit 1
 }
 
@@ -88,6 +97,9 @@ $SourceExe = Join-Path $PublishDir $ExeName
 
 if (-not (Test-Path $SourceExe)) {
     Write-Host "ERROR: Published executable not found at: $SourceExe" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Press Enter to close..." -ForegroundColor Yellow
+    Read-Host
     exit 1
 }
 
@@ -116,3 +128,5 @@ Write-Host ""
 Write-Host "You can now run the application from:" -ForegroundColor Yellow
 Write-Host "  .\$OutputDir\$ExeName" -ForegroundColor Cyan
 Write-Host ""
+Write-Host "Press Enter to close..." -ForegroundColor Green
+Read-Host

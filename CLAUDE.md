@@ -82,7 +82,7 @@ This application uses **unpackaged deployment** mode with self-contained Windows
 **Critical Implementation Details**:
 1. **Bootstrap Initialization**: When `WindowsAppSDKSelfContained=true` and `WindowsPackageType=None` are set, the Windows App SDK **automatically** performs Bootstrap initialization. **DO NOT** manually call `Bootstrap.Initialize()` or `DeploymentManager.Initialize()` - this causes fast-fail crashes (0xc0000602).
 
-2. **Settings Storage**: Unpackaged apps cannot use `ApplicationData.Current` (requires package identity). This app uses **Windows Registry** at `HKCU\SOFTWARE\XUnity.AutoInstaller` via `SettingsService.cs`.
+2. **Settings Storage**: Unpackaged apps cannot use `ApplicationData.Current` (requires package identity). This app uses **JSON file** at `%AppData%\Roaming\XUnity.AutoInstaller\settings.json` via `SettingsService.cs` (migrated from legacy Registry storage).
 
 3. **Version Retrieval**: Cannot use `Package.Current.Id.Version`. Use `Assembly.GetExecutingAssembly().GetName().Version` instead (see `SettingsService.GetAppVersion()`).
 
@@ -116,15 +116,16 @@ The backend follows a service-oriented architecture organized into three main la
 **Services/** - Business logic layer:
 - `LogService`: **Singleton** for unified application logging with event-driven updates to LogPage. Replaces all `Debug.WriteLine()` calls
 - `GameStateService`: **Singleton** for global game path management. Use `Instance.CurrentGamePath` and subscribe to `GamePathChanged` event
+- `InstallationStateService`: **Singleton** for global installation progress tracking. Provides cross-page installation state management with events (`InstallationStarted`, `ProgressChanged`, `InstallationCompleted`) and `CreateProgressReporter()` method for IProgress integration
 - `VersionCacheService`: **Singleton** for global version list caching. Initialized once at app startup, provides cached versions to all pages, only refreshes on manual request in VersionManagementPage
 - `GitHubAtomFeedClient`: **Primary version source** - Fetches releases via Atom feed (no rate limits, no authentication required). Parses XML and constructs download URLs
 - `GitHubApiClient`: **Fallback/Token mode** - Supports optional GitHub Token authentication (60→5000 requests/hour), rate limit error handling, and API pagination limiting (maxCount parameter defaults to 3 versions)
 - `VersionService`: **Smart mode switching** - Uses `GitHubAtomFeedClient` by default (no rate limits), automatically switches to `GitHubApiClient` when Token configured or on Atom feed failure
 - `BepInExBuildsApiClient`: Fetches IL2CPP versions (optimized to latest 1 build only)
 - `ConfigurationService`: Parses INI files with correct section mappings for XUnity config
-- `InstallationService`: Orchestrates installation pipeline using `LogWriter` which internally uses `LogService`
+- `InstallationService`: Orchestrates installation pipeline using `LogWriter` which internally uses `LogService`. Thread-safe with concurrent installation prevention
 - `GameLauncherService`: Launches game, monitors config file generation (BepInEx.cfg, AutoTranslatorConfig.ini), auto-closes game when configs are detected. Includes timeout handling and diagnostic capabilities
-- `SettingsService`: Manages settings persistence via Windows Registry (HKCU\SOFTWARE\XUnity.AutoInstaller) for unpackaged app compatibility. Stores GitHub Token, theme, path memory, and other user preferences
+- `SettingsService`: Manages settings persistence via **JSON file** at `%AppData%\Roaming\XUnity.AutoInstaller\settings.json` (migrated from Registry) for unpackaged app compatibility. Stores GitHub Token, theme, path memory, and other user preferences
 
 **Utils/** - Shared utilities:
 - `IniParser`: INI file parser with type conversion helpers
@@ -133,14 +134,20 @@ The backend follows a service-oriented architecture organized into three main la
 
 **Key Architectural Patterns:**
 
-1. **Singleton Pattern**: `GameStateService`, `LogService`, and `VersionCacheService` use thread-safe singletons
-2. **Event-Driven Communication**: `GameStateService.GamePathChanged`, `LogService.LogEntryAdded`, and `VersionCacheService.VersionsUpdated` events for cross-component updates
-3. **Global Caching**: `VersionCacheService` provides application-wide version caching, initialized once at startup in `App.OnLaunched()`, preventing redundant API calls
-4. **Async/Await Throughout**: All I/O operations with proper cancellation token support
-5. **Progress Reporting**: Services accept `IProgress<T>` for real-time UI updates
-6. **UI Thread Synchronization**: Use `DispatcherQueue.TryEnqueue()` for UI updates
-7. **No MVVM**: Direct code-behind approach with manual UI updates
-8. **Lazy Initialization**: VersionService lazy-loads GitHubApiClient with settings, but prioritizes VersionCacheService
+1. **Singleton Pattern**: `GameStateService`, `LogService`, `InstallationStateService`, and `VersionCacheService` use thread-safe singletons
+2. **Event-Driven Communication**:
+   - `GameStateService.GamePathChanged` - Game path changes
+   - `LogService.LogEntryAdded` - New log entries
+   - `VersionCacheService.VersionsUpdated` - Version list updates
+   - `InstallationStateService.InstallationStarted/ProgressChanged/InstallationCompleted` - Installation progress tracking
+3. **Global State Management**: Cross-page state sharing via singleton services (`InstallationStateService` for install progress, `GameStateService` for game path)
+4. **Global Caching**: `VersionCacheService` provides application-wide version caching, initialized once at startup in `App.OnLaunched()`, preventing redundant API calls
+5. **Async/Await Throughout**: All I/O operations with proper cancellation token support
+6. **Progress Reporting**: Services use `IProgress<(int, string)>` for real-time UI updates. `InstallationStateService.CreateProgressReporter()` provides standardized progress reporting
+7. **UI Thread Synchronization**: Use `DispatcherQueue.TryEnqueue()` for UI updates
+8. **No MVVM**: Direct code-behind approach with manual UI updates
+9. **Lazy Initialization**: VersionService lazy-loads GitHubApiClient with settings, but prioritizes VersionCacheService
+10. **Thread Safety**: `InstallationService` prevents concurrent installations with lock-based synchronization
 
 ### Code Patterns
 
@@ -171,8 +178,28 @@ The backend follows a service-oriented architecture organized into three main la
 **Logging Pattern**:
 - Use `LogService.Instance.Log(message, LogLevel, prefix)` for all logging
 - Log levels: `Debug`, `Info`, `Warning`, `Error`
-- Use consistent prefixes: `[Config]`, `[IL2CPP]`, `[GitHub]`, `[VersionService]`, `[VersionCache]`, `[版本管理]`, `[安装]`
+- Use consistent prefixes: `[Config]`, `[IL2CPP]`, `[GitHub]`, `[VersionService]`, `[VersionCache]`, `[版本管理]`, `[安装]`, `[Settings]`
 - Never use `System.Diagnostics.Debug.WriteLine()` directly
+
+**Installation Progress Pattern**:
+- Use `InstallationStateService.Instance` for cross-page installation progress tracking
+- Subscribe to events in page constructors:
+  ```csharp
+  public DashboardPage()
+  {
+      this.InitializeComponent();
+      InstallationStateService.Instance.InstallationStarted += OnInstallationStarted;
+      InstallationStateService.Instance.ProgressChanged += OnProgressChanged;
+      InstallationStateService.Instance.InstallationCompleted += OnInstallationCompleted;
+  }
+  ```
+- Create progress reporter in InstallationService:
+  ```csharp
+  var progress = InstallationStateService.Instance.CreateProgressReporter();
+  await SomeOperationAsync(progress);  // Pass IProgress<(int, string)>
+  ```
+- Always call `StartInstallation()` before starting and `CompleteInstallation(success)` when done
+- Check `IsInstalling` property to prevent concurrent installations or show installation status
 
 **Version Management Pattern**:
 - **Never call GitHub API directly in pages** - always use `VersionCacheService.Instance`
@@ -202,20 +229,23 @@ The backend follows a service-oriented architecture organized into three main la
 
 **Installation Flow** (InstallationService.InstallAsync):
 1. Validate game path and detect engine type (`PathHelper.IsValidGameDirectory()`)
-2. Optionally backup existing BepInEx directory (`InstallOptions.BackupExisting`)
-3. Optionally clean old installation (`InstallOptions.CleanOldVersion`)
-4. Download BepInEx for target platform from GitHub (`VersionService.DownloadVersionAsync()`)
-5. Extract BepInEx to game root (uses SharpCompress)
-6. Download XUnity.AutoTranslator from GitHub
-7. Extract XUnity to `BepInEx/plugins/`
-8. Apply recommended configuration (`InstallOptions.UseRecommendedConfig`, optional)
-9. **Auto-launch game to generate configs** (`InstallOptions.LaunchGameToGenerateConfig`, optional, default enabled):
+2. Check for concurrent installation (thread-safe lock prevents multiple simultaneous installs)
+3. Notify `InstallationStateService.StartInstallation()` to broadcast installation start event
+4. Optionally backup existing BepInEx directory (`InstallOptions.BackupExisting`)
+5. Optionally clean old installation (`InstallOptions.CleanOldVersion`)
+6. Download BepInEx for target platform from GitHub (`VersionService.DownloadVersionAsync()`)
+7. Extract BepInEx to game root (uses SharpCompress)
+8. Download XUnity.AutoTranslator from GitHub
+9. Extract XUnity to `BepInEx/plugins/`
+10. **Auto-launch game to generate configs** (`InstallOptions.LaunchGameToGenerateConfig`, optional, default enabled):
    - Launches game executable via `GameLauncherService`
    - Monitors for BepInEx.cfg and AutoTranslatorConfig.ini generation (polls every 500ms)
    - Verifies file size > 0 to ensure complete writes
    - Auto-closes game gracefully (3s timeout before force kill)
    - Includes diagnostic logging if generation fails
    - Configurable timeout (default 60s, range 10-300s via `InstallOptions.ConfigGenerationTimeout`)
+11. Report progress via `InstallationStateService.CreateProgressReporter()` throughout entire flow
+12. Notify `InstallationStateService.CompleteInstallation(success)` to broadcast completion event
 
 **Uninstallation Flow** (UninstallationService.UninstallAsync):
 1. Validate game path and check installation status
@@ -409,9 +439,10 @@ if (versionCounts.BepInExCount == 0)
 - Must set `XamlRoot` property to page's `XamlRoot` before calling `ShowAsync()`
 
 **Settings Persistence (Unpackaged App)**:
-- `SettingsService` uses **Windows Registry** at `HKCU\SOFTWARE\XUnity.AutoInstaller` (not ApplicationData - unpackaged apps don't have package identity)
-- Registry values: AppTheme (DWord), RememberLastGamePath (DWord), LastGamePath (String), ShowDetailedProgress (DWord), DefaultBackupExisting (DWord), DefaultUseRecommendedConfig (DWord), GitHubToken (String)
-- GitHub Token stored securely in registry (deleted when set to null)
+- `SettingsService` uses **JSON file** at `%AppData%\Roaming\XUnity.AutoInstaller\settings.json` (migrated from Registry)
+- One-time automatic migration from legacy Registry storage (`HKCU\SOFTWARE\XUnity.AutoInstaller`) with flag file (`.migrated`)
+- Settings: Theme, RememberLastGamePath, LastGamePath, ShowDetailedProgress, DefaultBackupExisting, GitHubToken
+- Atomic file writes using temp file + rename pattern for safety
 - Theme changes applied immediately via `SettingsService.ApplyTheme()`
 - **DO NOT** use `ApplicationData.Current` anywhere - this will throw `System.InvalidOperationException` (HResult=0x80073D54) in unpackaged apps
 
@@ -429,52 +460,60 @@ if (versionCounts.BepInExCount == 0)
 - `ProgressRing` and `ProgressBar` for loading states
 
 ### Recent Architectural Changes
-1. **Unpackaged App Deployment** (Latest): Converted from MSIX packaged app to unpackaged deployment
+1. **Installation Progress & Settings Refactoring** (Latest - Nov 2025):
+   - Introduced `InstallationStateService` singleton for global installation progress tracking across pages
+   - Migrated settings storage from Windows Registry to **JSON file** at `%AppData%\Roaming\XUnity.AutoInstaller\settings.json`
+   - Implemented automatic one-time migration from legacy Registry storage with `.migrated` flag file
+   - Removed "UseRecommendedConfig" option from `InstallOptions` (simplified installation flow)
+   - Enhanced `InstallationService` with thread-safe concurrent installation prevention
+   - Updated `PathHelper` to use AppData directory for cache storage
+   - Added cache management features to SettingsPage (clear version cache, clear all data)
+   - Atomic file writes using temp file + rename pattern for settings persistence
+2. **Unpackaged App Deployment**: Converted from MSIX packaged app to unpackaged deployment
    - Added `WindowsPackageType=None` and `WindowsAppSDKSelfContained=true` to .csproj
-   - Migrated settings storage from ApplicationData to Windows Registry (SettingsService.cs)
    - Changed version retrieval from Package.Current to Assembly.GetExecutingAssembly()
    - Removed manual Bootstrap initialization (auto-initialized by WindowsAppSDKSelfContained)
    - Created Build-Release.ps1 automation script for single-file exe generation
    - **Critical**: Manual Bootstrap.Initialize() or DeploymentManager.Initialize() calls cause fast-fail crashes (0xc0000602)
-2. **Uninstallation Service Refactoring**: Removed automatic backup from uninstallation flow
+3. **Uninstallation Service Refactoring**: Removed automatic backup from uninstallation flow
    - Deleted `UninstallOptions.BackupBeforeUninstall` property
    - Removed `UninstallationService.BackupBeforeUninstall()` method and backup check logic
    - Updated DashboardPage confirmation dialog to remove backup messaging
    - Uninstallation now directly deletes files without creating backups
-3. **WinUI3 RadioButtons Fix**: Fixed auto-recommended version not displaying in InstallPage
+4. **WinUI3 RadioButtons Fix**: Fixed auto-recommended version not displaying in InstallPage
    - Root cause: `IsChecked="True"` in XAML doesn't set `RadioButtons.SelectedIndex`
    - Solution: Explicitly set `VersionModeRadio.SelectedIndex = 0` in constructor
    - Added comprehensive documentation in "Common Pitfalls" section
-4. **Version Cache Refresh Prevention**: Fixed unwanted network calls on page navigation
+5. **Version Cache Refresh Prevention**: Fixed unwanted network calls on page navigation
    - Removed `VersionCacheService.RefreshAsync()` call from InstallPage
    - Pages now only wait for initialization (max 10s), never trigger refresh
    - Only VersionManagementPage can manually refresh
    - Enforces single-refresh architectural principle
-5. **Atom Feed Integration**: Eliminated GitHub API rate limit issues
+6. **Atom Feed Integration**: Eliminated GitHub API rate limit issues
    - New `GitHubAtomFeedClient` fetches from `releases.atom` (no authentication, no limits)
    - Smart mode switching in `VersionService`: Atom feed by default, API when Token configured
    - Automatic fallback: Atom → API on failure
    - Download URL construction from version tags
    - **Result**: Users without Token can refresh versions unlimited times
-6. **Auto-Launch Game for Config Generation**: New `GameLauncherService` automates first-run config generation
+7. **Auto-Launch Game for Config Generation**: New `GameLauncherService` automates first-run config generation
    - Launches game after installation, monitors for BepInEx.cfg and AutoTranslatorConfig.ini
    - Polls every 500ms with file size verification
    - Auto-closes game gracefully or force-kills after 3s
    - Configurable timeout (10-300s) with diagnostic logging on failure
-   - Integrated into step 9 of installation flow
-7. **Comprehensive Configuration Editor**: Expanded from basic to complete config coverage
+   - Integrated into installation flow
+8. **Comprehensive Configuration Editor**: Expanded from basic to complete config coverage
    - BepInEx: 11→30 properties across 8 sections (Caching, Chainloader, Harmony, Logging, Preloader)
    - XUnity: 34→50+ properties across 12 sections (added Http, Debug, Optimization, Integration, ResourceRedirector, Watson/LingoCloud auth)
    - All UI controls properly wired with correct property names and type mappings
-8. **Version Caching System**: Introduced `VersionCacheService` singleton for global version list caching
+9. **Version Caching System**: Introduced `VersionCacheService` singleton for global version list caching
    - Initialized once at app startup in background (non-blocking)
    - All pages read from cache, preventing redundant fetches
    - Manual refresh only in VersionManagementPage
    - Reduces fetch frequency by 90%+, improves page navigation speed 10x
-9. **Unified Logging System**: All output routed through LogService to dedicated LogPage
-10. **GitHub Token Support**: Optional token configuration switches to API mode (more metadata)
-11. **Translation Services**: Expanded from 6 to 17 endpoints with Tag-based mapping
-12. **IL2CPP Optimization**: Reduced fetch from 5 builds to 1 for faster loading
-13. **Page Initialization**: Fixed NullReferenceException with Loaded event pattern
-14. **Layout Redesign**: VersionManagementPage changed to vertical layout with larger fonts/controls
-15. **ARM64 Removal**: Discontinued from UI (platform filter) due to plugin incompatibility
+10. **Unified Logging System**: All output routed through LogService to dedicated LogPage
+11. **GitHub Token Support**: Optional token configuration switches to API mode (more metadata)
+12. **Translation Services**: Expanded from 6 to 17 endpoints with Tag-based mapping
+13. **IL2CPP Optimization**: Reduced fetch from 5 builds to 1 for faster loading
+14. **Page Initialization**: Fixed NullReferenceException with Loaded event pattern
+15. **Layout Redesign**: VersionManagementPage changed to vertical layout with larger fonts/controls
+16. **ARM64 Removal**: Discontinued from UI (platform filter) due to plugin incompatibility

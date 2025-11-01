@@ -16,6 +16,10 @@ namespace XUnity.AutoInstaller
         {
             InitializeComponent();
 
+            // Set window icon for taskbar and title bar
+            string iconPath = System.IO.Path.Combine(AppContext.BaseDirectory, "ICON.ico");
+            AppWindow.SetIcon(iconPath);
+
             // Enable custom title bar
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(AppTitleBar);
