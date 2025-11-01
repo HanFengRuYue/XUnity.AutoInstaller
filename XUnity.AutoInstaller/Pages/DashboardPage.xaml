@@ -203,6 +203,31 @@
                             </StackPanel>
                         </Button>
                     </Grid>
+
+                    <!-- 卸载按钮 -->
+                    <Button
+                        x:Name="UninstallButton"
+                        HorizontalAlignment="Stretch"
+                        Padding="16,12"
+                        Click="UninstallButton_Click"
+                        IsEnabled="False">
+                        <Button.Content>
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <FontIcon Glyph="&#xE74D;" FontSize="20" Foreground="Red"/>
+                                <StackPanel>
+                                    <TextBlock
+                                        Text="完全卸载"
+                                        FontSize="16"
+                                        FontWeight="SemiBold"
+                                        Foreground="Red"/>
+                                    <TextBlock
+                                        Text="完全移除 BepInEx 和 XUnity.AutoTranslator"
+                                        FontSize="12"
+                                        Opacity="0.8"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Button.Content>
+                    </Button>
                 </StackPanel>
             </StackPanel>
 

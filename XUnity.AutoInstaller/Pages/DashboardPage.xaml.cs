@@ -288,6 +288,121 @@ namespace XUnity.AutoInstaller.Pages
 
             // 启用/禁用一键安装按钮
             QuickInstallButton.IsEnabled = true;
+
+            // 启用/禁用卸载按钮（仅当检测到安装时启用）
+            UninstallButton.IsEnabled = status.IsBepInExInstalled || status.IsXUnityInstalled;
+        }
+
+        private async void UninstallButton_Click(object sender, RoutedEventArgs e)
+        {
+            var gamePath = _gameStateService.CurrentGamePath;
+            if (string.IsNullOrEmpty(gamePath))
+            {
+                StatusInfoBar.Severity = InfoBarSeverity.Warning;
+                StatusInfoBar.Title = "警告";
+                StatusInfoBar.Message = "请先选择游戏路径";
+                StatusInfoBar.IsOpen = true;
+                return;
+            }
+
+            // 检测安装状态
+            var status = GameDetectionService.DetectInstallationStatus(gamePath);
+            if (!status.IsBepInExInstalled && !status.IsXUnityInstalled)
+            {
+                StatusInfoBar.Severity = InfoBarSeverity.Warning;
+                StatusInfoBar.Title = "警告";
+                StatusInfoBar.Message = "未检测到 BepInEx 或 XUnity 安装";
+                StatusInfoBar.IsOpen = true;
+                return;
+            }
+
+            // 显示二次确认对话框
+            var dialog = new ContentDialog
+            {
+                Title = "确认卸载",
+                Content = "即将完全卸载 BepInEx 和 XUnity.AutoTranslator，包括所有配置文件。\n\n" +
+                          "此操作不可撤销，是否继续？",
+                PrimaryButtonText = "卸载",
+                CloseButtonText = "取消",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary)
+            {
+                return;
+            }
+
+            // 执行卸载
+            await PerformUninstallAsync(gamePath);
+        }
+
+        private async Task PerformUninstallAsync(string gamePath)
+        {
+            try
+            {
+                // 禁用按钮，显示进度UI
+                UninstallButton.IsEnabled = false;
+                QuickInstallButton.IsEnabled = false;
+                InstallProgressPanel.Visibility = Visibility.Visible;
+                InstallProgressRing.IsActive = true;
+
+                LogService.Instance.Log($"开始卸载: {gamePath}", LogLevel.Info, "[首页]");
+
+                // 创建卸载选项
+                var options = new UninstallOptions();
+
+                // 创建日志记录器
+                var logger = new LogWriter(null, DispatcherQueue);
+
+                // 创建卸载服务
+                var uninstallService = new UninstallationService(logger);
+
+                // 创建进度报告
+                var progress = new Progress<(int percentage, string message)>(p =>
+                {
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        InstallProgressBar.Value = p.percentage;
+                        ProgressText.Text = p.message;
+                        ProgressPercentText.Text = $"{p.percentage}%";
+                    });
+                });
+
+                // 执行卸载
+                var success = await uninstallService.UninstallAsync(gamePath, options, progress);
+
+                if (success)
+                {
+                    LogService.Instance.Log("卸载成功完成！", LogLevel.Info, "[首页]");
+
+                    StatusInfoBar.Severity = InfoBarSeverity.Success;
+                    StatusInfoBar.Title = "成功";
+                    StatusInfoBar.Message = "卸载完成！BepInEx 和 XUnity.AutoTranslator 已完全移除。";
+                    StatusInfoBar.IsOpen = true;
+
+                    // 刷新状态显示
+                    RefreshStatus();
+                }
+            }
+            catch (Exception ex)
+            {
+                LogService.Instance.Log($"卸载失败: {ex.Message}", LogLevel.Error, "[首页]");
+
+                StatusInfoBar.Severity = InfoBarSeverity.Error;
+                StatusInfoBar.Title = "错误";
+                StatusInfoBar.Message = $"卸载失败: {ex.Message}";
+                StatusInfoBar.IsOpen = true;
+            }
+            finally
+            {
+                // 恢复UI状态
+                UninstallButton.IsEnabled = true;
+                QuickInstallButton.IsEnabled = true;
+                InstallProgressRing.IsActive = false;
+                // 保持进度面板可见以便用户查看完成状态
+            }
         }
     }
 }

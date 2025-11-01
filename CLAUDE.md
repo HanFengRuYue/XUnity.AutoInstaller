@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-XUnity.AutoInstaller (XUnity自动安装器) is a WinUI3 desktop application for automatically installing and configuring BepInEx (plugin framework) and XUnity.AutoTranslator (auto-translation plugin) for Unity games. The application handles version management, automatic game detection, configuration editing, and installation orchestration.
+XUnity.AutoInstaller (XUnity自动安装器) is a WinUI3 desktop application for automatically installing and configuring BepInEx (plugin framework) and XUnity.AutoTranslator (auto-translation plugin) for Unity games. The application handles version management, automatic game detection, configuration editing, and installation/uninstallation orchestration.
 
 ## Build Commands
 
@@ -166,22 +166,30 @@ The backend follows a service-oriented architecture organized into three main la
   - Auto-fallback: Atom feed failure automatically switches to API
   - Download URLs constructed from version info: `https://github.com/{owner}/{repo}/releases/download/{tag}/{filename}`
 
-**Installation Flow**:
-1. Validate game path and detect engine type
-2. Optionally backup existing BepInEx directory
-3. Optionally clean old installation
-4. Download BepInEx for target platform from GitHub
-5. Extract BepInEx to game root
+**Installation Flow** (InstallationService.InstallAsync):
+1. Validate game path and detect engine type (`PathHelper.IsValidGameDirectory()`)
+2. Optionally backup existing BepInEx directory (`InstallOptions.BackupExisting`)
+3. Optionally clean old installation (`InstallOptions.CleanOldVersion`)
+4. Download BepInEx for target platform from GitHub (`VersionService.DownloadVersionAsync()`)
+5. Extract BepInEx to game root (uses SharpCompress)
 6. Download XUnity.AutoTranslator from GitHub
 7. Extract XUnity to `BepInEx/plugins/`
-8. Apply recommended configuration (optional)
-9. **Auto-launch game to generate configs** (optional, default enabled):
-   - Launches game executable
+8. Apply recommended configuration (`InstallOptions.UseRecommendedConfig`, optional)
+9. **Auto-launch game to generate configs** (`InstallOptions.LaunchGameToGenerateConfig`, optional, default enabled):
+   - Launches game executable via `GameLauncherService`
    - Monitors for BepInEx.cfg and AutoTranslatorConfig.ini generation (polls every 500ms)
    - Verifies file size > 0 to ensure complete writes
    - Auto-closes game gracefully (3s timeout before force kill)
    - Includes diagnostic logging if generation fails
-   - Configurable timeout (default 60s, range 10-300s)
+   - Configurable timeout (default 60s, range 10-300s via `InstallOptions.ConfigGenerationTimeout`)
+
+**Uninstallation Flow** (UninstallationService.UninstallAsync):
+1. Validate game path and check installation status
+2. Delete BepInEx directory
+3. Delete winhttp.dll (BepInEx entry point)
+4. Delete doorstop_config.ini
+5. Delete other related files (.doorstop_version, doorstop.dll, changelog.txt)
+6. Verify uninstallation completed (`GameDetectionService.DetectInstallationStatus()`)
 
 ## Important Notes
 
@@ -216,7 +224,7 @@ The backend follows a service-oriented architecture organized into three main la
 - ✅ CORRECT: `IniParser.GetInt(data, "Behaviour", "MaxCharactersPerTranslation", 200)`
 
 ### Version Fetching Strategy (Rate Limit Solution)
-The application uses a **dual-client strategy** to eliminate rate limit issues:
+The application uses a **dual-client strategy** with global caching to eliminate rate limit issues:
 
 **Primary: GitHub Atom Feed (GitHubAtomFeedClient)**
 - Fetches releases from `https://github.com/{owner}/{repo}/releases.atom`
@@ -229,22 +237,25 @@ The application uses a **dual-client strategy** to eliminate rate limit issues:
 
 **Fallback: GitHub REST API (GitHubApiClient)**
 - Used when: (1) User configures GitHub Token, or (2) Atom feed fails
-- Unauthenticated: 60 requests/hour, Authenticated: 5000 requests/hour
+- Unauthenticated: 60 requests/hour, Authenticated: 5000 requests/hour (set in SettingsPage)
 - Rate limit errors throw custom exception with Chinese error message
-- Uses Octokit with `ApiOptions` to limit results (maxCount parameter)
+- Uses Octokit with `ApiOptions` to limit results (maxCount parameter defaults to 3)
 
 **Smart Mode Switching (VersionService)**
-- Constructor checks for GitHub Token in settings
+- Constructor checks for GitHub Token in settings (`SettingsService.LoadSettings()`)
 - If Token present: uses API mode (more detailed metadata)
 - If no Token: uses Atom feed mode (unlimited, faster)
 - All methods have automatic fallback: Atom → API on failure
 - Logs mode selection: `[VersionService]` prefix shows active mode
 
-**Caching Layer (VersionCacheService)**
-- Initialized once at app startup, caches results globally
-- Pages never fetch directly - always read from cache
-- Manual refresh only in `VersionManagementPage` via "刷新" button
-- Typical usage: 1-2 fetches at startup, then cache-only until manual refresh
+**Global Caching Layer (VersionCacheService)**
+- **Singleton** initialized once in `App.OnLaunched()` via background `InitializeVersionCacheAsync()`
+- 30-second timeout with graceful failure handling to prevent app startup blocking
+- Pages never fetch directly - always read from cache via `GetBepInExVersions()`, `GetXUnityVersions()`
+- Subscribe to `VersionsUpdated` event in page constructors for reactive updates
+- Manual refresh **only** in `VersionManagementPage` via "刷新" button calling `RefreshAsync()`
+- Pages wait for initialization (max 10s) without triggering refresh if cache not ready
+- Typical usage: 1 fetch at startup, then cache-only until manual refresh
 
 ### IL2CPP Version Detection
 - `BepInExBuildsApiClient` scrapes HTML from builds.bepinex.dev
@@ -382,40 +393,45 @@ if (versionCounts.BepInExCount == 0)
 - `ProgressRing` and `ProgressBar` for loading states
 
 ### Recent Architectural Changes
-1. **WinUI3 RadioButtons Fix** (Latest): Fixed auto-recommended version not displaying in InstallPage
+1. **Uninstallation Service Refactoring** (Latest): Removed automatic backup from uninstallation flow
+   - Deleted `UninstallOptions.BackupBeforeUninstall` property
+   - Removed `UninstallationService.BackupBeforeUninstall()` method and backup check logic
+   - Updated DashboardPage confirmation dialog to remove backup messaging
+   - Uninstallation now directly deletes files without creating backups
+2. **WinUI3 RadioButtons Fix**: Fixed auto-recommended version not displaying in InstallPage
    - Root cause: `IsChecked="True"` in XAML doesn't set `RadioButtons.SelectedIndex`
    - Solution: Explicitly set `VersionModeRadio.SelectedIndex = 0` in constructor
    - Added comprehensive documentation in "Common Pitfalls" section
-2. **Version Cache Refresh Prevention** (Latest): Fixed unwanted network calls on page navigation
+3. **Version Cache Refresh Prevention**: Fixed unwanted network calls on page navigation
    - Removed `VersionCacheService.RefreshAsync()` call from InstallPage
    - Pages now only wait for initialization (max 10s), never trigger refresh
    - Only VersionManagementPage can manually refresh
    - Enforces single-refresh architectural principle
-3. **Atom Feed Integration**: Eliminated GitHub API rate limit issues
+4. **Atom Feed Integration**: Eliminated GitHub API rate limit issues
    - New `GitHubAtomFeedClient` fetches from `releases.atom` (no authentication, no limits)
    - Smart mode switching in `VersionService`: Atom feed by default, API when Token configured
    - Automatic fallback: Atom → API on failure
    - Download URL construction from version tags
    - **Result**: Users without Token can refresh versions unlimited times
-4. **Auto-Launch Game for Config Generation**: New `GameLauncherService` automates first-run config generation
+5. **Auto-Launch Game for Config Generation**: New `GameLauncherService` automates first-run config generation
    - Launches game after installation, monitors for BepInEx.cfg and AutoTranslatorConfig.ini
    - Polls every 500ms with file size verification
    - Auto-closes game gracefully or force-kills after 3s
    - Configurable timeout (10-300s) with diagnostic logging on failure
    - Integrated into step 9 of installation flow
-5. **Comprehensive Configuration Editor**: Expanded from basic to complete config coverage
+6. **Comprehensive Configuration Editor**: Expanded from basic to complete config coverage
    - BepInEx: 11→30 properties across 8 sections (Caching, Chainloader, Harmony, Logging, Preloader)
    - XUnity: 34→50+ properties across 12 sections (added Http, Debug, Optimization, Integration, ResourceRedirector, Watson/LingoCloud auth)
    - All UI controls properly wired with correct property names and type mappings
-6. **Version Caching System**: Introduced `VersionCacheService` singleton for global version list caching
+7. **Version Caching System**: Introduced `VersionCacheService` singleton for global version list caching
    - Initialized once at app startup in background (non-blocking)
    - All pages read from cache, preventing redundant fetches
    - Manual refresh only in VersionManagementPage
    - Reduces fetch frequency by 90%+, improves page navigation speed 10x
-7. **Unified Logging System**: All output routed through LogService to dedicated LogPage
-8. **GitHub Token Support**: Optional token configuration switches to API mode (more metadata)
-9. **Translation Services**: Expanded from 6 to 17 endpoints with Tag-based mapping
-10. **IL2CPP Optimization**: Reduced fetch from 5 builds to 1 for faster loading
-11. **Page Initialization**: Fixed NullReferenceException with Loaded event pattern
-12. **Layout Redesign**: VersionManagementPage changed to vertical layout with larger fonts/controls
-13. **ARM64 Removal**: Discontinued from UI (platform filter) due to plugin incompatibility
+8. **Unified Logging System**: All output routed through LogService to dedicated LogPage
+9. **GitHub Token Support**: Optional token configuration switches to API mode (more metadata)
+10. **Translation Services**: Expanded from 6 to 17 endpoints with Tag-based mapping
+11. **IL2CPP Optimization**: Reduced fetch from 5 builds to 1 for faster loading
+12. **Page Initialization**: Fixed NullReferenceException with Loaded event pattern
+13. **Layout Redesign**: VersionManagementPage changed to vertical layout with larger fonts/controls
+14. **ARM64 Removal**: Discontinued from UI (platform filter) due to plugin incompatibility
