@@ -1,10 +1,10 @@
 # Build-Release.ps1
-# Build script for XUnity.AutoInstaller - Creates a single executable file
+# Build script for XUnity-AutoInstaller - Creates a single executable file
 
 $ErrorActionPreference = "Stop"
 
 # Configuration
-$ProjectPath = "XUnity.AutoInstaller\XUnity.AutoInstaller.csproj"
+$ProjectPath = "XUnity-AutoInstaller\XUnity-AutoInstaller.csproj"
 $Platform = "x64"
 $Configuration = "Release"
 $RuntimeIdentifier = "win-x64"
@@ -12,7 +12,7 @@ $OutputDir = "Release"
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "XUnity.AutoInstaller Build Script" -ForegroundColor Cyan
+Write-Host "XUnity-AutoInstaller Build Script" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -91,8 +91,8 @@ Write-Host ""
 Write-Host "Step 4/4: Copying executable..." -ForegroundColor Yellow
 
 # Find the published exe
-$PublishDir = "XUnity.AutoInstaller\bin\$Configuration\net9.0-windows10.0.26100.0\$RuntimeIdentifier\publish"
-$ExeName = "XUnity.AutoInstaller.exe"
+$PublishDir = "XUnity-AutoInstaller\bin\$Configuration\net9.0-windows10.0.26100.0\$RuntimeIdentifier\publish"
+$ExeName = "XUnity-AutoInstaller.exe"
 $SourceExe = Join-Path $PublishDir $ExeName
 
 if (-not (Test-Path $SourceExe)) {

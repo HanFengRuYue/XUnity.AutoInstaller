@@ -1,10 +1,10 @@
-# CLAUDE.md
+﻿# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
-XUnity.AutoInstaller (XUnity自动安装器) is a WinUI3 desktop application for automatically installing and configuring BepInEx (plugin framework) and XUnity.AutoTranslator (auto-translation plugin) for Unity games. The application handles version management, automatic game detection, configuration editing, and installation/uninstallation orchestration.
+XUnity-AutoInstaller (XUnity自动安装器) is a WinUI3 desktop application for automatically installing and configuring BepInEx (plugin framework) and XUnity.AutoTranslator (auto-translation plugin) for Unity games. The application handles version management, automatic game detection, configuration editing, and installation/uninstallation orchestration.
 
 ## Build Commands
 
@@ -25,10 +25,10 @@ dotnet build -p:Platform=ARM64
 ### Running the Application
 ```bash
 # Debug mode
-dotnet run --project XUnity.AutoInstaller/XUnity.AutoInstaller.csproj
+dotnet run --project XUnity-AutoInstaller/XUnity-AutoInstaller.csproj
 
 # Release mode
-dotnet run --project XUnity.AutoInstaller/XUnity.AutoInstaller.csproj -c Release
+dotnet run --project XUnity-AutoInstaller/XUnity-AutoInstaller.csproj -c Release
 ```
 
 ### Publishing
@@ -39,6 +39,16 @@ dotnet publish -p:Platform=x64 -c Release
 # Automated Release Build (generates single exe in Release/)
 powershell.exe -ExecutionPolicy Bypass -File Build-Release.ps1
 ```
+
+### Visual Studio Debugging
+When debugging in Visual Studio, ensure you:
+1. Use the **"XUnity-AutoInstaller (Unpackaged)"** launch profile (not Package mode)
+2. If debugging fails after renaming or configuration changes:
+   - Close Visual Studio completely
+   - Delete cache: `.vs`, `bin`, and `obj` folders
+   - Reopen solution and rebuild
+3. Launch profiles are defined in `Properties/launchSettings.json`
+4. Package manifest is in `Package.appxmanifest` (display names only, not used for unpackaged deployment)
 
 ## Architecture
 
@@ -73,7 +83,7 @@ All pages use `GameStateService.Instance.CurrentGamePath` for global path access
 ### Unpackaged App Configuration
 This application uses **unpackaged deployment** mode with self-contained Windows App SDK:
 
-**Project Settings (XUnity.AutoInstaller.csproj)**:
+**Project Settings (XUnity-AutoInstaller.csproj)**:
 - `<WindowsPackageType>None</WindowsPackageType>` - Disables MSIX packaging
 - `<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>` - Enables self-contained deployment with **automatic Bootstrap initialization**
 - `<EnableMsixTooling>true</EnableMsixTooling>` - Kept enabled for resources.pri generation
@@ -82,7 +92,7 @@ This application uses **unpackaged deployment** mode with self-contained Windows
 **Critical Implementation Details**:
 1. **Bootstrap Initialization**: When `WindowsAppSDKSelfContained=true` and `WindowsPackageType=None` are set, the Windows App SDK **automatically** performs Bootstrap initialization. **DO NOT** manually call `Bootstrap.Initialize()` or `DeploymentManager.Initialize()` - this causes fast-fail crashes (0xc0000602).
 
-2. **Settings Storage**: Unpackaged apps cannot use `ApplicationData.Current` (requires package identity). This app uses **JSON file** at `%AppData%\Roaming\XUnity.AutoInstaller\settings.json` via `SettingsService.cs` (migrated from legacy Registry storage).
+2. **Settings Storage**: Unpackaged apps cannot use `ApplicationData.Current` (requires package identity). This app uses **JSON file** at `%AppData%\Roaming\XUnity-AutoInstaller\settings.json` via `SettingsService.cs` (migrated from legacy Registry storage).
 
 3. **Version Retrieval**: Cannot use `Package.Current.Id.Version`. Use `Assembly.GetExecutingAssembly().GetName().Version` instead (see `SettingsService.GetAppVersion()`).
 
@@ -125,7 +135,7 @@ The backend follows a service-oriented architecture organized into three main la
 - `ConfigurationService`: Parses INI files with correct section mappings for XUnity config
 - `InstallationService`: Orchestrates installation pipeline using `LogWriter` which internally uses `LogService`. Thread-safe with concurrent installation prevention
 - `GameLauncherService`: Launches game, monitors config file generation (BepInEx.cfg, AutoTranslatorConfig.ini), auto-closes game when configs are detected. Includes timeout handling and diagnostic capabilities
-- `SettingsService`: Manages settings persistence via **JSON file** at `%AppData%\Roaming\XUnity.AutoInstaller\settings.json` (migrated from Registry) for unpackaged app compatibility. Stores GitHub Token, theme, path memory, and other user preferences
+- `SettingsService`: Manages settings persistence via **JSON file** at `%AppData%\Roaming\XUnity-AutoInstaller\settings.json` (migrated from Registry) for unpackaged app compatibility. Stores GitHub Token, theme, path memory, and other user preferences
 
 **Utils/** - Shared utilities:
 - `IniParser`: INI file parser with type conversion helpers
@@ -439,8 +449,8 @@ if (versionCounts.BepInExCount == 0)
 - Must set `XamlRoot` property to page's `XamlRoot` before calling `ShowAsync()`
 
 **Settings Persistence (Unpackaged App)**:
-- `SettingsService` uses **JSON file** at `%AppData%\Roaming\XUnity.AutoInstaller\settings.json` (migrated from Registry)
-- One-time automatic migration from legacy Registry storage (`HKCU\SOFTWARE\XUnity.AutoInstaller`) with flag file (`.migrated`)
+- `SettingsService` uses **JSON file** at `%AppData%\Roaming\XUnity-AutoInstaller\settings.json` (migrated from Registry)
+- One-time automatic migration from legacy Registry storage (`HKCU\SOFTWARE\XUnity-AutoInstaller`) with flag file (`.migrated`)
 - Settings: Theme, RememberLastGamePath, LastGamePath, ShowDetailedProgress, DefaultBackupExisting, GitHubToken
 - Atomic file writes using temp file + rename pattern for safety
 - Theme changes applied immediately via `SettingsService.ApplyTheme()`
@@ -460,9 +470,17 @@ if (versionCounts.BepInExCount == 0)
 - `ProgressRing` and `ProgressBar` for loading states
 
 ### Recent Architectural Changes
-1. **Installation Progress & Settings Refactoring** (Latest - Nov 2025):
+1. **Project Renaming** (Latest - Nov 2025):
+   - Renamed entire project from `XUnity.AutoInstaller` to `XUnity-AutoInstaller` (dot to hyphen)
+   - Updated namespace from `XUnity.AutoInstaller` to `XUnity_AutoInstaller` (C# doesn't allow hyphens)
+   - Updated all configuration files: .csproj, .slnx, launchSettings.json, Package.appxmanifest
+   - Changed AppData path from `%AppData%\XUnity.AutoInstaller` to `%AppData%\XUnity-AutoInstaller`
+   - Updated Registry path from `SOFTWARE\XUnity.AutoInstaller` to `SOFTWARE\XUnity-AutoInstaller`
+   - Modified Build-Release.ps1 to use new project paths and output filename
+   - Updated all XAML x:Class attributes and documentation files
+2. **Installation Progress & Settings Refactoring** (Nov 2025):
    - Introduced `InstallationStateService` singleton for global installation progress tracking across pages
-   - Migrated settings storage from Windows Registry to **JSON file** at `%AppData%\Roaming\XUnity.AutoInstaller\settings.json`
+   - Migrated settings storage from Windows Registry to **JSON file** at `%AppData%\Roaming\XUnity-AutoInstaller\settings.json`
    - Implemented automatic one-time migration from legacy Registry storage with `.migrated` flag file
    - Removed "UseRecommendedConfig" option from `InstallOptions` (simplified installation flow)
    - Enhanced `InstallationService` with thread-safe concurrent installation prevention
