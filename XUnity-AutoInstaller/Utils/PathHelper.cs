@@ -179,4 +179,60 @@ public static class PathHelper
         }
         return $"{len:0.##} {sizes[order]}";
     }
+
+    /// <summary>
+    /// 获取字体缓存目录路径
+    /// </summary>
+    public static string GetFontCachePath()
+    {
+        var fontCachePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "XUnity.AutoInstaller",
+            "Cache",
+            "Fonts");
+        Directory.CreateDirectory(fontCachePath);
+        return fontCachePath;
+    }
+
+    /// <summary>
+    /// 获取游戏中的字体目录路径 (BepInEx\fonts)
+    /// </summary>
+    public static string GetGameFontPath(string gamePath)
+    {
+        return Path.Combine(GetBepInExPath(gamePath), "fonts");
+    }
+
+    /// <summary>
+    /// 检查字体是否已缓存
+    /// </summary>
+    public static bool IsFontCached(string fileName)
+    {
+        try
+        {
+            var cachePath = GetFontCachePath();
+            var filePath = Path.Combine(cachePath, fileName);
+            return File.Exists(filePath);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 检查字体是否已安装到游戏
+    /// </summary>
+    public static bool IsFontInstalledInGame(string gamePath, string fileName)
+    {
+        try
+        {
+            var gameFontPath = GetGameFontPath(gamePath);
+            var filePath = Path.Combine(gameFontPath, fileName);
+            return File.Exists(filePath);
+        }
+        catch
+        {
+            return false;
+        }
+    }
 }

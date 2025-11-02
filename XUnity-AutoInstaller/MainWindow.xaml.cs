@@ -55,6 +55,9 @@ namespace XUnity_AutoInstaller
                     case "Config":
                         ContentFrame.Navigate(typeof(ConfigPage));
                         break;
+                    case "FontDownload":
+                        ContentFrame.Navigate(typeof(FontDownloadPage));
+                        break;
                     case "Version":
                         ContentFrame.Navigate(typeof(VersionManagementPage));
                         break;

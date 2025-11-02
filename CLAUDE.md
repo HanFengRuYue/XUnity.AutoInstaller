@@ -60,14 +60,15 @@ When debugging in Visual Studio, ensure you:
   - Default window size: 1200x800px
 
 ### Page Organization
-The application uses a 6-page structure in the `Pages/` folder:
+The application uses a 7-page structure in the `Pages/` folder:
 
 1. **DashboardPage**: Game path selection, installation status cards (BepInEx/XUnity), quick actions
 2. **InstallPage**: Version selection (auto/manual), platform choice, installation progress
 3. **ConfigPage**: Configuration editor for BepInEx and XUnity settings with 17 translation service endpoints
-4. **VersionManagementPage**: Vertical layout with installed versions at top, available versions below. Platform filters exclude ARM64 (discontinued plugin support)
-5. **LogPage**: Unified logging page showing all application output with filtering and auto-scroll
-6. **SettingsPage**: Application settings including theme and path memory
+4. **FontDownloadPage**: TextMeshPro font resource download with Unity version detection and smart recommendations
+5. **VersionManagementPage**: Vertical layout with installed versions at top, available versions below. Platform filters exclude ARM64 (discontinued plugin support)
+6. **LogPage**: Unified logging page showing all application output with filtering and auto-scroll
+7. **SettingsPage**: Application settings including theme and path memory
 
 All pages use `GameStateService.Instance.CurrentGamePath` for global path access.
 
@@ -123,6 +124,7 @@ The backend follows a service-oriented architecture organized into three main la
 - `InstallOptions`: Includes `LaunchGameToGenerateConfig` (bool) and `ConfigGenerationTimeout` (int) for automatic config generation
 - `DownloadSourceType` enum: `GitHub` (default) and `Mirror` options for download source selection
 - `AppSettings` stores user preferences including `DownloadSource` property
+- `FontResourceInfo`: Font metadata with FontName, UnityVersion (YYYY-M-P format), filename (no extension), cache/install status, and Visibility properties for UI binding
 
 **Services/** - Business logic layer:
 - `LogService`: **Singleton** for unified application logging with event-driven updates to LogPage. Replaces all `Debug.WriteLine()` calls
@@ -138,10 +140,13 @@ The backend follows a service-oriented architecture organized into three main la
 - `InstallationService`: Orchestrates installation pipeline using `LogWriter` which internally uses `LogService`. Thread-safe with concurrent installation prevention
 - `GameLauncherService`: Launches game, monitors config file generation (BepInEx.cfg, AutoTranslatorConfig.ini), auto-closes game when configs are detected. Includes timeout handling and diagnostic capabilities
 - `SettingsService`: Manages settings persistence via **JSON file** at `%AppData%\Roaming\XUnity-AutoInstaller\settings.json` (migrated from Registry) for unpackaged app compatibility. Stores theme, path memory, download source preference, and other user preferences
+- `UnityVersionDetector`: Detects Unity version from game binaries (globalgamemanagers) by parsing binary data. Uses regex to find version strings. Provides version similarity scoring for font recommendations
+- `FontMirrorClient`: WebDAV client for TextMeshPro fonts from https://fraxelia.com:60761/TextMeshProFonts/. Parses filename format `{FontName}_U{UnityVersion}` (no file extension). Includes download with retry logic
+- `FontManagementService`: Orchestrates font operations - downloads to cache, installs to game's BepInEx\fonts, provides Unity version-based recommendations using similarity scoring
 
 **Utils/** - Shared utilities:
 - `IniParser`: INI file parser with type conversion helpers
-- `PathHelper`: Centralized path logic for BepInEx directories
+- `PathHelper`: Centralized path logic for BepInEx directories. Includes font-specific methods: `GetFontCachePath()`, `GetGameFontPath()`, `IsFontCached()`, `IsFontInstalledInGame()`
 - `LogWriter`: Adapter that uses `LogService` internally for unified logging
 
 **Key Architectural Patterns:**
@@ -166,6 +171,8 @@ The backend follows a service-oriented architecture organized into three main la
 - Use `<Button.Content>` child elements instead of `Content="..."` attribute
 - All child controls in Expanders should have `HorizontalAlignment="Stretch"`
 - Card-style UI using `CardBackgroundFillColorDefaultBrush` and `CornerRadius="8"`
+- **CRITICAL**: All XAML files MUST have UTF-8 BOM (Byte Order Mark). WinUI3 XAML compiler fails without it. Use `printf '\xEF\xBB\xBF'` when creating files
+- **CRITICAL**: Avoid nested quotes in XAML attribute values. Use brackets `【】` instead of quotes `""` for Chinese text in Run elements to prevent XML parsing errors
 
 **C# Code-Behind**:
 - Page constructors: `InitializeComponent()` → subscribe to events → explicitly set control properties → use `Loaded` event for deferred XAML control access
@@ -189,7 +196,7 @@ The backend follows a service-oriented architecture organized into three main la
 **Logging Pattern**:
 - Use `LogService.Instance.Log(message, LogLevel, prefix)` for all logging
 - Log levels: `Debug`, `Info`, `Warning`, `Error`
-- Use consistent prefixes: `[Config]`, `[IL2CPP]`, `[GitHub]`, `[AtomFeed]`, `[Mirror]`, `[VersionService]`, `[VersionCache]`, `[版本管理]`, `[安装]`, `[Settings]`, `[DownloadSource]`
+- Use consistent prefixes: `[Config]`, `[IL2CPP]`, `[GitHub]`, `[AtomFeed]`, `[Mirror]`, `[VersionService]`, `[VersionCache]`, `[版本管理]`, `[安装]`, `[Settings]`, `[DownloadSource]`, `[UnityVersion]`, `[FontMirror]`, `[FontManagement]`, `[FontDownload]`
 - Never use `System.Diagnostics.Debug.WriteLine()` directly
 
 **Installation Progress Pattern**:
@@ -490,6 +497,53 @@ if (versionCounts.BepInExCount == 0)
 - `InfoBar` for status messages (preferred over ContentDialog)
 - `ProgressRing` and `ProgressBar` for loading states
 
+### TextMeshPro Font Download Feature
+
+**Overview**: Allows users to download pre-configured TextMeshPro fonts optimized for specific Unity versions, with automatic Unity version detection and smart recommendations.
+
+**Filename Format**: `{FontName}_U{UnityVersion}` (no file extension)
+- Example: `SourceHanSans_U2018-4-36` = SourceHanSans font for Unity 2018.4.36
+- Unity version format: YYYY-M-P (e.g., 2018-4-36)
+
+**Architecture**:
+1. **Unity Version Detection** (`UnityVersionDetector`):
+   - Parses binary `globalgamemanagers` or `data.unity3d` files
+   - Searches for version pattern `\d{4}\.\d+\.\d+[a-z]\d+` in binary data
+   - Normalizes to YYYY-M-P format (removes suffix like f1, b1)
+   - Provides similarity scoring algorithm for font matching
+
+2. **Font Mirror Client** (`FontMirrorClient`):
+   - WebDAV PROPFIND to list fonts from https://fraxelia.com:60761/TextMeshProFonts/
+   - Parses filename with regex: `^(.+)_U(\d{4}-\d+-\d+)$`
+   - Download with 3 retry attempts and progress reporting
+   - Files have NO file extension (as specified by WebDAV server)
+
+3. **Font Management** (`FontManagementService`):
+   - Two-stage installation: Download to cache → Install to game
+   - Cache: `%AppData%\XUnity-AutoInstaller\Cache\Fonts\{filename}`
+   - Game: `{GamePath}\BepInEx\fonts\{filename}`
+   - Smart recommendations using version similarity scoring:
+     - Exact major version match: +1000 points
+     - Exact minor version match: +100 points
+     - Close patch version: +50 points (decreases with difference)
+     - Sorts fonts by score, highest compatibility first
+
+4. **UI Integration** (`FontDownloadPage`):
+   - Three sections: Game Info, Font List, Usage Instructions
+   - Three-state buttons: Download → Install to Game → Installed (✓)
+   - Progress dialog created programmatically (NOT in XAML tree)
+   - Model uses `Visibility` properties (not bool) for x:Bind compatibility
+
+**Config Integration**:
+- After installation, users set font path in ConfigPage
+- Path format: `BepInEx\fonts\{filename}` (e.g., `BepInEx\fonts\SourceHanSans_U2018-4-36`)
+- Maps to XUnityConfig properties: `BehaviourOverrideFontTextMeshPro` or `BehaviourFallbackFontTextMeshPro`
+
+**Key Implementation Details**:
+- `FontResourceInfo` visibility properties return `Microsoft.UI.Xaml.Visibility` directly (not bool) for WinUI3 x:Bind
+- ContentDialog must be created in code-behind, NOT placed in XAML visual tree (causes compilation errors)
+- Font files have no extension - this is intentional and required by the WebDAV server naming scheme
+
 ### Recent Architectural Changes
 1. **Project Renaming** (Latest - Nov 2025):
    - Renamed entire project from `XUnity.AutoInstaller` to `XUnity-AutoInstaller` (dot to hyphen)
@@ -574,3 +628,13 @@ if (versionCounts.BepInExCount == 0)
    - Download button conditionally hidden for cached versions, replaced with green "已下载" indicator with checkmark (&#xE73E;)
    - UI automatically refreshes after successful download to immediately reflect cache status
    - Cache directory: `%AppData%\Roaming\XUnity.AutoInstaller\Cache` (same as download location)
+18. **TextMeshPro Font Download Feature** (Nov 2025):
+   - Added new FontDownloadPage with Unity version detection and smart font recommendations
+   - Created `UnityVersionDetector` service to parse game binaries and detect Unity versions
+   - Implemented `FontMirrorClient` for WebDAV-based font downloads from https://fraxelia.com:60761/TextMeshProFonts/
+   - Created `FontManagementService` with two-stage installation (cache → game) and similarity-based recommendations
+   - Font filename format: `{FontName}_U{UnityVersion}` with no file extension
+   - Cache location: `%AppData%\XUnity-AutoInstaller\Cache\Fonts\`
+   - Game installation: `{GamePath}\BepInEx\fonts\`
+   - Added font-specific PathHelper methods and FontResourceInfo model with Visibility properties for x:Bind
+   - Navigation placement: Between ConfigPage and VersionManagementPage with Font icon (&#xE8D2;)

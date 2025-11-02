@@ -76,6 +76,15 @@
                 </NavigationViewItem>
 
                 <NavigationViewItem
+                    Content="字体下载"
+                    Tag="FontDownload"
+                    x:Name="FontDownloadNavItem">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8D2;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
+                <NavigationViewItem
                     Content="版本管理"
                     Tag="Version"
                     x:Name="VersionNavItem">
