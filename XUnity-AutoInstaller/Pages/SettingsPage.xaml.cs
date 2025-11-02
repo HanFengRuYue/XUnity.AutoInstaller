@@ -53,9 +53,6 @@ namespace XUnity_AutoInstaller.Pages
 
             // 默认安装选项
             DefaultBackupCheckBox.IsChecked = _currentSettings.DefaultBackupExisting;
-
-            // GitHub Token
-            GitHubTokenPasswordBox.Password = _currentSettings.GitHubToken ?? string.Empty;
         }
 
         /// <summary>
@@ -77,9 +74,6 @@ namespace XUnity_AutoInstaller.Pages
 
             // 默认安装选项
             _currentSettings.DefaultBackupExisting = DefaultBackupCheckBox.IsChecked == true;
-
-            // GitHub Token
-            _currentSettings.GitHubToken = string.IsNullOrWhiteSpace(GitHubTokenPasswordBox.Password) ? null : GitHubTokenPasswordBox.Password.Trim();
 
             // 保存到本地存储
             _settingsService.SaveSettings(_currentSettings);
@@ -125,12 +119,6 @@ namespace XUnity_AutoInstaller.Pages
                     XamlRoot = this.XamlRoot
                 };
                 await dialog.ShowAsync();
-
-                // 如果输入了Token，显示Token信息提示
-                if (!string.IsNullOrWhiteSpace(GitHubTokenPasswordBox.Password))
-                {
-                    TokenInfoBar.IsOpen = true;
-                }
             }
             catch (Exception ex)
             {
@@ -358,7 +346,7 @@ namespace XUnity_AutoInstaller.Pages
             var confirmDialog = new ContentDialog
             {
                 Title = "⚠️ 警告",
-                Content = "即将删除所有应用数据，包括：\n\n• 所有设置\n• 记住的游戏路径\n• GitHub Token\n\n此操作不可撤销，确定继续吗？",
+                Content = "即将删除所有应用数据，包括：\n\n• 所有设置\n• 记住的游戏路径\n\n此操作不可撤销，确定继续吗？",
                 PrimaryButtonText = "确定删除",
                 CloseButtonText = "取消",
                 DefaultButton = ContentDialogButton.Close,

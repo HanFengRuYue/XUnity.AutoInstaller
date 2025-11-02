@@ -185,60 +185,6 @@
                 </Border>
             </StackPanel>
 
-            <!-- GitHub API 设置 -->
-            <Expander
-                Header="GitHub API 设置"
-                IsExpanded="False"
-                HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Stretch">
-                <Border
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="0,0,8,8"
-                    Padding="20"
-                    HorizontalAlignment="Stretch">
-                    <StackPanel Spacing="16">
-                        <TextBlock
-                            Text="配置 GitHub Personal Access Token 可以将 API 速率限制从 60 次/小时提升至 5000 次/小时，避免频繁获取版本列表时出现速率限制错误。"
-                            TextWrapping="Wrap"
-                            Opacity="0.8"/>
-
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="GitHub Token (可选)" FontWeight="SemiBold"/>
-                            <PasswordBox
-                                x:Name="GitHubTokenPasswordBox"
-                                PlaceholderText="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                                PasswordRevealMode="Peek"
-                                HorizontalAlignment="Stretch"/>
-                            <TextBlock
-                                FontSize="12"
-                                Opacity="0.7"
-                                TextWrapping="Wrap">
-                                <Run Text="如何获取 Token:"/>
-                                <LineBreak/>
-                                <Run Text="1. 访问 "/>
-                                <Hyperlink NavigateUri="https://github.com/settings/tokens">
-                                    <Run Text="https://github.com/settings/tokens"/>
-                                </Hyperlink>
-                                <LineBreak/>
-                                <Run Text="2. 点击 'Generate new token (classic)'"/>
-                                <LineBreak/>
-                                <Run Text="3. 勾选 'public_repo' 权限即可"/>
-                                <LineBreak/>
-                                <Run Text="4. 生成后复制粘贴到此处"/>
-                            </TextBlock>
-                        </StackPanel>
-
-                        <InfoBar
-                            x:Name="TokenInfoBar"
-                            IsOpen="False"
-                            Severity="Informational"
-                            Message="Token 已保存并将在下次获取版本时生效"/>
-                    </StackPanel>
-                </Border>
-            </Expander>
-
             <!-- 关于 -->
             <StackPanel Spacing="16">
                 <TextBlock

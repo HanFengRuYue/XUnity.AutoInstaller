@@ -31,10 +31,4 @@ public class AppSettings
     /// 默认备份现有安装
     /// </summary>
     public bool DefaultBackupExisting { get; set; } = true;
-
-    /// <summary>
-    /// GitHub Personal Access Token (可选，用于提高API速率限制)
-    /// 未认证: 60次/小时，认证后: 5000次/小时
-    /// </summary>
-    public string? GitHubToken { get; set; }
 }

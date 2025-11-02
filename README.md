@@ -32,7 +32,7 @@ XUnity-AutoInstaller 是一款专为 Unity 游戏设计的自动化安装工具�
 - **快速操作面板** - 一键安装、卸载、打开游戏目录
 
 ### 📦 版本管理
-- **智能版本获取** - 采用双源策略（Atom Feed + GitHub API）避免速率限制
+- **智能版本获取** - 使用 GitHub Atom Feed，无速率限制，无需认证
 - **平台自动适配** - 支持 x86、x64、IL2CPP 等多种平台自动匹配
 - **版本缓存系统** - 全局缓存机制，减少 90% 以上的网络请求
 - **手动版本选择** - 支持安装特定历史版本
@@ -50,7 +50,6 @@ XUnity-AutoInstaller 是一款专为 Unity 游戏设计的自动化安装工具�
 - **旧版本清理** - 可选清理旧版本文件避免冲突
 
 ### 🔧 高级特性
-- **GitHub Token 支持** - 配置 Token 可提升 API 请求限额（60→5000/小时）
 - **统一日志系统** - 所有操作日志集中显示，支持级别过滤
 - **并发安装保护** - 线程安全机制防止多个安装任务冲突
 - **安装进度跨页面** - 全局进度追踪，任意页面查看安装状态
@@ -118,7 +117,6 @@ powershell.exe -ExecutionPolicy Bypass -File Build-Release.ps1
 - **C# 13** - 启用可空引用类型
 
 ### 关键库
-- **Octokit.NET 14.0.0** - GitHub API 集成
 - **SharpCompress 0.41.0** - ZIP 压缩解压
 - **System.Xml.Linq** - Atom Feed XML 解析
 
@@ -183,9 +181,9 @@ XUnity-AutoInstaller/
 │   ├── LogService.cs              # 统一日志服务（单例）
 │   ├── InstallationStateService.cs # 全局安装进度追踪（单例）
 │   ├── VersionCacheService.cs     # 全局版本缓存（单例）
-│   ├── GitHubAtomFeedClient.cs    # Atom Feed 版本获取（无速率限制）
-│   ├── GitHubApiClient.cs         # GitHub API 版本获取（支持 Token）
-│   ├── VersionService.cs          # 智能版本服务（双源切换）
+│   ├── GitHubAtomFeedClient.cs    # Atom Feed 版本获取和下载（无速率限制）
+│   ├── BepInExBuildsApiClient.cs  # IL2CPP 版本获取（builds.bepinex.dev）
+│   ├── VersionService.cs          # 版本服务协调层
 │   ├── InstallationService.cs     # 安装编排服务
 │   ├── GameLauncherService.cs     # 游戏启动和配置生成监控
 │   ├── ConfigurationService.cs    # INI 配置文件读写

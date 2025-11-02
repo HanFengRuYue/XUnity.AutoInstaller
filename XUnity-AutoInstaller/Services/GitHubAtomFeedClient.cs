@@ -257,6 +257,77 @@ public class GitHubAtomFeedClient : IDisposable
         return entries;
     }
 
+    /// <summary>
+    /// 下载文件到指定路径
+    /// </summary>
+    /// <param name="url">下载 URL</param>
+    /// <param name="destinationPath">目标文件路径</param>
+    /// <param name="progress">进度报告（0-100）</param>
+    public async Task DownloadFileAsync(string url, string destinationPath, IProgress<int>? progress = null)
+    {
+        const int maxRetries = 3;
+        const int retryDelayMs = 1000;
+
+        for (int attempt = 1; attempt <= maxRetries; attempt++)
+        {
+            try
+            {
+                // 确保目标目录存在
+                var directory = System.IO.Path.GetDirectoryName(destinationPath);
+                if (!string.IsNullOrEmpty(directory))
+                {
+                    System.IO.Directory.CreateDirectory(directory);
+                }
+
+                // 下载文件（增加超时时间以应对大文件）
+                using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+                response.EnsureSuccessStatusCode();
+
+                var totalBytes = response.Content.Headers.ContentLength ?? -1;
+                var canReportProgress = totalBytes != -1 && progress != null;
+
+                using var contentStream = await response.Content.ReadAsStreamAsync();
+                using var fileStream = new System.IO.FileStream(destinationPath, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None, 8192, true);
+
+                var buffer = new byte[8192];
+                long totalRead = 0;
+                int bytesRead;
+
+                while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                {
+                    await fileStream.WriteAsync(buffer, 0, bytesRead);
+                    totalRead += bytesRead;
+
+                    if (canReportProgress)
+                    {
+                        var percentage = (int)((double)totalRead / totalBytes * 100);
+                        progress!.Report(percentage);
+                    }
+                }
+
+                // 验证文件完整性
+                if (totalBytes > 0 && totalRead != totalBytes)
+                {
+                    throw new Exception($"下载不完整: 期望 {totalBytes} 字节，实际 {totalRead} 字节");
+                }
+
+                return; // 下载成功，退出重试循环
+            }
+            catch (Exception ex)
+            {
+                // 如果是最后一次尝试，抛出异常
+                if (attempt == maxRetries)
+                {
+                    throw new Exception($"下载文件失败（已重试 {maxRetries} 次）: {ex.Message}", ex);
+                }
+
+                // 否则记录日志并重试
+                LogService.Instance.Log($"下载失败（尝试 {attempt}/{maxRetries}）: {ex.Message}，{retryDelayMs}ms后重试...", LogLevel.Warning, "[AtomFeed]");
+                await Task.Delay(retryDelayMs * attempt); // 递增延迟时间
+            }
+        }
+    }
+
     public void Dispose()
     {
         _httpClient?.Dispose();

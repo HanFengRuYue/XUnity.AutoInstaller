@@ -114,8 +114,7 @@ public class SettingsService
                     RememberLastGamePath = LoadBoolFromRegistry(registryKey, "RememberLastGamePath", true),
                     LastGamePath = LoadStringFromRegistry(registryKey, "LastGamePath"),
                     ShowDetailedProgress = LoadBoolFromRegistry(registryKey, "ShowDetailedProgress", true),
-                    DefaultBackupExisting = LoadBoolFromRegistry(registryKey, "DefaultBackupExisting", true),
-                    GitHubToken = LoadStringFromRegistry(registryKey, "GitHubToken")
+                    DefaultBackupExisting = LoadBoolFromRegistry(registryKey, "DefaultBackupExisting", true)
                 };
 
                 // Save to JSON file

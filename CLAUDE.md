@@ -67,14 +67,13 @@ The application uses a 6-page structure in the `Pages/` folder:
 3. **ConfigPage**: Configuration editor for BepInEx and XUnity settings with 17 translation service endpoints
 4. **VersionManagementPage**: Vertical layout with installed versions at top, available versions below. Platform filters exclude ARM64 (discontinued plugin support)
 5. **LogPage**: Unified logging page showing all application output with filtering and auto-scroll
-6. **SettingsPage**: Application settings including theme, path memory, GitHub Token configuration
+6. **SettingsPage**: Application settings including theme and path memory
 
 All pages use `GameStateService.Instance.CurrentGamePath` for global path access.
 
 ### Technology Stack
 - **.NET 9.0** (net9.0-windows10.0.26100.0)
 - **WinUI3** via Microsoft.WindowsAppSDK 1.8.251003001
-- **Octokit.NET 14.0.0** for GitHub API integration
 - **SharpCompress 0.41.0** for ZIP extraction
 - **Minimum OS**: Windows 10 17763 (October 2018 Update)
 - **Deployment Mode**: Unpackaged (WindowsPackageType=None, WindowsAppSDKSelfContained=true)
@@ -121,21 +120,20 @@ The backend follows a service-oriented architecture organized into three main la
 - `BepInExConfig`: 30 configuration properties covering Caching, Chainloader, Harmony.Logger, Logging (Console/Disk), and Preloader sections
 - `XUnityConfig`: 50+ configuration properties covering Service, General, Behaviour, TextFrameworks, Files, Texture, Advanced, Authentication (8 services), Http, Debug, Optimization, Integration, and ResourceRedirector sections
 - `InstallOptions`: Includes `LaunchGameToGenerateConfig` (bool) and `ConfigGenerationTimeout` (int) for automatic config generation
-- `AppSettings` stores user preferences including GitHub Token
+- `AppSettings` stores user preferences
 
 **Services/** - Business logic layer:
 - `LogService`: **Singleton** for unified application logging with event-driven updates to LogPage. Replaces all `Debug.WriteLine()` calls
 - `GameStateService`: **Singleton** for global game path management. Use `Instance.CurrentGamePath` and subscribe to `GamePathChanged` event
 - `InstallationStateService`: **Singleton** for global installation progress tracking. Provides cross-page installation state management with events (`InstallationStarted`, `ProgressChanged`, `InstallationCompleted`) and `CreateProgressReporter()` method for IProgress integration
 - `VersionCacheService`: **Singleton** for global version list caching. Initialized once at app startup, provides cached versions to all pages, only refreshes on manual request in VersionManagementPage
-- `GitHubAtomFeedClient`: **Primary version source** - Fetches releases via Atom feed (no rate limits, no authentication required). Parses XML and constructs download URLs
-- `GitHubApiClient`: **Fallback/Token mode** - Supports optional GitHub Token authentication (60→5000 requests/hour), rate limit error handling, and API pagination limiting (maxCount parameter defaults to 3 versions)
-- `VersionService`: **Smart mode switching** - Uses `GitHubAtomFeedClient` by default (no rate limits), automatically switches to `GitHubApiClient` when Token configured or on Atom feed failure
+- `GitHubAtomFeedClient`: Fetches releases via Atom feed (no rate limits, no authentication required). Parses XML and constructs download URLs. Includes download functionality with retry logic and progress reporting
+- `VersionService`: Coordinates version fetching using `GitHubAtomFeedClient` for BepInEx/XUnity versions and `BepInExBuildsApiClient` for IL2CPP versions
 - `BepInExBuildsApiClient`: Fetches IL2CPP versions (optimized to latest 1 build only)
 - `ConfigurationService`: Parses INI files with correct section mappings for XUnity config
 - `InstallationService`: Orchestrates installation pipeline using `LogWriter` which internally uses `LogService`. Thread-safe with concurrent installation prevention
 - `GameLauncherService`: Launches game, monitors config file generation (BepInEx.cfg, AutoTranslatorConfig.ini), auto-closes game when configs are detected. Includes timeout handling and diagnostic capabilities
-- `SettingsService`: Manages settings persistence via **JSON file** at `%AppData%\Roaming\XUnity-AutoInstaller\settings.json` (migrated from Registry) for unpackaged app compatibility. Stores GitHub Token, theme, path memory, and other user preferences
+- `SettingsService`: Manages settings persistence via **JSON file** at `%AppData%\Roaming\XUnity-AutoInstaller\settings.json` (migrated from Registry) for unpackaged app compatibility. Stores theme, path memory, and other user preferences
 
 **Utils/** - Shared utilities:
 - `IniParser`: INI file parser with type conversion helpers
@@ -156,8 +154,7 @@ The backend follows a service-oriented architecture organized into three main la
 6. **Progress Reporting**: Services use `IProgress<(int, string)>` for real-time UI updates. `InstallationStateService.CreateProgressReporter()` provides standardized progress reporting
 7. **UI Thread Synchronization**: Use `DispatcherQueue.TryEnqueue()` for UI updates
 8. **No MVVM**: Direct code-behind approach with manual UI updates
-9. **Lazy Initialization**: VersionService lazy-loads GitHubApiClient with settings, but prioritizes VersionCacheService
-10. **Thread Safety**: `InstallationService` prevents concurrent installations with lock-based synchronization
+9. **Thread Safety**: `InstallationService` prevents concurrent installations with lock-based synchronization
 
 ### Code Patterns
 
@@ -231,11 +228,11 @@ The backend follows a service-oriented architecture organized into three main la
       }
   }
   ```
-- **Atom Feed vs API**:
-  - Default: `GitHubAtomFeedClient` (no rate limits, no auth required)
-  - Token mode: `GitHubApiClient` when user configures GitHub Token (more detailed info)
-  - Auto-fallback: Atom feed failure automatically switches to API
+- **Version Fetching**:
+  - Uses `GitHubAtomFeedClient` for BepInEx/XUnity versions (no rate limits, no auth required)
+  - Uses `BepInExBuildsApiClient` for IL2CPP versions from builds.bepinex.dev
   - Download URLs constructed from version info: `https://github.com/{owner}/{repo}/releases/download/{tag}/{filename}`
+  - Download functionality includes retry logic (3 attempts), progress reporting, and file integrity verification
 
 **Installation Flow** (InstallationService.InstallAsync):
 1. Validate game path and detect engine type (`PathHelper.IsValidGameDirectory()`)
@@ -297,30 +294,19 @@ The backend follows a service-oriented architecture organized into three main la
 - ❌ WRONG: `IniParser.GetInt(data, "General", "MaxCharactersPerTranslation", 200)`
 - ✅ CORRECT: `IniParser.GetInt(data, "Behaviour", "MaxCharactersPerTranslation", 200)`
 
-### Version Fetching Strategy (Rate Limit Solution)
-The application uses a **dual-client strategy** with global caching to eliminate rate limit issues:
+### Version Fetching Strategy
+The application uses **GitHub Atom Feed** with global caching for unlimited version fetching:
 
-**Primary: GitHub Atom Feed (GitHubAtomFeedClient)**
-- Fetches releases from `https://github.com/{owner}/{repo}/releases.atom`
-- **No rate limits, no authentication required**
-- Parses XML using `System.Xml.Linq` to extract version info
-- Constructs download URLs from version tags:
-  - BepInEx: `https://github.com/BepInEx/BepInEx/releases/download/v{version}/BepInEx_win_{arch}_{version}.zip`
-  - XUnity: `https://github.com/bbepis/XUnity.AutoTranslator/releases/download/v{version}/XUnity.AutoTranslator-BepInEx-{version}.zip`
-- Provides `ValidateDownloadUrlAsync()` and `GetFileSizeAsync()` for URL verification
-
-**Fallback: GitHub REST API (GitHubApiClient)**
-- Used when: (1) User configures GitHub Token, or (2) Atom feed fails
-- Unauthenticated: 60 requests/hour, Authenticated: 5000 requests/hour (set in SettingsPage)
-- Rate limit errors throw custom exception with Chinese error message
-- Uses Octokit with `ApiOptions` to limit results (maxCount parameter defaults to 3)
-
-**Smart Mode Switching (VersionService)**
-- Constructor checks for GitHub Token in settings (`SettingsService.LoadSettings()`)
-- If Token present: uses API mode (more detailed metadata)
-- If no Token: uses Atom feed mode (unlimited, faster)
-- All methods have automatic fallback: Atom → API on failure
-- Logs mode selection: `[VersionService]` prefix shows active mode
+**Version Sources:**
+- **GitHubAtomFeedClient**: Fetches BepInEx and XUnity releases from `https://github.com/{owner}/{repo}/releases.atom`
+  - No rate limits, no authentication required
+  - Parses XML using `System.Xml.Linq` to extract version info
+  - Constructs download URLs from version tags:
+    - BepInEx: `https://github.com/BepInEx/BepInEx/releases/download/v{version}/BepInEx_win_{arch}_{version}.zip`
+    - XUnity: `https://github.com/bbepis/XUnity.AutoTranslator/releases/download/v{version}/XUnity.AutoTranslator-BepInEx-{version}.zip`
+  - Provides `ValidateDownloadUrlAsync()` and `GetFileSizeAsync()` for URL verification
+  - Includes `DownloadFileAsync()` with retry logic (3 attempts), progress reporting, and file integrity verification
+- **BepInExBuildsApiClient**: Fetches IL2CPP versions from builds.bepinex.dev (HTML scraping with regex parsing)
 
 **Global Caching Layer (VersionCacheService)**
 - **Singleton** initialized once in `App.OnLaunched()` via background `InitializeVersionCacheAsync()`
@@ -507,12 +493,12 @@ if (versionCounts.BepInExCount == 0)
    - Pages now only wait for initialization (max 10s), never trigger refresh
    - Only VersionManagementPage can manually refresh
    - Enforces single-refresh architectural principle
-6. **Atom Feed Integration**: Eliminated GitHub API rate limit issues
-   - New `GitHubAtomFeedClient` fetches from `releases.atom` (no authentication, no limits)
-   - Smart mode switching in `VersionService`: Atom feed by default, API when Token configured
-   - Automatic fallback: Atom → API on failure
+6. **Atom Feed Integration**: Simplified version fetching using only GitHub Atom Feed
+   - `GitHubAtomFeedClient` fetches from `releases.atom` (no authentication, no rate limits)
+   - Removed `GitHubApiClient` and all GitHub Token/Octokit dependencies
+   - Added download functionality to `GitHubAtomFeedClient` with retry logic and progress reporting
    - Download URL construction from version tags
-   - **Result**: Users without Token can refresh versions unlimited times
+   - **Result**: Unlimited version refreshes for all users, simplified architecture
 7. **Auto-Launch Game for Config Generation**: New `GameLauncherService` automates first-run config generation
    - Launches game after installation, monitors for BepInEx.cfg and AutoTranslatorConfig.ini
    - Polls every 500ms with file size verification
@@ -529,9 +515,8 @@ if (versionCounts.BepInExCount == 0)
    - Manual refresh only in VersionManagementPage
    - Reduces fetch frequency by 90%+, improves page navigation speed 10x
 10. **Unified Logging System**: All output routed through LogService to dedicated LogPage
-11. **GitHub Token Support**: Optional token configuration switches to API mode (more metadata)
-12. **Translation Services**: Expanded from 6 to 17 endpoints with Tag-based mapping
-13. **IL2CPP Optimization**: Reduced fetch from 5 builds to 1 for faster loading
-14. **Page Initialization**: Fixed NullReferenceException with Loaded event pattern
-15. **Layout Redesign**: VersionManagementPage changed to vertical layout with larger fonts/controls
-16. **ARM64 Removal**: Discontinued from UI (platform filter) due to plugin incompatibility
+11. **Translation Services**: Expanded from 6 to 17 endpoints with Tag-based mapping
+12. **IL2CPP Optimization**: Reduced fetch from 5 builds to 1 for faster loading
+13. **Page Initialization**: Fixed NullReferenceException with Loaded event pattern
+14. **Layout Redesign**: VersionManagementPage changed to vertical layout with larger fonts/controls
+15. **ARM64 Removal**: Discontinued from UI (platform filter) due to plugin incompatibility
