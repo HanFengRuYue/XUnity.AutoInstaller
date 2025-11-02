@@ -34,7 +34,7 @@ if (-not (Test-Path $ProjectPath)) {
     exit 1
 }
 
-Write-Host "Step 1/4: Cleaning previous builds..." -ForegroundColor Yellow
+Write-Host "Step 1/5: Cleaning previous builds..." -ForegroundColor Yellow
 try {
     dotnet clean $ProjectPath -c $Configuration -p:Platform=$Platform --verbosity quiet
     Write-Host "  Clean completed successfully" -ForegroundColor Green
@@ -43,7 +43,7 @@ try {
 }
 
 Write-Host ""
-Write-Host "Step 2/4: Building and publishing..." -ForegroundColor Yellow
+Write-Host "Step 2/5: Building and publishing..." -ForegroundColor Yellow
 Write-Host "  Configuration: $Configuration" -ForegroundColor Gray
 Write-Host "  Platform: $Platform" -ForegroundColor Gray
 Write-Host "  Runtime: $RuntimeIdentifier" -ForegroundColor Gray
@@ -77,7 +77,7 @@ try {
 }
 
 Write-Host ""
-Write-Host "Step 3/4: Preparing output directory..." -ForegroundColor Yellow
+Write-Host "Step 3/5: Preparing output directory..." -ForegroundColor Yellow
 
 # Create Release directory if it doesn't exist
 if (-not (Test-Path $OutputDir)) {
@@ -88,7 +88,7 @@ if (-not (Test-Path $OutputDir)) {
 }
 
 Write-Host ""
-Write-Host "Step 4/4: Copying executable..." -ForegroundColor Yellow
+Write-Host "Step 4/5: Copying executable..." -ForegroundColor Yellow
 
 # Find the published exe
 $PublishDir = "XUnity-AutoInstaller\bin\$Configuration\net9.0-windows10.0.26100.0\$RuntimeIdentifier\publish"
@@ -115,18 +115,95 @@ $FileSize = (Get-Item $DestExe).Length
 $FileSizeMB = [math]::Round($FileSize / 1MB, 2)
 
 Write-Host ""
+Write-Host "Step 5/5: Creating ZIP archive..." -ForegroundColor Yellow
+
+# Find 7-Zip executable
+$SevenZipPaths = @(
+    "$env:ProgramFiles\7-Zip\7z.exe",
+    "${env:ProgramFiles(x86)}\7-Zip\7z.exe"
+)
+
+$SevenZipPath = $null
+foreach ($path in $SevenZipPaths) {
+    if (Test-Path $path) {
+        $SevenZipPath = $path
+        Write-Host "  Found 7-Zip at: $path" -ForegroundColor Green
+        break
+    }
+}
+
+if (-not $SevenZipPath) {
+    Write-Host ""
+    Write-Host "ERROR: 7-Zip not found!" -ForegroundColor Red
+    Write-Host "Please install 7-Zip from: https://www.7-zip.org/" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "Searched locations:" -ForegroundColor Gray
+    foreach ($path in $SevenZipPaths) {
+        Write-Host "  - $path" -ForegroundColor Gray
+    }
+    Write-Host ""
+    Write-Host "Press Enter to close..." -ForegroundColor Yellow
+    Read-Host
+    exit 1
+}
+
+# Create ZIP archive
+$ZipName = "XUnity-AutoInstaller-win-x64.zip"
+$ZipPath = Join-Path $OutputDir $ZipName
+
+Write-Host "  Creating archive: $ZipName" -ForegroundColor Gray
+
+try {
+    # Save current location and change to output directory
+    # This ensures the ZIP contains only the exe file without folder structure
+    Push-Location $OutputDir
+
+    try {
+        # Use 7-Zip to create the archive with only the exe file (no folder path)
+        & "$SevenZipPath" a -tzip $ZipName $ExeName | Out-Null
+
+        if ($LASTEXITCODE -ne 0) {
+            throw "7-Zip failed with exit code $LASTEXITCODE"
+        }
+
+        Write-Host "  Archive created successfully" -ForegroundColor Green
+
+        # Get ZIP file size
+        $ZipSize = (Get-Item $ZipName).Length
+        $ZipSizeMB = [math]::Round($ZipSize / 1MB, 2)
+        Write-Host "  ZIP Size: $ZipSizeMB MB" -ForegroundColor Green
+
+    } finally {
+        # Restore original location
+        Pop-Location
+    }
+
+} catch {
+    Write-Host ""
+    Write-Host "ERROR: Failed to create ZIP archive!" -ForegroundColor Red
+    Write-Host $_.Exception.Message -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Press Enter to close..." -ForegroundColor Yellow
+    Read-Host
+    exit 1
+}
+
+Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "BUILD SUCCESSFUL!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Output Information:" -ForegroundColor White
 Write-Host "  Executable: $DestExe" -ForegroundColor White
-Write-Host "  File Size: $FileSizeMB MB" -ForegroundColor White
+Write-Host "  Exe Size: $FileSizeMB MB" -ForegroundColor White
+Write-Host "  ZIP Archive: $ZipPath" -ForegroundColor White
+Write-Host "  ZIP Size: $ZipSizeMB MB" -ForegroundColor White
 Write-Host "  Platform: $RuntimeIdentifier" -ForegroundColor White
 Write-Host "  Configuration: $Configuration" -ForegroundColor White
 Write-Host ""
-Write-Host "You can now run the application from:" -ForegroundColor Yellow
-Write-Host "  .\$OutputDir\$ExeName" -ForegroundColor Cyan
+Write-Host "You can now:" -ForegroundColor Yellow
+Write-Host "  - Run the application: .\$OutputDir\$ExeName" -ForegroundColor Cyan
+Write-Host "  - Distribute the ZIP: .\$OutputDir\$ZipName" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Press Enter to close..." -ForegroundColor Green
 Read-Host
