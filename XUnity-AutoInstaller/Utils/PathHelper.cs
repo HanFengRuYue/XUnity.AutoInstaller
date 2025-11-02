@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.Win32;
+using XUnity_AutoInstaller.Models;
 
 namespace XUnity_AutoInstaller.Utils;
 
@@ -143,6 +144,24 @@ public static class PathHelper
             "Cache");
         Directory.CreateDirectory(cachePath);
         return cachePath;
+    }
+
+    /// <summary>
+    /// 检查版本是否已缓存到本地
+    /// </summary>
+    public static bool IsCachedVersion(VersionInfo version)
+    {
+        try
+        {
+            var tempDir = GetTempDownloadDirectory();
+            var fileName = Path.GetFileName(new Uri(version.DownloadUrl).LocalPath);
+            var downloadPath = Path.Combine(tempDir, fileName);
+            return File.Exists(downloadPath);
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     /// <summary>

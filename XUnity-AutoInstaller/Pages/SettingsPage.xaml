@@ -274,7 +274,7 @@
                         <StackPanel Spacing="8">
                             <HyperlinkButton
                                 Content="访问 GitHub 仓库"
-                                NavigateUri="https://github.com/yourusername/XUnity.AutoInstaller"/>
+                                NavigateUri="https://github.com/HanFengRuYue/XUnity.AutoInstaller"/>
                             <HyperlinkButton
                                 Content="BepInEx 官方文档"
                                 NavigateUri="https://docs.bepinex.dev/"/>

@@ -279,6 +279,8 @@
                                                 TextWrapping="NoWrap"
                                                 FontSize="14"
                                                 VerticalAlignment="Center"/>
+
+                                            <!-- Download Button (visible when not cached) -->
                                             <Button
                                                 Grid.Column="1"
                                                 Content="下载"
@@ -286,7 +288,26 @@
                                                 Height="36"
                                                 Padding="16,6"
                                                 Tag="{x:Bind}"
+                                                Visibility="{x:Bind IsDownloadButtonVisible}"
                                                 Click="DownloadButton_Click"/>
+
+                                            <!-- Already Downloaded Indicator (visible when cached) -->
+                                            <StackPanel
+                                                Grid.Column="1"
+                                                Orientation="Horizontal"
+                                                Spacing="6"
+                                                VerticalAlignment="Center"
+                                                Visibility="{x:Bind IsDownloadedTextVisible}">
+                                                <FontIcon
+                                                    Glyph="&#xE73E;"
+                                                    FontSize="16"
+                                                    Foreground="{ThemeResource SystemFillColorSuccessBrush}"/>
+                                                <TextBlock
+                                                    Text="已下载"
+                                                    FontSize="14"
+                                                    Foreground="{ThemeResource SystemFillColorSuccessBrush}"
+                                                    VerticalAlignment="Center"/>
+                                            </StackPanel>
                                         </Grid>
                                     </DataTemplate>
                                 </ListView.ItemTemplate>
@@ -338,6 +359,8 @@
                                                 TextWrapping="NoWrap"
                                                 FontSize="14"
                                                 VerticalAlignment="Center"/>
+
+                                            <!-- Download Button (visible when not cached) -->
                                             <Button
                                                 Grid.Column="1"
                                                 Content="下载"
@@ -345,7 +368,26 @@
                                                 Height="36"
                                                 Padding="16,6"
                                                 Tag="{x:Bind}"
+                                                Visibility="{x:Bind IsDownloadButtonVisible}"
                                                 Click="DownloadButton_Click"/>
+
+                                            <!-- Already Downloaded Indicator (visible when cached) -->
+                                            <StackPanel
+                                                Grid.Column="1"
+                                                Orientation="Horizontal"
+                                                Spacing="6"
+                                                VerticalAlignment="Center"
+                                                Visibility="{x:Bind IsDownloadedTextVisible}">
+                                                <FontIcon
+                                                    Glyph="&#xE73E;"
+                                                    FontSize="16"
+                                                    Foreground="{ThemeResource SystemFillColorSuccessBrush}"/>
+                                                <TextBlock
+                                                    Text="已下载"
+                                                    FontSize="14"
+                                                    Foreground="{ThemeResource SystemFillColorSuccessBrush}"
+                                                    VerticalAlignment="Center"/>
+                                            </StackPanel>
                                         </Grid>
                                     </DataTemplate>
                                 </ListView.ItemTemplate>

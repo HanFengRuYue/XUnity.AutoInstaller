@@ -362,6 +362,11 @@ The application uses **Multi-Source Architecture** with global caching and autom
 - **Platform filter excludes ARM64**: Plugin support discontinued
 - **Font sizes increased**: Title 32px, headers 22px, list items 16px
 - **Control sizes increased**: ListViews 250-400px, buttons 40px height
+- **Download Status Indicators**: Version lists show "已下载" (Already Downloaded) with green checkmark for cached versions
+  - `AvailableVersionItem.IsCached` property tracks cache status
+  - `PathHelper.IsCachedVersion()` checks file existence in cache directory
+  - Download button hidden for cached versions, replaced with green status indicator
+  - UI automatically refreshes after successful download via `ApplyFilters()` call
 
 ### Unified Logging System
 - **LogService**: Singleton managing all application logs
@@ -562,3 +567,10 @@ if (versionCounts.BepInExCount == 0)
    - Mirror URLs: BepInEx (https://fraxelia.com:60761/BepInEx/), XUnity (https://fraxelia.com:60761/XUnity/)
    - WebDAV PROPFIND-based version discovery with filename parsing
    - Comprehensive logging with `[Mirror]`, `[AtomFeed]`, `[DownloadSource]` prefixes
+17. **Download Status Indicators** (Nov 2025):
+   - Added visual indicators to show which versions are already downloaded in VersionManagementPage
+   - Enhanced `AvailableVersionItem` model with `IsCached`, `IsDownloadButtonVisible`, and `IsDownloadedTextVisible` properties
+   - Implemented `PathHelper.IsCachedVersion(VersionInfo)` to check file existence in cache directory
+   - Download button conditionally hidden for cached versions, replaced with green "已下载" indicator with checkmark (&#xE73E;)
+   - UI automatically refreshes after successful download to immediately reflect cache status
+   - Cache directory: `%AppData%\Roaming\XUnity.AutoInstaller\Cache` (same as download location)

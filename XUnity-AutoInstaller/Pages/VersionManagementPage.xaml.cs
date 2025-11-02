@@ -342,7 +342,8 @@ namespace XUnity_AutoInstaller.Pages
                 var item = new AvailableVersionItem
                 {
                     DisplayText = displayText,
-                    Version = version
+                    Version = version,
+                    IsCached = PathHelper.IsCachedVersion(version)
                 };
 
                 BepInExVersionsListView.Items.Add(item);
@@ -385,7 +386,8 @@ namespace XUnity_AutoInstaller.Pages
                 var item = new AvailableVersionItem
                 {
                     DisplayText = displayText,
-                    Version = version
+                    Version = version,
+                    IsCached = PathHelper.IsCachedVersion(version)
                 };
 
                 XUnityVersionsListView.Items.Add(item);
@@ -755,6 +757,10 @@ namespace XUnity_AutoInstaller.Pages
 
                     dialog.Hide();
                     await ShowSuccessAsync($"下载完成！\n\n文件已保存到缓存:\n{downloadPath}\n\n您可以在安装页面中使用已下载的版本进行安装。");
+
+                    // 刷新UI以显示"已下载"状态
+                    LogService.Instance.Log("刷新版本列表以更新下载状态", LogLevel.Debug, "[版本管理]");
+                    ApplyFilters();
                 }
                 catch (Exception ex)
                 {
