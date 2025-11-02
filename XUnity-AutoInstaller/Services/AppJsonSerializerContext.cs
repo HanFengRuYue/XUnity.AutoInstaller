@@ -9,6 +9,7 @@ namespace XUnity_AutoInstaller.Services;
 /// </summary>
 [JsonSerializable(typeof(AppSettings))]
 [JsonSerializable(typeof(SnapshotInfo))]
+[JsonSerializable(typeof(DownloadSourceType))]
 [JsonSourceGenerationOptions(
     WriteIndented = true,
     PropertyNameCaseInsensitive = true,

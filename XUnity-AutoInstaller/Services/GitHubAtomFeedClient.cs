@@ -13,11 +13,13 @@ namespace XUnity_AutoInstaller.Services;
 /// GitHub Atom Feed 客户端
 /// 使用 Atom feed 获取版本信息，完全不受速率限制
 /// </summary>
-public class GitHubAtomFeedClient : IDisposable
+public class GitHubAtomFeedClient : IVersionFetcher, IDisposable
 {
     private readonly HttpClient _httpClient;
     private const string BepInExFeedUrl = "https://github.com/BepInEx/BepInEx/releases.atom";
     private const string XUnityFeedUrl = "https://github.com/bbepis/XUnity.AutoTranslator/releases.atom";
+
+    public string SourceName => "GitHub Official";
 
     public GitHubAtomFeedClient()
     {
@@ -169,6 +171,23 @@ public class GitHubAtomFeedClient : IDisposable
         {
             LogService.Instance.Log($"从 Atom Feed 获取 XUnity 版本失败: {ex.Message}", LogLevel.Error, "[AtomFeed]");
             throw new Exception($"获取 XUnity 版本失败: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// 验证连接是否可用
+    /// </summary>
+    public async Task<bool> ValidateConnectionAsync()
+    {
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Head, BepInExFeedUrl);
+            var response = await _httpClient.SendAsync(request);
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
         }
     }
 

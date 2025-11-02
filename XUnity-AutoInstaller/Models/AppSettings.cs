@@ -31,4 +31,9 @@ public class AppSettings
     /// 默认备份现有安装
     /// </summary>
     public bool DefaultBackupExisting { get; set; } = true;
+
+    /// <summary>
+    /// 下载源类型（GitHub官方或镜像网站）
+    /// </summary>
+    public DownloadSourceType DownloadSource { get; set; } = DownloadSourceType.GitHub;
 }

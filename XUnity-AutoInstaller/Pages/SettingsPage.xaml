@@ -89,6 +89,66 @@
                 </Border>
             </StackPanel>
 
+            <!-- 下载源设置 -->
+            <StackPanel Spacing="16">
+                <TextBlock
+                    Text="下载源设置"
+                    Style="{StaticResource SubtitleTextBlockStyle}"/>
+
+                <Border
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="20">
+                    <StackPanel Spacing="16">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="版本列表和下载来源" FontWeight="SemiBold"/>
+                            <TextBlock
+                                Text="镜像网站可提供更快的访问速度，在无法访问GitHub时会自动切换。"
+                                Opacity="0.7"
+                                TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <RadioButtons x:Name="DownloadSourceRadioButtons" SelectionChanged="DownloadSourceRadioButtons_SelectionChanged">
+                            <RadioButton Tag="GitHub">
+                                <RadioButton.Content>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="GitHub 官方仓库" FontWeight="SemiBold"/>
+                                        <TextBlock Text="直接从GitHub下载（推荐）" Opacity="0.7" FontSize="12"/>
+                                    </StackPanel>
+                                </RadioButton.Content>
+                            </RadioButton>
+                            <RadioButton Tag="Mirror">
+                                <RadioButton.Content>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="镜像网站" FontWeight="SemiBold"/>
+                                        <TextBlock Text="从WebDAV镜像站下载（国内用户推荐）" Opacity="0.7" FontSize="12"/>
+                                    </StackPanel>
+                                </RadioButton.Content>
+                            </RadioButton>
+                        </RadioButtons>
+
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="连接状态" FontWeight="SemiBold"/>
+                            <TextBlock
+                                x:Name="ConnectionStatusTextBlock"
+                                Text="未测试"
+                                Opacity="0.7"/>
+                        </StackPanel>
+
+                        <Button Click="TestConnectionButton_Click">
+                            <Button.Content>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE895;" FontSize="14"/>
+                                    <TextBlock Text="测试连接"/>
+                                </StackPanel>
+                            </Button.Content>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
             <!-- 下载缓存管理 -->
             <StackPanel Spacing="16">
                 <TextBlock

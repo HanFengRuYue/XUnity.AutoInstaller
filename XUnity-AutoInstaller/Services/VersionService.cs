@@ -15,12 +15,79 @@ namespace XUnity_AutoInstaller.Services;
 public class VersionService
 {
     private readonly BepInExBuildsApiClient _buildsClient;
-    private readonly GitHubAtomFeedClient _atomFeedClient;
+    private readonly GitHubAtomFeedClient _githubClient;
+    private readonly WebDAVMirrorClient _mirrorClient;
+    private readonly SettingsService _settingsService;
+
+    // 会话级别的回退状态（不持久化）
+    private DownloadSourceType? _sessionFallbackSource;
+    private DateTime _lastFallbackTime = DateTime.MinValue;
 
     public VersionService()
     {
         _buildsClient = new BepInExBuildsApiClient();
-        _atomFeedClient = new GitHubAtomFeedClient();
+        _githubClient = new GitHubAtomFeedClient();
+        _mirrorClient = new WebDAVMirrorClient();
+        _settingsService = new SettingsService();
+    }
+
+    /// <summary>
+    /// 获取当前应使用的版本获取客户端（带自动回退逻辑）
+    /// </summary>
+    private IVersionFetcher GetVersionFetcher()
+    {
+        // 如果有会话级别的回退，优先使用回退源
+        if (_sessionFallbackSource.HasValue)
+        {
+            LogService.Instance.Log($"使用会话回退源: {_sessionFallbackSource.Value}", LogLevel.Debug, "[VersionService]");
+            return _sessionFallbackSource.Value == DownloadSourceType.Mirror ? _mirrorClient : _githubClient;
+        }
+
+        // 否则使用用户设置的源
+        var settings = _settingsService.LoadSettings();
+        return settings.DownloadSource == DownloadSourceType.Mirror ? _mirrorClient : _githubClient;
+    }
+
+    /// <summary>
+    /// 执行操作并在失败时自动回退到镜像源
+    /// </summary>
+    private async Task<T> ExecuteWithFallbackAsync<T>(Func<IVersionFetcher, Task<T>> operation)
+    {
+        var fetcher = GetVersionFetcher();
+
+        try
+        {
+            return await operation(fetcher);
+        }
+        catch (Exception ex)
+        {
+            // 如果当前使用的是GitHub且尚未回退，尝试切换到镜像
+            var settings = _settingsService.LoadSettings();
+            if (settings.DownloadSource == DownloadSourceType.GitHub && _sessionFallbackSource == null)
+            {
+                LogService.Instance.Log($"GitHub 访问失败: {ex.Message}，自动切换到镜像源", LogLevel.Warning, "[VersionService]");
+
+                // 设置会话级别回退
+                _sessionFallbackSource = DownloadSourceType.Mirror;
+                _lastFallbackTime = DateTime.Now;
+
+                // 使用镜像客户端重试
+                try
+                {
+                    var result = await operation(_mirrorClient);
+                    LogService.Instance.Log("成功从镜像源获取数据", LogLevel.Info, "[VersionService]");
+                    return result;
+                }
+                catch (Exception mirrorEx)
+                {
+                    LogService.Instance.Log($"镜像源也失败: {mirrorEx.Message}", LogLevel.Error, "[VersionService]");
+                    throw new Exception($"GitHub 和镜像源均失败。GitHub错误: {ex.Message}，镜像错误: {mirrorEx.Message}");
+                }
+            }
+
+            // 如果已经在使用镜像或已经回退过，直接抛出异常
+            throw;
+        }
     }
 
     /// <summary>
@@ -34,9 +101,13 @@ public class VersionService
         {
             if (filterType == null || filterType == PackageType.BepInEx)
             {
-                // 使用 Atom feed 获取 BepInEx Mono 版本（无速率限制）
-                var monoVersions = await _atomFeedClient.GetBepInExVersionsAsync(maxCount: 10);
-                LogService.Instance.Log($"从 Atom Feed 获取 {monoVersions.Count} 个 Mono 版本", LogLevel.Debug, "[VersionService]");
+                // 使用当前源获取 BepInEx Mono 版本（带自动回退）
+                var monoVersions = await ExecuteWithFallbackAsync(async fetcher =>
+                {
+                    var vers = await fetcher.GetBepInExVersionsAsync(maxCount: 10);
+                    LogService.Instance.Log($"从 {fetcher.SourceName} 获取 {vers.Count} 个 Mono 版本", LogLevel.Debug, "[VersionService]");
+                    return vers;
+                });
 
                 versions.AddRange(monoVersions.Where(v => includePrerelease || !v.IsPrerelease));
 
@@ -68,9 +139,13 @@ public class VersionService
 
             if (filterType == null || filterType == PackageType.XUnity)
             {
-                // 使用 Atom feed 获取 XUnity 版本（无速率限制）
-                var xunityVersions = await _atomFeedClient.GetXUnityVersionsAsync(maxCount: 10);
-                LogService.Instance.Log($"从 Atom Feed 获取 {xunityVersions.Count} 个 XUnity 版本", LogLevel.Debug, "[VersionService]");
+                // 使用当前源获取 XUnity 版本（带自动回退）
+                var xunityVersions = await ExecuteWithFallbackAsync(async fetcher =>
+                {
+                    var vers = await fetcher.GetXUnityVersionsAsync(maxCount: 10);
+                    LogService.Instance.Log($"从 {fetcher.SourceName} 获取 {vers.Count} 个 XUnity 版本", LogLevel.Debug, "[VersionService]");
+                    return vers;
+                });
 
                 versions.AddRange(xunityVersions.Where(v => includePrerelease || !v.IsPrerelease));
             }
@@ -121,16 +196,16 @@ public class VersionService
             }
             else
             {
-                // Mono 平台：使用 Atom feed
-                var monoVersions = await _atomFeedClient.GetBepInExVersionsAsync(maxCount: 5);
+                // Mono 平台：使用当前源（带自动回退）
+                var monoVersions = await ExecuteWithFallbackAsync(fetcher => fetcher.GetBepInExVersionsAsync(maxCount: 5));
                 bepinex = monoVersions
                     .Where(v => v.TargetPlatform == platform && !v.IsPrerelease)
                     .OrderByDescending(v => v.ReleaseDate)
                     .FirstOrDefault();
             }
 
-            // XUnity：使用 Atom feed
-            var xunityVersions = await _atomFeedClient.GetXUnityVersionsAsync(maxCount: 5);
+            // XUnity：使用当前源（带自动回退）
+            var xunityVersions = await ExecuteWithFallbackAsync(fetcher => fetcher.GetXUnityVersionsAsync(maxCount: 5));
             var xunityVersion = xunityVersions
                 .Where(v => !v.IsPrerelease)
                 .OrderByDescending(v => v.ReleaseDate)
@@ -164,7 +239,12 @@ public class VersionService
                 File.Delete(downloadPath);
             }
 
-            await _atomFeedClient.DownloadFileAsync(version.DownloadUrl, downloadPath, progress);
+            // 使用当前源下载（带自动回退）
+            await ExecuteWithFallbackAsync(async fetcher =>
+            {
+                await fetcher.DownloadFileAsync(version.DownloadUrl, downloadPath, progress);
+                return true; // 返回值用于满足泛型约束
+            });
 
             return downloadPath;
         }

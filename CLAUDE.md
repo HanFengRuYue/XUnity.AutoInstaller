@@ -75,6 +75,7 @@ All pages use `GameStateService.Instance.CurrentGamePath` for global path access
 - **.NET 9.0** (net9.0-windows10.0.26100.0)
 - **WinUI3** via Microsoft.WindowsAppSDK 1.8.251003001
 - **SharpCompress 0.41.0** for ZIP extraction
+- **WebDav.Client 2.9.0** for WebDAV mirror support
 - **Minimum OS**: Windows 10 17763 (October 2018 Update)
 - **Deployment Mode**: Unpackaged (WindowsPackageType=None, WindowsAppSDKSelfContained=true)
 - **Nullable reference types** enabled
@@ -120,20 +121,23 @@ The backend follows a service-oriented architecture organized into three main la
 - `BepInExConfig`: 30 configuration properties covering Caching, Chainloader, Harmony.Logger, Logging (Console/Disk), and Preloader sections
 - `XUnityConfig`: 50+ configuration properties covering Service, General, Behaviour, TextFrameworks, Files, Texture, Advanced, Authentication (8 services), Http, Debug, Optimization, Integration, and ResourceRedirector sections
 - `InstallOptions`: Includes `LaunchGameToGenerateConfig` (bool) and `ConfigGenerationTimeout` (int) for automatic config generation
-- `AppSettings` stores user preferences
+- `DownloadSourceType` enum: `GitHub` (default) and `Mirror` options for download source selection
+- `AppSettings` stores user preferences including `DownloadSource` property
 
 **Services/** - Business logic layer:
 - `LogService`: **Singleton** for unified application logging with event-driven updates to LogPage. Replaces all `Debug.WriteLine()` calls
 - `GameStateService`: **Singleton** for global game path management. Use `Instance.CurrentGamePath` and subscribe to `GamePathChanged` event
 - `InstallationStateService`: **Singleton** for global installation progress tracking. Provides cross-page installation state management with events (`InstallationStarted`, `ProgressChanged`, `InstallationCompleted`) and `CreateProgressReporter()` method for IProgress integration
 - `VersionCacheService`: **Singleton** for global version list caching. Initialized once at app startup, provides cached versions to all pages, only refreshes on manual request in VersionManagementPage
-- `GitHubAtomFeedClient`: Fetches releases via Atom feed (no rate limits, no authentication required). Parses XML and constructs download URLs. Includes download functionality with retry logic and progress reporting
-- `VersionService`: Coordinates version fetching using `GitHubAtomFeedClient` for BepInEx/XUnity versions and `BepInExBuildsApiClient` for IL2CPP versions
+- `IVersionFetcher`: **Interface** abstraction for version fetching and downloading from different sources (GitHub or Mirror)
+- `GitHubAtomFeedClient`: Implements `IVersionFetcher`. Fetches releases via Atom feed (no rate limits, no authentication required). Parses XML and constructs download URLs. Includes download functionality with retry logic and progress reporting
+- `WebDAVMirrorClient`: Implements `IVersionFetcher`. Fetches versions from WebDAV mirror via PROPFIND directory listing. Parses filenames to extract version info. Mirror URLs: BepInEx (https://fraxelia.com:60761/BepInEx/), XUnity (https://fraxelia.com:60761/XUnity/)
+- `VersionService`: Coordinates version fetching with automatic fallback support. Uses `IVersionFetcher` factory pattern to select GitHub or Mirror based on user settings. Implements session-level automatic fallback when GitHub is unreachable
 - `BepInExBuildsApiClient`: Fetches IL2CPP versions (optimized to latest 1 build only)
 - `ConfigurationService`: Parses INI files with correct section mappings for XUnity config
 - `InstallationService`: Orchestrates installation pipeline using `LogWriter` which internally uses `LogService`. Thread-safe with concurrent installation prevention
 - `GameLauncherService`: Launches game, monitors config file generation (BepInEx.cfg, AutoTranslatorConfig.ini), auto-closes game when configs are detected. Includes timeout handling and diagnostic capabilities
-- `SettingsService`: Manages settings persistence via **JSON file** at `%AppData%\Roaming\XUnity-AutoInstaller\settings.json` (migrated from Registry) for unpackaged app compatibility. Stores theme, path memory, and other user preferences
+- `SettingsService`: Manages settings persistence via **JSON file** at `%AppData%\Roaming\XUnity-AutoInstaller\settings.json` (migrated from Registry) for unpackaged app compatibility. Stores theme, path memory, download source preference, and other user preferences
 
 **Utils/** - Shared utilities:
 - `IniParser`: INI file parser with type conversion helpers
@@ -185,7 +189,7 @@ The backend follows a service-oriented architecture organized into three main la
 **Logging Pattern**:
 - Use `LogService.Instance.Log(message, LogLevel, prefix)` for all logging
 - Log levels: `Debug`, `Info`, `Warning`, `Error`
-- Use consistent prefixes: `[Config]`, `[IL2CPP]`, `[GitHub]`, `[VersionService]`, `[VersionCache]`, `[版本管理]`, `[安装]`, `[Settings]`
+- Use consistent prefixes: `[Config]`, `[IL2CPP]`, `[GitHub]`, `[AtomFeed]`, `[Mirror]`, `[VersionService]`, `[VersionCache]`, `[版本管理]`, `[安装]`, `[Settings]`, `[DownloadSource]`
 - Never use `System.Diagnostics.Debug.WriteLine()` directly
 
 **Installation Progress Pattern**:
@@ -228,10 +232,14 @@ The backend follows a service-oriented architecture organized into three main la
       }
   }
   ```
-- **Version Fetching**:
-  - Uses `GitHubAtomFeedClient` for BepInEx/XUnity versions (no rate limits, no auth required)
-  - Uses `BepInExBuildsApiClient` for IL2CPP versions from builds.bepinex.dev
-  - Download URLs constructed from version info: `https://github.com/{owner}/{repo}/releases/download/{tag}/{filename}`
+- **Version Fetching & Download Source Management**:
+  - **Primary Source**: `GitHubAtomFeedClient` for BepInEx/XUnity versions (no rate limits, no auth required)
+  - **Mirror Source**: `WebDAVMirrorClient` for faster access in some regions (WebDAV PROPFIND-based)
+  - **IL2CPP Source**: `BepInExBuildsApiClient` for IL2CPP versions from builds.bepinex.dev
+  - **Automatic Fallback**: If GitHub fails (timeout/network error), automatically switches to mirror for current session only
+  - **Session-level Behavior**: Fallback resets on app restart, always tries GitHub first on next launch
+  - **User Control**: Settings page allows manual selection between GitHub and Mirror sources
+  - Download URLs constructed from version info or mirror base URL
   - Download functionality includes retry logic (3 attempts), progress reporting, and file integrity verification
 
 **Installation Flow** (InstallationService.InstallAsync):
@@ -295,17 +303,29 @@ The backend follows a service-oriented architecture organized into three main la
 - ✅ CORRECT: `IniParser.GetInt(data, "Behaviour", "MaxCharactersPerTranslation", 200)`
 
 ### Version Fetching Strategy
-The application uses **GitHub Atom Feed** with global caching for unlimited version fetching:
+The application uses **Multi-Source Architecture** with global caching and automatic fallback:
 
 **Version Sources:**
-- **GitHubAtomFeedClient**: Fetches BepInEx and XUnity releases from `https://github.com/{owner}/{repo}/releases.atom`
+- **GitHubAtomFeedClient** (Primary, implements `IVersionFetcher`): Fetches BepInEx and XUnity releases from `https://github.com/{owner}/{repo}/releases.atom`
   - No rate limits, no authentication required
   - Parses XML using `System.Xml.Linq` to extract version info
   - Constructs download URLs from version tags:
     - BepInEx: `https://github.com/BepInEx/BepInEx/releases/download/v{version}/BepInEx_win_{arch}_{version}.zip`
     - XUnity: `https://github.com/bbepis/XUnity.AutoTranslator/releases/download/v{version}/XUnity.AutoTranslator-BepInEx-{version}.zip`
-  - Provides `ValidateDownloadUrlAsync()` and `GetFileSizeAsync()` for URL verification
+  - Provides `ValidateConnectionAsync()` for testing GitHub connectivity
   - Includes `DownloadFileAsync()` with retry logic (3 attempts), progress reporting, and file integrity verification
+
+- **WebDAVMirrorClient** (Fallback, implements `IVersionFetcher`): Fetches from WebDAV mirror servers
+  - Uses `WebDav.Client` library for PROPFIND operations
+  - Mirror URLs:
+    - BepInEx: `https://fraxelia.com:60761/BepInEx/`
+    - XUnity: `https://fraxelia.com:60761/XUnity/`
+  - Flat directory structure with filename parsing:
+    - BepInEx: `BepInEx_win_{platform}_{version}.zip` → extracts platform and version
+    - XUnity: `XUnity.AutoTranslator-BepInEx-{version}.zip` → extracts version
+  - Provides `ValidateConnectionAsync()` for testing mirror connectivity
+  - Same retry logic and progress reporting as GitHub client
+
 - **BepInExBuildsApiClient**: Fetches IL2CPP versions from builds.bepinex.dev (HTML scraping with regex parsing)
 
 **Global Caching Layer (VersionCacheService)**
@@ -316,6 +336,14 @@ The application uses **GitHub Atom Feed** with global caching for unlimited vers
 - Manual refresh **only** in `VersionManagementPage` via "刷新" button calling `RefreshAsync()`
 - Pages wait for initialization (max 10s) without triggering refresh if cache not ready
 - Typical usage: 1 fetch at startup, then cache-only until manual refresh
+
+**Automatic Fallback System**
+- **Trigger Conditions**: `TaskCanceledException`, `HttpRequestException`, `TimeoutException` when accessing GitHub
+- **Behavior**: Automatically switches to WebDAV mirror for current session only
+- **Reset Policy**: Fallback state resets on app restart - always retries GitHub first on next launch
+- **Manual Override**: User can manually select download source in Settings page anytime
+- **Logging**: All fallback events logged with `[VersionService]` prefix for diagnostics
+- **Implementation**: `VersionService.ExecuteWithFallbackAsync<T>()` wrapper method handles automatic fallback logic
 
 ### IL2CPP Version Detection
 - `BepInExBuildsApiClient` scrapes HTML from builds.bepinex.dev
@@ -437,9 +465,11 @@ if (versionCounts.BepInExCount == 0)
 **Settings Persistence (Unpackaged App)**:
 - `SettingsService` uses **JSON file** at `%AppData%\Roaming\XUnity-AutoInstaller\settings.json` (migrated from Registry)
 - One-time automatic migration from legacy Registry storage (`HKCU\SOFTWARE\XUnity-AutoInstaller`) with flag file (`.migrated`)
-- Settings: Theme, RememberLastGamePath, LastGamePath, ShowDetailedProgress, DefaultBackupExisting, GitHubToken
+- Settings: Theme, RememberLastGamePath, LastGamePath, ShowDetailedProgress, DefaultBackupExisting, **DownloadSource** (GitHub or Mirror)
+- `DownloadSource` property stored as `DownloadSourceType` enum (default: GitHub)
 - Atomic file writes using temp file + rename pattern for safety
 - Theme changes applied immediately via `SettingsService.ApplyTheme()`
+- Download source changes saved automatically on selection in SettingsPage
 - **DO NOT** use `ApplicationData.Current` anywhere - this will throw `System.InvalidOperationException` (HResult=0x80073D54) in unpackaged apps
 
 **Configuration Accuracy**:
@@ -520,3 +550,15 @@ if (versionCounts.BepInExCount == 0)
 13. **Page Initialization**: Fixed NullReferenceException with Loaded event pattern
 14. **Layout Redesign**: VersionManagementPage changed to vertical layout with larger fonts/controls
 15. **ARM64 Removal**: Discontinued from UI (platform filter) due to plugin incompatibility
+16. **Mirror Website Support** (Nov 2025):
+   - Added `IVersionFetcher` interface abstraction for multiple download sources
+   - Implemented `WebDAVMirrorClient` with WebDav.Client 2.9.0 for mirror server support
+   - Refactored `GitHubAtomFeedClient` to implement `IVersionFetcher` interface
+   - Added automatic fallback system: GitHub → Mirror on timeout/network error (session-only)
+   - Fallback resets on app restart to always retry GitHub first
+   - Added `DownloadSourceType` enum and `AppSettings.DownloadSource` property
+   - Updated `VersionService` with factory pattern and `ExecuteWithFallbackAsync<T>()` wrapper
+   - Added download source selection UI in SettingsPage with connection testing
+   - Mirror URLs: BepInEx (https://fraxelia.com:60761/BepInEx/), XUnity (https://fraxelia.com:60761/XUnity/)
+   - WebDAV PROPFIND-based version discovery with filename parsing
+   - Comprehensive logging with `[Mirror]`, `[AtomFeed]`, `[DownloadSource]` prefixes

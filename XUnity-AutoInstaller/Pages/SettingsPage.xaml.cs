@@ -53,6 +53,12 @@ namespace XUnity_AutoInstaller.Pages
 
             // 默认安装选项
             DefaultBackupCheckBox.IsChecked = _currentSettings.DefaultBackupExisting;
+
+            // 下载源设置（需要在Loaded事件后才能访问，使用IsLoaded检查）
+            if (DownloadSourceRadioButtons != null)
+            {
+                DownloadSourceRadioButtons.SelectedIndex = _currentSettings.DownloadSource == DownloadSourceType.Mirror ? 1 : 0;
+            }
         }
 
         /// <summary>
@@ -74,6 +80,11 @@ namespace XUnity_AutoInstaller.Pages
 
             // 默认安装选项
             _currentSettings.DefaultBackupExisting = DefaultBackupCheckBox.IsChecked == true;
+
+            // 下载源设置
+            _currentSettings.DownloadSource = DownloadSourceRadioButtons.SelectedIndex == 1
+                ? DownloadSourceType.Mirror
+                : DownloadSourceType.GitHub;
 
             // 保存到本地存储
             _settingsService.SaveSettings(_currentSettings);
@@ -332,6 +343,81 @@ namespace XUnity_AutoInstaller.Pages
             catch (Exception ex)
             {
                 LogService.Instance.Log($"打开配置文件夹失败: {ex.Message}", LogLevel.Error, "[Settings]");
+            }
+        }
+
+        private void DownloadSourceRadioButtons_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!this.IsLoaded || DownloadSourceRadioButtons == null)
+            {
+                return;
+            }
+
+            // 自动保存下载源设置
+            SaveSettingsFromUI();
+
+            var sourceName = DownloadSourceRadioButtons.SelectedIndex == 1 ? "镜像网站" : "GitHub 官方";
+            LogService.Instance.Log($"下载源已切换为: {sourceName}", LogLevel.Info, "[Settings]");
+            ConnectionStatusTextBlock.Text = "未测试（请点击测试连接按钮）";
+        }
+
+        /// <summary>
+        /// 测试连接
+        /// </summary>
+        private async void TestConnectionButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.XamlRoot == null || DownloadSourceRadioButtons == null) return;
+
+            try
+            {
+                ConnectionStatusTextBlock.Text = "正在测试连接...";
+
+                // 根据选择的源创建客户端并测试
+                IVersionFetcher client = DownloadSourceRadioButtons.SelectedIndex == 1
+                    ? new WebDAVMirrorClient()
+                    : new GitHubAtomFeedClient();
+
+                bool isConnected = await client.ValidateConnectionAsync();
+
+                if (isConnected)
+                {
+                    ConnectionStatusTextBlock.Text = $"✓ 连接成功 ({client.SourceName})";
+                    LogService.Instance.Log($"连接测试成功: {client.SourceName}", LogLevel.Info, "[Settings]");
+                }
+                else
+                {
+                    ConnectionStatusTextBlock.Text = $"✗ 连接失败 ({client.SourceName})";
+                    LogService.Instance.Log($"连接测试失败: {client.SourceName}", LogLevel.Warning, "[Settings]");
+
+                    var errorDialog = new ContentDialog
+                    {
+                        Title = "连接失败",
+                        Content = $"无法连接到 {client.SourceName}\n\n请检查网络连接或尝试其他下载源。",
+                        CloseButtonText = "确定",
+                        XamlRoot = this.XamlRoot
+                    };
+                    await errorDialog.ShowAsync();
+                }
+
+                // 释放客户端资源
+                if (client is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
+            }
+            catch (Exception ex)
+            {
+                ConnectionStatusTextBlock.Text = "✗ 测试出错";
+                LogService.Instance.Log($"连接测试出错: {ex.Message}", LogLevel.Error, "[Settings]");
+
+                var errorDialog = new ContentDialog
+                {
+                    Title = "测试失败",
+                    Content = $"连接测试失败:\n{ex.Message}",
+                    CloseButtonText = "确定",
+                    XamlRoot = this.XamlRoot
+                };
+                await errorDialog.ShowAsync();
             }
         }
 
