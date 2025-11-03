@@ -49,9 +49,28 @@ public class FontResourceInfo
     public bool IsInstalled { get; set; }
 
     /// <summary>
+    /// 是否推荐（Unity 版本完全匹配）
+    /// </summary>
+    public bool IsRecommended { get; set; }
+
+    /// <summary>
     /// UI 显示名称
     /// </summary>
     public string DisplayName => $"{FontName} (Unity {UnityVersion})";
+
+    /// <summary>
+    /// 用于 UI 显示的 Unity 版本（点分格式，例如: 2018.4.36）
+    /// </summary>
+    public string UnityVersionForDisplay
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(UnityVersion))
+                return string.Empty;
+
+            return UnityVersion.Replace('-', '.');
+        }
+    }
 
     /// <summary>
     /// 格式化的文件大小
@@ -103,6 +122,11 @@ public class FontResourceInfo
     /// 已安装状态是否可见
     /// </summary>
     public Visibility IsInstalledStatusVisible => IsInstalled ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>
+    /// 推荐标识是否可见
+    /// </summary>
+    public Visibility RecommendedBadgeVisibility => IsRecommended ? Visibility.Visible : Visibility.Collapsed;
 
     /// <summary>
     /// 用于配置文件的字体路径（例如: BepInEx\fonts\SourceHanSans_U2018-4-36）

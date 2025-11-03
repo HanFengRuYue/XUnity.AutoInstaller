@@ -499,4 +499,45 @@ public class ConfigurationService
         var bepinexPath = PathHelper.GetBepInExPath(gamePath);
         return Directory.Exists(bepinexPath);
     }
+
+    /// <summary>
+    /// 更新字体配置（Override 或 Fallback）
+    /// </summary>
+    /// <param name="gamePath">游戏路径</param>
+    /// <param name="fontPath">字体路径（例如: BepInEx\fonts\SourceHanSans_U2018-4-36）</param>
+    /// <param name="isOverride">是否为 Override Font（true=Override, false=Fallback）</param>
+    /// <returns>是否成功</returns>
+    public static bool UpdateFontConfig(string gamePath, string fontPath, bool isOverride)
+    {
+        try
+        {
+            LogService.Instance.Log($"更新字体配置: {fontPath} ({(isOverride ? "Override" : "Fallback")})", LogLevel.Info, "[Config]");
+
+            // 加载现有配置
+            var config = LoadXUnityConfig(gamePath);
+
+            // 更新字体设置
+            if (isOverride)
+            {
+                config.BehaviourOverrideFontTextMeshPro = fontPath;
+                LogService.Instance.Log($"设置 OverrideFontTextMeshPro = {fontPath}", LogLevel.Info, "[Config]");
+            }
+            else
+            {
+                config.BehaviourFallbackFontTextMeshPro = fontPath;
+                LogService.Instance.Log($"设置 FallbackFontTextMeshPro = {fontPath}", LogLevel.Info, "[Config]");
+            }
+
+            // 保存配置
+            SaveXUnityConfig(gamePath, config);
+
+            LogService.Instance.Log("字体配置更新成功", LogLevel.Info, "[Config]");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            LogService.Instance.Log($"更新字体配置失败: {ex.Message}", LogLevel.Error, "[Config]");
+            return false;
+        }
+    }
 }

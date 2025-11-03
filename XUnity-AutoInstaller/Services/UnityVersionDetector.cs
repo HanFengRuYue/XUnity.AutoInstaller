@@ -260,4 +260,17 @@ public class UnityVersionDetector
             return 0;
         }
     }
+
+    /// <summary>
+    /// 将版本字符串格式化为显示格式（点分格式）
+    /// </summary>
+    /// <param name="version">版本字符串（例如: "2018-4-36"）</param>
+    /// <returns>格式化后的版本字符串（例如: "2018.4.36"）</returns>
+    public static string FormatVersionForDisplay(string? version)
+    {
+        if (string.IsNullOrEmpty(version))
+            return string.Empty;
+
+        return version.Replace('-', '.');
+    }
 }

@@ -14,8 +14,11 @@ namespace XUnity_AutoInstaller.Pages
     {
         private readonly GameStateService _gameStateService;
         private readonly FontManagementService _fontManagementService;
-        private List<FontResourceInfo> _availableFonts = new();
+        private List<FontResourceInfo> _allFonts = new();
+        private List<FontResourceInfo> _filteredFonts = new();
         private string? _detectedUnityVersion;
+        private string _currentSortColumn = ""; // "", "fontname", "unityversion", "filesize"
+        private bool _currentSortAscending = true;
 
         public FontDownloadPage()
         {
@@ -63,20 +66,18 @@ namespace XUnity_AutoInstaller.Pages
         /// </summary>
         private void UpdateGameInfo()
         {
-            if (GamePathTextBlock == null || UnityVersionTextBlock == null)
+            if (UnityVersionRun == null)
                 return;
 
             var gamePath = _gameStateService.CurrentGamePath;
 
             if (string.IsNullOrEmpty(gamePath))
             {
-                GamePathTextBlock.Text = "未选择游戏（请在仪表盘页面选择游戏目录）";
-                UnityVersionTextBlock.Text = "N/A";
+                UnityVersionRun.Text = "未选择游戏";
                 return;
             }
 
-            GamePathTextBlock.Text = gamePath;
-            UnityVersionTextBlock.Text = "检测中...";
+            UnityVersionRun.Text = "检测中...";
         }
 
         /// <summary>
@@ -105,9 +106,9 @@ namespace XUnity_AutoInstaller.Pages
                     fonts = await _fontManagementService.GetAvailableFontsAsync();
                     _detectedUnityVersion = null;
 
-                    if (UnityVersionTextBlock != null)
+                    if (UnityVersionRun != null)
                     {
-                        UnityVersionTextBlock.Text = "N/A";
+                        UnityVersionRun.Text = "未选择游戏";
                     }
                 }
                 else
@@ -115,43 +116,49 @@ namespace XUnity_AutoInstaller.Pages
                     // Get recommended fonts based on Unity version
                     fonts = await _fontManagementService.GetRecommendedFontsAsync(gamePath);
 
-                    // Update Unity version display
-                    if (fonts.Any())
-                    {
-                        // Try to get detected version from service
-                        var detector = new UnityVersionDetector();
-                        _detectedUnityVersion = await detector.DetectUnityVersionAsync(gamePath);
+                    // Detect Unity version
+                    var detector = new UnityVersionDetector();
+                    _detectedUnityVersion = await detector.DetectUnityVersionAsync(gamePath);
 
-                        if (UnityVersionTextBlock != null)
+                    if (UnityVersionRun != null)
+                    {
+                        UnityVersionRun.Text = UnityVersionDetector.FormatVersionForDisplay(_detectedUnityVersion) ?? "未知";
+                    }
+
+                    // Mark exact matches as recommended
+                    if (!string.IsNullOrEmpty(_detectedUnityVersion))
+                    {
+                        foreach (var font in fonts)
                         {
-                            UnityVersionTextBlock.Text = _detectedUnityVersion ?? "未知";
+                            font.IsRecommended = font.UnityVersion == _detectedUnityVersion;
+                        }
+                    }
+
+                    // Auto-filter by Unity major version if game selected
+                    if (!string.IsNullOrEmpty(_detectedUnityVersion) && UnityVersionFilterBox != null)
+                    {
+                        var majorVersion = _detectedUnityVersion.Split('-').FirstOrDefault();
+                        if (!string.IsNullOrEmpty(majorVersion))
+                        {
+                            // Find matching ComboBox item
+                            foreach (ComboBoxItem item in UnityVersionFilterBox.Items)
+                            {
+                                if (item.Tag?.ToString() == majorVersion)
+                                {
+                                    UnityVersionFilterBox.SelectedItem = item;
+                                    break;
+                                }
+                            }
                         }
                     }
                 }
 
-                _availableFonts = fonts;
+                _allFonts = fonts;
 
-                // Update UI
-                if (FontListView != null && LoadingPanel != null && EmptyFontsPanel != null)
-                {
-                    if (_availableFonts.Count > 0)
-                    {
-                        FontListView.ItemsSource = _availableFonts;
-                        FontListView.Visibility = Visibility.Visible;
-                        LoadingPanel.Visibility = Visibility.Collapsed;
-                        EmptyFontsPanel.Visibility = Visibility.Collapsed;
+                // Apply filters
+                ApplyFilters();
 
-                        LogService.Instance.Log($"加载 {_availableFonts.Count} 个字体", LogLevel.Info, "[FontDownload]");
-                    }
-                    else
-                    {
-                        EmptyFontsPanel.Visibility = Visibility.Visible;
-                        LoadingPanel.Visibility = Visibility.Collapsed;
-                        FontListView.Visibility = Visibility.Collapsed;
-
-                        LogService.Instance.Log("未找到可用字体", LogLevel.Warning, "[FontDownload]");
-                    }
-                }
+                LogService.Instance.Log($"加载 {_allFonts.Count} 个字体", LogLevel.Info, "[FontDownload]");
             }
             catch (Exception ex)
             {
@@ -166,6 +173,204 @@ namespace XUnity_AutoInstaller.Pages
                     FontListView.Visibility = Visibility.Collapsed;
                 }
             }
+        }
+
+        /// <summary>
+        /// 应用筛选和排序
+        /// </summary>
+        private void ApplyFilters()
+        {
+            if (FontNameFilterBox == null || UnityVersionFilterBox == null)
+                return;
+
+            // Start with all fonts
+            _filteredFonts = new List<FontResourceInfo>(_allFonts);
+
+            // Apply font name filter
+            var fontNameFilter = FontNameFilterBox.Text?.Trim().ToLower();
+            if (!string.IsNullOrEmpty(fontNameFilter))
+            {
+                _filteredFonts = _filteredFonts.Where(f =>
+                    f.FontName.ToLower().Contains(fontNameFilter)).ToList();
+            }
+
+            // Apply Unity version filter
+            var selectedItem = UnityVersionFilterBox.SelectedItem as ComboBoxItem;
+            var versionFilter = selectedItem?.Tag?.ToString();
+            if (!string.IsNullOrEmpty(versionFilter))
+            {
+                _filteredFonts = _filteredFonts.Where(f =>
+                    f.UnityMajorVersion.ToString() == versionFilter ||
+                    (versionFilter == "6000" && f.UnityMajorVersion >= 6000)).ToList();
+            }
+
+            // Apply current sort
+            ApplySort();
+
+            // Update UI
+            UpdateListView();
+        }
+
+        /// <summary>
+        /// 应用当前排序
+        /// </summary>
+        private void ApplySort()
+        {
+            if (string.IsNullOrEmpty(_currentSortColumn))
+                return;
+
+            _filteredFonts = _currentSortColumn switch
+            {
+                "fontname" => _currentSortAscending
+                    ? _filteredFonts.OrderBy(f => f.FontName).ToList()
+                    : _filteredFonts.OrderByDescending(f => f.FontName).ToList(),
+                "unityversion" => _currentSortAscending
+                    ? _filteredFonts.OrderBy(f => f.UnityVersion).ToList()
+                    : _filteredFonts.OrderByDescending(f => f.UnityVersion).ToList(),
+                "filesize" => _currentSortAscending
+                    ? _filteredFonts.OrderBy(f => f.FileSize).ToList()
+                    : _filteredFonts.OrderByDescending(f => f.FileSize).ToList(),
+                _ => _filteredFonts
+            };
+        }
+
+        /// <summary>
+        /// 更新列表视图
+        /// </summary>
+        private void UpdateListView()
+        {
+            if (FontListView == null || LoadingPanel == null || EmptyFontsPanel == null)
+                return;
+
+            if (_filteredFonts.Count > 0)
+            {
+                FontListView.ItemsSource = _filteredFonts;
+                FontListView.Visibility = Visibility.Visible;
+                LoadingPanel.Visibility = Visibility.Collapsed;
+                EmptyFontsPanel.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                EmptyFontsPanel.Visibility = Visibility.Visible;
+                LoadingPanel.Visibility = Visibility.Collapsed;
+                FontListView.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        /// <summary>
+        /// 更新排序图标
+        /// </summary>
+        private void UpdateSortIcons(string column)
+        {
+            if (FontNameSortIcon == null || UnityVersionSortIcon == null || FileSizeSortIcon == null)
+                return;
+
+            // Hide all icons
+            FontNameSortIcon.Visibility = Visibility.Collapsed;
+            UnityVersionSortIcon.Visibility = Visibility.Collapsed;
+            FileSizeSortIcon.Visibility = Visibility.Collapsed;
+
+            // Show active column icon
+            FontIcon? activeIcon = column switch
+            {
+                "fontname" => FontNameSortIcon,
+                "unityversion" => UnityVersionSortIcon,
+                "filesize" => FileSizeSortIcon,
+                _ => null
+            };
+
+            if (activeIcon != null)
+            {
+                activeIcon.Visibility = Visibility.Visible;
+                activeIcon.Glyph = _currentSortAscending ? "\uE74A" : "\uE74B"; // Up/Down arrows
+            }
+        }
+
+        /// <summary>
+        /// 字体名称筛选框文本变化
+        /// </summary>
+        private void FilterBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            ApplyFilters();
+        }
+
+        /// <summary>
+        /// Unity 版本筛选框选择变化
+        /// </summary>
+        private void FilterBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ApplyFilters();
+        }
+
+        /// <summary>
+        /// 清除筛选按钮
+        /// </summary>
+        private void ClearFilter_Click(object sender, RoutedEventArgs e)
+        {
+            if (FontNameFilterBox != null)
+                FontNameFilterBox.Text = "";
+
+            if (UnityVersionFilterBox != null)
+                UnityVersionFilterBox.SelectedIndex = 0;
+
+            ApplyFilters();
+        }
+
+        /// <summary>
+        /// 按字体名称排序
+        /// </summary>
+        private void SortByFontName_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentSortColumn == "fontname")
+            {
+                _currentSortAscending = !_currentSortAscending;
+            }
+            else
+            {
+                _currentSortColumn = "fontname";
+                _currentSortAscending = true;
+            }
+
+            UpdateSortIcons("fontname");
+            ApplyFilters();
+        }
+
+        /// <summary>
+        /// 按 Unity 版本排序
+        /// </summary>
+        private void SortByUnityVersion_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentSortColumn == "unityversion")
+            {
+                _currentSortAscending = !_currentSortAscending;
+            }
+            else
+            {
+                _currentSortColumn = "unityversion";
+                _currentSortAscending = true;
+            }
+
+            UpdateSortIcons("unityversion");
+            ApplyFilters();
+        }
+
+        /// <summary>
+        /// 按文件大小排序
+        /// </summary>
+        private void SortByFileSize_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentSortColumn == "filesize")
+            {
+                _currentSortAscending = !_currentSortAscending;
+            }
+            else
+            {
+                _currentSortColumn = "filesize";
+                _currentSortAscending = true;
+            }
+
+            UpdateSortIcons("filesize");
+            ApplyFilters();
         }
 
         /// <summary>
@@ -200,7 +405,7 @@ namespace XUnity_AutoInstaller.Pages
 
                 progressText = new TextBlock
                 {
-                    Text = $"正在下载: {fontInfo.DisplayName}",
+                    Text = $"正在下载: {fontInfo.FontName}",
                     TextWrapping = TextWrapping.Wrap
                 };
 
@@ -231,7 +436,7 @@ namespace XUnity_AutoInstaller.Pages
                         if (progressBar != null && progressText != null)
                         {
                             progressBar.Value = percentage;
-                            progressText.Text = $"正在下载: {fontInfo.DisplayName} ({percentage}%)";
+                            progressText.Text = $"正在下载: {fontInfo.FontName} ({percentage}%)";
                         }
                     });
                 });
@@ -243,7 +448,7 @@ namespace XUnity_AutoInstaller.Pages
                 progressDialog?.Hide();
 
                 // Show success message
-                ShowInfoBar("下载成功", $"字体 {fontInfo.DisplayName} 已下载到缓存", InfoBarSeverity.Success);
+                ShowInfoBar("下载成功", $"字体 {fontInfo.FontName} (Unity {fontInfo.UnityVersionForDisplay}) 已下载到缓存", InfoBarSeverity.Success);
 
                 // Refresh list to update button states
                 await LoadFontsAsync();
@@ -279,11 +484,55 @@ namespace XUnity_AutoInstaller.Pages
                 // Install font to game
                 await _fontManagementService.InstallFontToGameAsync(gamePath, fontInfo);
 
-                // Show success message with config path
-                ShowInfoBar(
-                    "安装成功",
-                    $"字体已安装到游戏。请在配置编辑页面设置字体路径: {fontInfo.ConfigPath}",
-                    InfoBarSeverity.Success);
+                LogService.Instance.Log($"字体安装成功: {fontInfo.FileName}", LogLevel.Info, "[FontDownload]");
+
+                // Show config selection dialog
+                var configDialog = new ContentDialog
+                {
+                    Title = "字体安装成功",
+                    Content = "是否立即配置字体设置？",
+                    PrimaryButtonText = "设置为 Override Font",
+                    SecondaryButtonText = "设置为 Fallback Font",
+                    CloseButtonText = "稍后配置",
+                    DefaultButton = ContentDialogButton.Primary,
+                    XamlRoot = this.XamlRoot
+                };
+
+                var result = await configDialog.ShowAsync();
+
+                if (result == ContentDialogResult.Primary)
+                {
+                    // Set as Override Font
+                    bool success = ConfigurationService.UpdateFontConfig(gamePath, fontInfo.ConfigPath, isOverride: true);
+
+                    if (success)
+                    {
+                        ShowInfoBar("配置成功", $"已将 {fontInfo.FontName} 设置为 Override Font TextMeshPro", InfoBarSeverity.Success);
+                    }
+                    else
+                    {
+                        ShowInfoBar("配置失败", "更新配置文件时出错，请查看日志", InfoBarSeverity.Error);
+                    }
+                }
+                else if (result == ContentDialogResult.Secondary)
+                {
+                    // Set as Fallback Font
+                    bool success = ConfigurationService.UpdateFontConfig(gamePath, fontInfo.ConfigPath, isOverride: false);
+
+                    if (success)
+                    {
+                        ShowInfoBar("配置成功", $"已将 {fontInfo.FontName} 设置为 Fallback Font TextMeshPro", InfoBarSeverity.Success);
+                    }
+                    else
+                    {
+                        ShowInfoBar("配置失败", "更新配置文件时出错，请查看日志", InfoBarSeverity.Error);
+                    }
+                }
+                else
+                {
+                    // Configure Later
+                    ShowInfoBar("稍后配置", $"字体路径: {fontInfo.ConfigPath}\n请在配置编辑页面手动设置", InfoBarSeverity.Informational);
+                }
 
                 // Refresh list to update button states
                 await LoadFontsAsync();

@@ -529,13 +529,27 @@ if (versionCounts.BepInExCount == 0)
      - Sorts fonts by score, highest compatibility first
 
 4. **UI Integration** (`FontDownloadPage`):
-   - Three sections: Game Info, Font List, Usage Instructions
-   - Three-state buttons: Download → Install to Game → Installed (✓)
-   - Progress dialog created programmatically (NOT in XAML tree)
-   - Model uses `Visibility` properties (not bool) for x:Bind compatibility
+   - **Layout**: DataGrid-style table with sortable column headers and filter controls
+   - **Sections**: Game Info (Unity version only), Font List with filters
+   - **Columns**: Font Name, Unity Version, File Size, Status (sortable by clicking headers)
+   - **Filtering**:
+     - Font name TextBox (case-insensitive contains search)
+     - Unity version ComboBox (全部版本, Unity 6 (6000+), 2017-2022)
+     - Auto-filter on page load to game's Unity major version
+     - Clear filter button to reset
+   - **Version Display**: Shows "2018.4.36" instead of "2018-4-36" for readability
+   - **Recommended Badge**: Green "推荐" badge for exact Unity version matches
+   - **Three-state buttons**: Download → Install to Game → Installed (✓)
+   - **Progress dialog**: Created programmatically (NOT in XAML tree)
+   - **Model**: Uses `Visibility` properties (not bool) for x:Bind compatibility
+   - **FontResourceInfo Properties**: `IsRecommended`, `UnityVersionForDisplay`, `RecommendedBadgeVisibility`
 
 **Config Integration**:
-- After installation, users set font path in ConfigPage
+- **Automatic Update**: After installation, ContentDialog prompts user with 3 options:
+  - Primary: "设置为 Override Font" - Sets `BehaviourOverrideFontTextMeshPro`
+  - Secondary: "设置为 Fallback Font" - Sets `BehaviourFallbackFontTextMeshPro`
+  - Close: "稍后配置" - User can manually configure later
+- **ConfigurationService.UpdateFontConfig()**: Loads existing config, updates font property, saves INI file
 - Path format: `BepInEx\fonts\{filename}` (e.g., `BepInEx\fonts\SourceHanSans_U2018-4-36`)
 - Maps to XUnityConfig properties: `BehaviourOverrideFontTextMeshPro` or `BehaviourFallbackFontTextMeshPro`
 
@@ -638,6 +652,15 @@ if (versionCounts.BepInExCount == 0)
    - Game installation: `{GamePath}\BepInEx\fonts\`
    - Added font-specific PathHelper methods and FontResourceInfo model with Visibility properties for x:Bind
    - Navigation placement: Between ConfigPage and VersionManagementPage with Font icon (&#xE8D2;)
+   - **UI Improvements** (Latest):
+     - DataGrid-style layout with sortable columns (Font Name, Unity Version, File Size, Status)
+     - Filtering: Font name TextBox filter + Unity version ComboBox (supports Unity 6/6000+, 2017-2022)
+     - Auto-filtering on page load: Automatically filters to game's Unity major version
+     - Unity version display: Converts "2018-4-36" → "2018.4.36" for better readability
+     - Green "推荐" badge for fonts that exactly match game's Unity version
+     - Automatic config integration: After installation, prompts user to set as Override Font or Fallback Font
+     - `ConfigurationService.UpdateFontConfig()` updates AutoTranslatorConfig.ini automatically
+     - `UnityVersionDetector.FormatVersionForDisplay()` helper for version string formatting
 19. **ConfigPage UI Restructuring** (Nov 2025):
    - Removed nested Expander elements within the three main categories (Basic/Advanced/Expert)
    - Flattened structure: Now uses TextBlock section headers with MenuFlyoutSeparator dividers instead of nested collapsible sections
