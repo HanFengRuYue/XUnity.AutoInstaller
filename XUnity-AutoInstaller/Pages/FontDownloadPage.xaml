@@ -13,7 +13,7 @@
         <StackPanel Spacing="24">
             <!-- 页面标题 -->
             <TextBlock
-                Text="字体资源下载"
+                Text="TextMeshPro字体资源下载"
                 Style="{StaticResource TitleTextBlockStyle}"/>
 
             <!-- Unity 版本信息 -->
@@ -187,7 +187,7 @@
                                                 <!-- 字体名称 -->
                                                 <TextBlock
                                                     Grid.Column="0"
-                                                    Text="{x:Bind FontName}"
+                                                    Text="{x:Bind DisplayFontName}"
                                                     FontSize="14"
                                                     VerticalAlignment="Center"/>
 

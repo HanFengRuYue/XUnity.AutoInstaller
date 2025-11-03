@@ -291,18 +291,6 @@
                 </Border>
             </StackPanel>
 
-            <!-- 操作按钮 -->
-            <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
-                <Button
-                    x:Name="ResetButton"
-                    Content="恢复默认"
-                    Click="ResetButton_Click"/>
-                <Button
-                    x:Name="SaveButton"
-                    Content="保存设置"
-                    Style="{StaticResource AccentButtonStyle}"
-                    Click="SaveButton_Click"/>
-            </StackPanel>
         </StackPanel>
     </ScrollViewer>
 </Page>

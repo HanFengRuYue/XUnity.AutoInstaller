@@ -14,6 +14,7 @@ namespace XUnity_AutoInstaller.Pages
     {
         private readonly SettingsService _settingsService;
         private AppSettings _currentSettings;
+        private bool _isInitializing = true;
 
         public SettingsPage()
         {
@@ -23,6 +24,9 @@ namespace XUnity_AutoInstaller.Pages
             _currentSettings = _settingsService.LoadSettings();
 
             LoadSettingsToUI();
+
+            // 标记初始化完成
+            _isInitializing = false;
 
             // 显示应用版本
             VersionTextBlock.Text = $"版本 {SettingsService.GetAppVersion()}";
@@ -66,33 +70,43 @@ namespace XUnity_AutoInstaller.Pages
         /// </summary>
         private void SaveSettingsFromUI()
         {
-            // 主题
-            _currentSettings.Theme = ThemeRadioButtons.SelectedIndex switch
+            try
             {
-                1 => ElementTheme.Light,
-                2 => ElementTheme.Dark,
-                _ => ElementTheme.Default
-            };
+                // 主题
+                _currentSettings.Theme = ThemeRadioButtons.SelectedIndex switch
+                {
+                    1 => ElementTheme.Light,
+                    2 => ElementTheme.Dark,
+                    _ => ElementTheme.Default
+                };
 
-            // 常规设置
-            _currentSettings.RememberLastGamePath = RememberPathCheckBox.IsChecked == true;
-            _currentSettings.ShowDetailedProgress = ShowDetailedProgressCheckBox.IsChecked == true;
+                // 常规设置
+                _currentSettings.RememberLastGamePath = RememberPathCheckBox.IsChecked == true;
+                _currentSettings.ShowDetailedProgress = ShowDetailedProgressCheckBox.IsChecked == true;
 
-            // 默认安装选项
-            _currentSettings.DefaultBackupExisting = DefaultBackupCheckBox.IsChecked == true;
+                // 默认安装选项
+                _currentSettings.DefaultBackupExisting = DefaultBackupCheckBox.IsChecked == true;
 
-            // 下载源设置
-            _currentSettings.DownloadSource = DownloadSourceRadioButtons.SelectedIndex == 1
-                ? DownloadSourceType.Mirror
-                : DownloadSourceType.GitHub;
+                // 下载源设置
+                if (DownloadSourceRadioButtons != null)
+                {
+                    _currentSettings.DownloadSource = DownloadSourceRadioButtons.SelectedIndex == 1
+                        ? DownloadSourceType.Mirror
+                        : DownloadSourceType.GitHub;
+                }
 
-            // 保存到本地存储
-            _settingsService.SaveSettings(_currentSettings);
+                // 保存到本地存储
+                _settingsService.SaveSettings(_currentSettings);
+            }
+            catch (Exception ex)
+            {
+                LogService.Instance.Log($"自动保存设置失败: {ex.Message}", LogLevel.Error, "[Settings]");
+            }
         }
 
         private void ThemeRadioButtons_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (!this.IsLoaded)
+            if (!this.IsLoaded || _isInitializing)
             {
                 return;
             }
@@ -104,81 +118,21 @@ namespace XUnity_AutoInstaller.Pages
                 _ => ElementTheme.Default
             };
 
+            // 更新设置并自动保存
+            _currentSettings.Theme = newTheme;
+            SaveSettingsFromUI();
+
             // 立即应用主题
             SettingsService.ApplyTheme(newTheme);
         }
 
         private void SettingChanged(object sender, RoutedEventArgs e)
         {
-            // 设置改变时可以添加提示，或自动保存
-        }
+            if (_isInitializing)
+                return;
 
-        private async void SaveButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (this.XamlRoot == null) return;
-
-            try
-            {
-                SaveSettingsFromUI();
-
-                // 显示成功消息
-                var dialog = new ContentDialog
-                {
-                    Title = "成功",
-                    Content = "设置已保存",
-                    CloseButtonText = "确定",
-                    XamlRoot = this.XamlRoot
-                };
-                await dialog.ShowAsync();
-            }
-            catch (Exception ex)
-            {
-                // 显示错误消息
-                var dialog = new ContentDialog
-                {
-                    Title = "错误",
-                    Content = $"保存设置失败: {ex.Message}",
-                    CloseButtonText = "确定",
-                    XamlRoot = this.XamlRoot
-                };
-                await dialog.ShowAsync();
-            }
-        }
-
-        private async void ResetButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (this.XamlRoot == null) return;
-
-            // 确认对话框
-            var confirmDialog = new ContentDialog
-            {
-                Title = "确认重置",
-                Content = "确定要恢复所有设置为默认值吗？",
-                PrimaryButtonText = "确定",
-                CloseButtonText = "取消",
-                XamlRoot = this.XamlRoot
-            };
-
-            var result = await confirmDialog.ShowAsync();
-            if (result == ContentDialogResult.Primary)
-            {
-                // 重置为默认设置
-                _currentSettings = new AppSettings();
-                LoadSettingsToUI();
-
-                // 应用默认主题
-                SettingsService.ApplyTheme(_currentSettings.Theme);
-
-                // 显示提示
-                var successDialog = new ContentDialog
-                {
-                    Title = "成功",
-                    Content = "设置已恢复为默认值\n\n请点击\"保存设置\"以应用更改",
-                    CloseButtonText = "确定",
-                    XamlRoot = this.XamlRoot
-                };
-                await successDialog.ShowAsync();
-            }
+            // 自动保存设置
+            SaveSettingsFromUI();
         }
 
         /// <summary>
@@ -348,7 +302,7 @@ namespace XUnity_AutoInstaller.Pages
 
         private void DownloadSourceRadioButtons_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (!this.IsLoaded || DownloadSourceRadioButtons == null)
+            if (!this.IsLoaded || DownloadSourceRadioButtons == null || _isInitializing)
             {
                 return;
             }
@@ -455,20 +409,36 @@ namespace XUnity_AutoInstaller.Pages
                     LogService.Instance.Log("所有应用数据已重置", LogLevel.Info, "[Settings]");
 
                     // 重新创建并加载默认设置
+                    _isInitializing = true;
                     _currentSettings = new AppSettings();
                     LoadSettingsToUI();
                     LoadCacheInfo();
                     LoadSettingsInfo();
+                    _isInitializing = false;
 
-                    // 显示成功消息
-                    var successDialog = new ContentDialog
+                    // 应用默认主题
+                    SettingsService.ApplyTheme(_currentSettings.Theme);
+
+                    // 显示成功消息并要求重启
+                    var restartDialog = new ContentDialog
                     {
-                        Title = "成功",
-                        Content = "所有数据已重置为默认值\n\n请点击\"保存设置\"以应用更改",
-                        CloseButtonText = "确定",
+                        Title = "数据已重置",
+                        Content = "所有数据已重置为默认值\n\n程序需要重启以彻底清除所有数据\n\n是否立即重启程序？",
+                        PrimaryButtonText = "立即重启",
+                        CloseButtonText = "稍后重启",
+                        DefaultButton = ContentDialogButton.Primary,
                         XamlRoot = this.XamlRoot
                     };
-                    await successDialog.ShowAsync();
+
+                    var restartResult = await restartDialog.ShowAsync();
+                    if (restartResult == ContentDialogResult.Primary)
+                    {
+                        // 重启程序
+                        var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName ?? 
+                                     System.Reflection.Assembly.GetExecutingAssembly().Location;
+                        System.Diagnostics.Process.Start(exePath);
+                        System.Diagnostics.Process.GetCurrentProcess().Kill();
+                    }
                 }
                 catch (Exception ex)
                 {

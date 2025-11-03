@@ -38,7 +38,7 @@ namespace XUnity_AutoInstaller.Pages
                 }
                 else
                 {
-                    ShowError("未设置游戏路径，请先在首页选择游戏目录，或点击下方按钮手动选择");
+                    SetLockedState(true);
                 }
             });
         }
@@ -65,6 +65,7 @@ namespace XUnity_AutoInstaller.Pages
                     }
                     else
                     {
+                        SetLockedState(true);
                         ShowError("所选目录不是有效的游戏目录");
                     }
                 }
@@ -76,6 +77,36 @@ namespace XUnity_AutoInstaller.Pages
         }
 
         /// <summary>
+        /// 设置锁定状态
+        /// </summary>
+        private void SetLockedState(bool isLocked)
+        {
+            if (LockedPanel == null || ConfigContentPanel == null || 
+                SaveButton == null || ResetButton == null || CancelButton == null ||
+                OpenConfigFolderButton == null)
+                return;
+
+            if (isLocked)
+            {
+                LockedPanel.Visibility = Visibility.Visible;
+                ConfigContentPanel.Visibility = Visibility.Collapsed;
+                SaveButton.IsEnabled = false;
+                ResetButton.IsEnabled = false;
+                CancelButton.IsEnabled = false;
+                OpenConfigFolderButton.IsEnabled = false;
+            }
+            else
+            {
+                LockedPanel.Visibility = Visibility.Collapsed;
+                ConfigContentPanel.Visibility = Visibility.Visible;
+                SaveButton.IsEnabled = true;
+                ResetButton.IsEnabled = true;
+                CancelButton.IsEnabled = true;
+                OpenConfigFolderButton.IsEnabled = true;
+            }
+        }
+
+        /// <summary>
         /// 异步加载配置并填充 UI
         /// </summary>
         private async System.Threading.Tasks.Task LoadConfigurationAsync()
@@ -83,9 +114,13 @@ namespace XUnity_AutoInstaller.Pages
             var gamePath = _gameStateService.CurrentGamePath;
             if (string.IsNullOrEmpty(gamePath) || !ConfigurationService.ValidateGamePath(gamePath))
             {
+                SetLockedState(true);
                 ShowError("无效的游戏路径或 BepInEx 未安装");
                 return;
             }
+
+            // 解锁界面
+            SetLockedState(false);
 
             try
             {

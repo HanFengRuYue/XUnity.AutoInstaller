@@ -44,6 +44,34 @@
                         HorizontalAlignment="Center"/>
                 </StackPanel>
 
+                <!-- 锁定状态面板 -->
+                <StackPanel
+                    x:Name="LockedPanel"
+                    Visibility="Collapsed"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="24"
+                    Margin="40">
+                    <FontIcon
+                        Glyph="&#xE72C;"
+                        FontSize="64"
+                        Opacity="0.5"
+                        Foreground="{ThemeResource SystemFillColorCriticalBrush}"/>
+                    <StackPanel Spacing="12" HorizontalAlignment="Center">
+                        <TextBlock
+                            Text="配置编辑已锁定"
+                            Style="{StaticResource TitleTextBlockStyle}"
+                            HorizontalAlignment="Center"/>
+                        <TextBlock
+                            Text="请先在首页选择有效的游戏路径并确保 BepInEx 已安装"
+                            FontSize="14"
+                            Opacity="0.7"
+                            HorizontalAlignment="Center"
+                            TextWrapping="Wrap"
+                            MaxWidth="400"/>
+                    </StackPanel>
+                </StackPanel>
+
                 <!-- 配置内容面板 -->
                 <StackPanel x:Name="ConfigContentPanel" Spacing="16">
                     <!-- 游戏路径提示 -->
@@ -1670,6 +1698,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Button
+                    x:Name="OpenConfigFolderButton"
                     Grid.Column="0"
                     HorizontalAlignment="Left"
                     Click="OpenConfigFolderButton_Click">
@@ -1680,16 +1709,19 @@
                 </Button>
 
                 <Button
+                    x:Name="ResetButton"
                     Grid.Column="1"
                     Content="重置为默认"
                     Click="ResetButton_Click"/>
 
                 <Button
+                    x:Name="CancelButton"
                     Grid.Column="2"
                     Content="取消"
                     Click="CancelButton_Click"/>
 
                 <Button
+                    x:Name="SaveButton"
                     Grid.Column="3"
                     Style="{StaticResource AccentButtonStyle}"
                     Click="SaveButton_Click">

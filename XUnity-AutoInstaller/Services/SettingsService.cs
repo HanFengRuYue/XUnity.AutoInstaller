@@ -191,6 +191,15 @@ public class SettingsService
         // For unpackaged apps, use Assembly version instead of Package.Current
         var assembly = Assembly.GetExecutingAssembly();
         var version = assembly.GetName().Version;
-        return version != null ? $"{version.Major}.{version.Minor}.{version.Build}.{version.Revision}" : "1.0.0.0";
+        if (version != null)
+        {
+            // If revision is 0, display as Major.Minor.Build format
+            if (version.Revision == 0)
+            {
+                return $"{version.Major}.{version.Minor}.{version.Build}";
+            }
+            return $"{version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
+        }
+        return "1.0.0";
     }
 }

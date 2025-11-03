@@ -18,6 +18,7 @@ public class FontMirrorClient : IDisposable
     private readonly WebDavClient _webDavClient;
     private readonly HttpClient _httpClient;
     private const string FontMirrorUrl = "https://fraxelia.com:60761/TextMeshProFonts/";
+    private Dictionary<string, string>? _chineseNameMapping;
 
     public FontMirrorClient()
     {
@@ -38,6 +39,61 @@ public class FontMirrorClient : IDisposable
     }
 
     /// <summary>
+    /// 加载字体中文名称映射
+    /// </summary>
+    private async Task<Dictionary<string, string>> LoadChineseNameMappingAsync()
+    {
+        if (_chineseNameMapping != null)
+            return _chineseNameMapping;
+
+        var mapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        try
+        {
+            var mappingUrl = $"{FontMirrorUrl}FontName.txt";
+            LogService.Instance.Log("加载字体中文名称映射", LogLevel.Debug, "[FontMirror]");
+
+            using var response = await _httpClient.GetAsync(mappingUrl);
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var lines = content.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (var line in lines)
+                {
+                    var trimmedLine = line.Trim();
+                    if (string.IsNullOrEmpty(trimmedLine) || trimmedLine.StartsWith("#"))
+                        continue;
+
+                    var parts = trimmedLine.Split('=', 2);
+                    if (parts.Length == 2)
+                    {
+                        var fontName = parts[0].Trim();
+                        var chineseName = parts[1].Trim();
+                        if (!string.IsNullOrEmpty(fontName) && !string.IsNullOrEmpty(chineseName))
+                        {
+                            mapping[fontName] = chineseName;
+                        }
+                    }
+                }
+
+                LogService.Instance.Log($"加载了 {mapping.Count} 个字体中文名称映射", LogLevel.Info, "[FontMirror]");
+            }
+            else
+            {
+                LogService.Instance.Log($"无法加载字体中文名称映射文件: {response.StatusCode}", LogLevel.Warning, "[FontMirror]");
+            }
+        }
+        catch (Exception ex)
+        {
+            LogService.Instance.Log($"加载字体中文名称映射失败: {ex.Message}", LogLevel.Warning, "[FontMirror]");
+        }
+
+        _chineseNameMapping = mapping;
+        return mapping;
+    }
+
+    /// <summary>
     /// 获取所有可用的 TextMeshPro 字体资源
     /// </summary>
     public async Task<List<FontResourceInfo>> GetAvailableFontsAsync()
@@ -45,6 +101,9 @@ public class FontMirrorClient : IDisposable
         try
         {
             LogService.Instance.Log("从 WebDAV 镜像获取 TextMeshPro 字体列表", LogLevel.Debug, "[FontMirror]");
+
+            // 加载中文名称映射
+            var chineseMapping = await LoadChineseNameMappingAsync();
 
             // 使用 PROPFIND 列出所有文件
             var result = await _webDavClient.Propfind(FontMirrorUrl);
@@ -75,6 +134,12 @@ public class FontMirrorClient : IDisposable
 
                 if (fontInfo != null)
                 {
+                    // 应用中文名称映射
+                    if (chineseMapping.TryGetValue(fontInfo.FontName, out var chineseName))
+                    {
+                        fontInfo.ChineseName = chineseName;
+                    }
+
                     fonts.Add(fontInfo);
                 }
             }

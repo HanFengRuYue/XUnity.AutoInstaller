@@ -76,7 +76,7 @@
                 </NavigationViewItem>
 
                 <NavigationViewItem
-                    Content="字体下载"
+                    Content="TMP字体下载"
                     Tag="FontDownload"
                     x:Name="FontDownloadNavItem">
                     <NavigationViewItem.Icon>

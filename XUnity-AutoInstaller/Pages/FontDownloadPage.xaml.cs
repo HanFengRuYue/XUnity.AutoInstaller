@@ -186,12 +186,13 @@ namespace XUnity_AutoInstaller.Pages
             // Start with all fonts
             _filteredFonts = new List<FontResourceInfo>(_allFonts);
 
-            // Apply font name filter
+            // Apply font name filter (search both English and Chinese names)
             var fontNameFilter = FontNameFilterBox.Text?.Trim().ToLower();
             if (!string.IsNullOrEmpty(fontNameFilter))
             {
                 _filteredFonts = _filteredFonts.Where(f =>
-                    f.FontName.ToLower().Contains(fontNameFilter)).ToList();
+                    f.FontName.ToLower().Contains(fontNameFilter) ||
+                    (!string.IsNullOrEmpty(f.ChineseName) && f.ChineseName.ToLower().Contains(fontNameFilter))).ToList();
             }
 
             // Apply Unity version filter
@@ -222,8 +223,8 @@ namespace XUnity_AutoInstaller.Pages
             _filteredFonts = _currentSortColumn switch
             {
                 "fontname" => _currentSortAscending
-                    ? _filteredFonts.OrderBy(f => f.FontName).ToList()
-                    : _filteredFonts.OrderByDescending(f => f.FontName).ToList(),
+                    ? _filteredFonts.OrderBy(f => f.SortFontName).ToList()
+                    : _filteredFonts.OrderByDescending(f => f.SortFontName).ToList(),
                 "unityversion" => _currentSortAscending
                     ? _filteredFonts.OrderBy(f => f.UnityVersion).ToList()
                     : _filteredFonts.OrderByDescending(f => f.UnityVersion).ToList(),
@@ -405,7 +406,7 @@ namespace XUnity_AutoInstaller.Pages
 
                 progressText = new TextBlock
                 {
-                    Text = $"正在下载: {fontInfo.FontName}",
+                    Text = $"正在下载: {fontInfo.DisplayFontName}",
                     TextWrapping = TextWrapping.Wrap
                 };
 
@@ -436,7 +437,7 @@ namespace XUnity_AutoInstaller.Pages
                         if (progressBar != null && progressText != null)
                         {
                             progressBar.Value = percentage;
-                            progressText.Text = $"正在下载: {fontInfo.FontName} ({percentage}%)";
+                            progressText.Text = $"正在下载: {fontInfo.DisplayFontName} ({percentage}%)";
                         }
                     });
                 });
@@ -448,7 +449,7 @@ namespace XUnity_AutoInstaller.Pages
                 progressDialog?.Hide();
 
                 // Show success message
-                ShowInfoBar("下载成功", $"字体 {fontInfo.FontName} (Unity {fontInfo.UnityVersionForDisplay}) 已下载到缓存", InfoBarSeverity.Success);
+                ShowInfoBar("下载成功", $"字体 {fontInfo.DisplayFontName} (Unity {fontInfo.UnityVersionForDisplay}) 已下载到缓存", InfoBarSeverity.Success);
 
                 // Refresh list to update button states
                 await LoadFontsAsync();
@@ -507,7 +508,7 @@ namespace XUnity_AutoInstaller.Pages
 
                     if (success)
                     {
-                        ShowInfoBar("配置成功", $"已将 {fontInfo.FontName} 设置为 Override Font TextMeshPro", InfoBarSeverity.Success);
+                        ShowInfoBar("配置成功", $"已将 {fontInfo.DisplayFontName} 设置为 Override Font TextMeshPro", InfoBarSeverity.Success);
                     }
                     else
                     {
@@ -521,7 +522,7 @@ namespace XUnity_AutoInstaller.Pages
 
                     if (success)
                     {
-                        ShowInfoBar("配置成功", $"已将 {fontInfo.FontName} 设置为 Fallback Font TextMeshPro", InfoBarSeverity.Success);
+                        ShowInfoBar("配置成功", $"已将 {fontInfo.DisplayFontName} 设置为 Fallback Font TextMeshPro", InfoBarSeverity.Success);
                     }
                     else
                     {

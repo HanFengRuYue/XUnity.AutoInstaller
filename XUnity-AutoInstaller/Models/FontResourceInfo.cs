@@ -14,6 +14,11 @@ public class FontResourceInfo
     public string FontName { get; set; } = string.Empty;
 
     /// <summary>
+    /// 字体中文名称（例如: 思源黑体）
+    /// </summary>
+    public string? ChineseName { get; set; }
+
+    /// <summary>
     /// Unity 版本（例如: 2018-4-36）
     /// </summary>
     public string UnityVersion { get; set; } = string.Empty;
@@ -54,9 +59,19 @@ public class FontResourceInfo
     public bool IsRecommended { get; set; }
 
     /// <summary>
-    /// UI 显示名称
+    /// UI 显示名称（优先显示中文名）
     /// </summary>
-    public string DisplayName => $"{FontName} (Unity {UnityVersion})";
+    public string DisplayName => $"{(string.IsNullOrEmpty(ChineseName) ? FontName : ChineseName)} (Unity {UnityVersion})";
+
+    /// <summary>
+    /// 用于显示和排序的字体名称（优先中文名）
+    /// </summary>
+    public string DisplayFontName => string.IsNullOrEmpty(ChineseName) ? FontName : $"{ChineseName} ({FontName})";
+
+    /// <summary>
+    /// 用于排序的字体名称（使用中文名或英文名）
+    /// </summary>
+    public string SortFontName => string.IsNullOrEmpty(ChineseName) ? FontName : ChineseName;
 
     /// <summary>
     /// 用于 UI 显示的 Unity 版本（点分格式，例如: 2018.4.36）
