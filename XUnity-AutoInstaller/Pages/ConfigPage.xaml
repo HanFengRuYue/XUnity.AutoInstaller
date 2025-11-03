@@ -161,6 +161,26 @@
                                                 <ComboBoxItem Content="de（德语）"/>
                                                 <ComboBoxItem Content="es（西班牙语）"/>
                                                 <ComboBoxItem Content="ru（俄语）"/>
+                                                <ComboBoxItem Content="pt（葡萄牙语）"/>
+                                                <ComboBoxItem Content="it（意大利语）"/>
+                                                <ComboBoxItem Content="ar（阿拉伯语）"/>
+                                                <ComboBoxItem Content="th（泰语）"/>
+                                                <ComboBoxItem Content="vi（越南语）"/>
+                                                <ComboBoxItem Content="id（印尼语）"/>
+                                                <ComboBoxItem Content="tr（土耳其语）"/>
+                                                <ComboBoxItem Content="pl（波兰语）"/>
+                                                <ComboBoxItem Content="nl（荷兰语）"/>
+                                                <ComboBoxItem Content="sv（瑞典语）"/>
+                                                <ComboBoxItem Content="da（丹麦语）"/>
+                                                <ComboBoxItem Content="fi（芬兰语）"/>
+                                                <ComboBoxItem Content="no（挪威语）"/>
+                                                <ComboBoxItem Content="cs（捷克语）"/>
+                                                <ComboBoxItem Content="hu（匈牙利语）"/>
+                                                <ComboBoxItem Content="ro（罗马尼亚语）"/>
+                                                <ComboBoxItem Content="uk（乌克兰语）"/>
+                                                <ComboBoxItem Content="el（希腊语）"/>
+                                                <ComboBoxItem Content="he（希伯来语）"/>
+                                                <ComboBoxItem Content="hi（印地语）"/>
                                             </ComboBox>
                                         </StackPanel>
 
@@ -169,12 +189,36 @@
                                             <ComboBox
                                                 x:Name="FromLanguageComboBox"
                                                 HorizontalAlignment="Stretch"
-                                                SelectedIndex="1">
-                                                <ComboBoxItem Content="auto（自动检测）"/>
+                                                SelectedIndex="0">
                                                 <ComboBoxItem Content="ja（日语）"/>
                                                 <ComboBoxItem Content="en（英语）"/>
                                                 <ComboBoxItem Content="ko（韩语）"/>
                                                 <ComboBoxItem Content="zh-CN（简体中文）"/>
+                                                <ComboBoxItem Content="zh-TW（繁体中文）"/>
+                                                <ComboBoxItem Content="fr（法语）"/>
+                                                <ComboBoxItem Content="de（德语）"/>
+                                                <ComboBoxItem Content="es（西班牙语）"/>
+                                                <ComboBoxItem Content="ru（俄语）"/>
+                                                <ComboBoxItem Content="pt（葡萄牙语）"/>
+                                                <ComboBoxItem Content="it（意大利语）"/>
+                                                <ComboBoxItem Content="ar（阿拉伯语）"/>
+                                                <ComboBoxItem Content="th（泰语）"/>
+                                                <ComboBoxItem Content="vi（越南语）"/>
+                                                <ComboBoxItem Content="id（印尼语）"/>
+                                                <ComboBoxItem Content="tr（土耳其语）"/>
+                                                <ComboBoxItem Content="pl（波兰语）"/>
+                                                <ComboBoxItem Content="nl（荷兰语）"/>
+                                                <ComboBoxItem Content="sv（瑞典语）"/>
+                                                <ComboBoxItem Content="da（丹麦语）"/>
+                                                <ComboBoxItem Content="fi（芬兰语）"/>
+                                                <ComboBoxItem Content="no（挪威语）"/>
+                                                <ComboBoxItem Content="cs（捷克语）"/>
+                                                <ComboBoxItem Content="hu（匈牙利语）"/>
+                                                <ComboBoxItem Content="ro（罗马尼亚语）"/>
+                                                <ComboBoxItem Content="uk（乌克兰语）"/>
+                                                <ComboBoxItem Content="el（希腊语）"/>
+                                                <ComboBoxItem Content="he（希伯来语）"/>
+                                                <ComboBoxItem Content="hi（印地语）"/>
                                             </ComboBox>
                                         </StackPanel>
                                     </StackPanel>
