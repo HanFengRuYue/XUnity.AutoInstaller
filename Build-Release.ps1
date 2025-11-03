@@ -47,6 +47,7 @@ Write-Host "Step 2/5: Building and publishing..." -ForegroundColor Yellow
 Write-Host "  Configuration: $Configuration" -ForegroundColor Gray
 Write-Host "  Platform: $Platform" -ForegroundColor Gray
 Write-Host "  Runtime: $RuntimeIdentifier" -ForegroundColor Gray
+Write-Host "  Deployment: Framework-Dependent (Size Optimized)" -ForegroundColor Gray
 Write-Host ""
 
 try {
@@ -54,10 +55,9 @@ try {
         -c $Configuration `
         -p:Platform=$Platform `
         -r $RuntimeIdentifier `
-        --self-contained true `
+        --self-contained false `
         -p:PublishSingleFile=true `
-        -p:IncludeNativeLibrariesForSelfExtract=true `
-        -p:PublishReadyToRun=true `
+        -p:EnableCompressionInSingleFile=true `
         -p:PublishTrimmed=true
 
     if ($LASTEXITCODE -ne 0) {
@@ -204,6 +204,13 @@ Write-Host ""
 Write-Host "You can now:" -ForegroundColor Yellow
 Write-Host "  - Run the application: .\$OutputDir\$ExeName" -ForegroundColor Cyan
 Write-Host "  - Distribute the ZIP: .\$OutputDir\$ZipName" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "IMPORTANT - Runtime Requirements:" -ForegroundColor Yellow
+Write-Host "  End users must have installed:" -ForegroundColor White
+Write-Host "  - .NET 9.0 Desktop Runtime (x64)" -ForegroundColor White
+Write-Host "    Download: https://dotnet.microsoft.com/download/dotnet/9.0" -ForegroundColor Cyan
+Write-Host "  - Windows App Runtime 1.8+" -ForegroundColor White
+Write-Host "    (Usually pre-installed on Windows 11, may need manual install on Windows 10)" -ForegroundColor Gray
 Write-Host ""
 Write-Host "Press Enter to close..." -ForegroundColor Green
 Read-Host

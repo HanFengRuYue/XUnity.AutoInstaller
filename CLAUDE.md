@@ -33,12 +33,16 @@ dotnet run --project XUnity-AutoInstaller/XUnity-AutoInstaller.csproj -c Release
 
 ### Publishing
 ```bash
-# Self-contained deployment with trimming and single-file exe
+# Framework-dependent deployment with size optimization (10-30 MB)
 dotnet publish -p:Platform=x64 -c Release
 
-# Automated Release Build (generates single exe in Release/)
+# Automated Release Build (generates optimized single exe in Release/)
 powershell.exe -ExecutionPolicy Bypass -File Build-Release.ps1
 ```
+
+**Runtime Requirements for End Users**:
+- **.NET 9.0 Desktop Runtime (x64)**: https://dotnet.microsoft.com/download/dotnet/9.0
+- **Windows App Runtime 1.8+**: Usually pre-installed on Windows 11, may require manual install on Windows 10
 
 ### Visual Studio Debugging
 When debugging in Visual Studio, ensure you:
@@ -78,20 +82,31 @@ All pages use `GameStateService.Instance.CurrentGamePath` for global path access
 - **SharpCompress 0.41.0** for ZIP extraction
 - **WebDav.Client 2.9.0** for WebDAV mirror support
 - **Minimum OS**: Windows 10 17763 (October 2018 Update)
-- **Deployment Mode**: Unpackaged (WindowsPackageType=None, WindowsAppSDKSelfContained=true)
+- **Deployment Mode**: Unpackaged, Framework-Dependent (WindowsPackageType=None, WindowsAppSDKSelfContained=false, SelfContained=false)
 - **Nullable reference types** enabled
 
 ### Unpackaged App Configuration
-This application uses **unpackaged deployment** mode with self-contained Windows App SDK:
+This application uses **unpackaged, framework-dependent deployment** mode:
 
 **Project Settings (XUnity-AutoInstaller.csproj)**:
 - `<WindowsPackageType>None</WindowsPackageType>` - Disables MSIX packaging
-- `<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>` - Enables self-contained deployment with **automatic Bootstrap initialization**
+- `<WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>` - Framework-dependent for Windows App SDK (requires Windows App Runtime)
+- `<SelfContained>false</SelfContained>` - Framework-dependent for .NET (requires .NET 9 Desktop Runtime)
 - `<EnableMsixTooling>true</EnableMsixTooling>` - Kept enabled for resources.pri generation
-- `<PublishSingleFile>true</PublishSingleFile>` - Generates single-file executable in Release builds
+- `<PublishSingleFile>true</PublishSingleFile>` - Generates single-file executable in Release builds (~10-30 MB vs 143 MB self-contained)
+
+**Size Optimization Settings** (Release builds only):
+- `<PublishTrimmed>true</PublishTrimmed>` - Removes unused assemblies
+- `<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>` - Compresses bundled files
+- `<DebuggerSupport>false</DebuggerSupport>` - Removes debugger support
+- `<EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>` - Removes legacy serialization
+- `<HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>` - Removes HTTP tracing
+- `<MetadataUpdaterSupport>false</MetadataUpdaterSupport>` - Removes hot reload support
+- `<UseSystemResourceKeys>true</UseSystemResourceKeys>` - Smaller satellite assemblies
+- ReadyToRun disabled (saves 30-50% size, slightly slower startup)
 
 **Critical Implementation Details**:
-1. **Bootstrap Initialization**: When `WindowsAppSDKSelfContained=true` and `WindowsPackageType=None` are set, the Windows App SDK **automatically** performs Bootstrap initialization. **DO NOT** manually call `Bootstrap.Initialize()` or `DeploymentManager.Initialize()` - this causes fast-fail crashes (0xc0000602).
+1. **Bootstrap Initialization**: With framework-dependent deployment, the Windows App SDK Bootstrap is loaded from the installed Windows App Runtime. **DO NOT** manually call `Bootstrap.Initialize()` or `DeploymentManager.Initialize()` - the framework handles this automatically.
 
 2. **Settings Storage**: Unpackaged apps cannot use `ApplicationData.Current` (requires package identity). This app uses **JSON file** at `%AppData%\Roaming\XUnity-AutoInstaller\settings.json` via `SettingsService.cs` (migrated from legacy Registry storage).
 
@@ -109,8 +124,8 @@ public App()
 
 **Build Output**:
 - Debug builds: Standard multi-file output in `bin/`
-- Release builds: Single-file exe (~143 MB) with trimming and ReadyToRun compilation
-- `Build-Release.ps1`: PowerShell script that automates Release build and copies exe to `Release/` folder
+- Release builds: Single-file exe (~10-30 MB) with trimming and compression. Framework-dependent, requires .NET 9 Desktop Runtime and Windows App Runtime installed on target system
+- `Build-Release.ps1`: PowerShell script that automates Release build and copies exe to `Release/` folder with runtime requirements notice
 
 ### Backend Architecture
 

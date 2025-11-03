@@ -12,7 +12,7 @@
     <WinUISDKReferences>false</WinUISDKReferences>
     <EnableMsixTooling>true</EnableMsixTooling>
     <WindowsPackageType>None</WindowsPackageType>
-    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -46,6 +46,11 @@
     <PackageReference Include="WebDav.Client" Version="2.9.0" />
   </ItemGroup>
 
+  <!-- Preserve all types in main assembly to prevent x:Bind property trimming -->
+  <ItemGroup>
+    <TrimmerRootAssembly Include="XUnity-AutoInstaller" />
+  </ItemGroup>
+
   <!--
     Defining the "HasPackageAndPublishMenuAddedByProject" property here allows the Solution
     Explorer "Package and Publish" context menu entry to be enabled for this project even if
@@ -55,15 +60,24 @@
     <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
   </PropertyGroup>
 
-  <!-- Publish Properties -->
+  <!-- Publish Properties - Framework-Dependent Deployment for Size Optimization -->
   <PropertyGroup>
-    <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
-    <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
+    <!-- Deployment Model: Framework-Dependent (requires .NET 9 Desktop Runtime and Windows App Runtime) -->
+    <SelfContained>false</SelfContained>
+
+    <!-- Size Optimizations -->
     <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
     <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
-    <SelfContained>true</SelfContained>
     <PublishSingleFile Condition="'$(Configuration)' != 'Debug'">true</PublishSingleFile>
-    <IncludeNativeLibrariesForSelfExtract Condition="'$(Configuration)' != 'Debug'">true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile Condition="'$(Configuration)' != 'Debug'">true</EnableCompressionInSingleFile>
+
+    <!-- Remove debugger and runtime features for smaller size -->
+    <DebuggerSupport Condition="'$(Configuration)' != 'Debug'">false</DebuggerSupport>
+    <EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
+    <HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
+    <MetadataUpdaterSupport>false</MetadataUpdaterSupport>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+
     <ApplicationIcon>..\ICON\ICON.ico</ApplicationIcon>
   </PropertyGroup>
 </Project>

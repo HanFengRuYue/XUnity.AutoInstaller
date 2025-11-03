@@ -42,7 +42,10 @@ namespace XUnity_AutoInstaller
         /// </summary>
         public App()
         {
-            // For unpackaged apps, Bootstrap.Initialize is called in Program.cs Main() before this
+            // Required for PublishSingleFile with framework-dependent deployment
+            // This ensures Windows App Runtime can locate its files when bundled in single-file exe
+            Environment.SetEnvironmentVariable("MICROSOFT_WINDOWSAPPRUNTIME_BASE_DIRECTORY", AppContext.BaseDirectory);
+
             InitializeComponent();
 
             // 添加全局异常处理器
