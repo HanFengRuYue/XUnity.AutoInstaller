@@ -638,3 +638,10 @@ if (versionCounts.BepInExCount == 0)
    - Game installation: `{GamePath}\BepInEx\fonts\`
    - Added font-specific PathHelper methods and FontResourceInfo model with Visibility properties for x:Bind
    - Navigation placement: Between ConfigPage and VersionManagementPage with Font icon (&#xE8D2;)
+19. **ConfigPage UI Restructuring** (Nov 2025):
+   - Removed nested Expander elements within the three main categories (Basic/Advanced/Expert)
+   - Flattened structure: Now uses TextBlock section headers with MenuFlyoutSeparator dividers instead of nested collapsible sections
+   - Simplified category names: Removed parenthetical descriptions ("基础设置（常用配置）" → "基础设置")
+   - Removed Border wrappers inside Expanders to eliminate "box within a box" visual effect
+   - All ~170 configuration options now displayed in flat lists within each category for easier scanning
+   - Set Padding="0" on all remaining structural elements to maximize content area

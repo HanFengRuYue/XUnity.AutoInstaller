@@ -69,7 +69,14 @@
                         IsExpanded="True"
                         HorizontalAlignment="Stretch"
                         HorizontalContentAlignment="Stretch">
-                        <StackPanel Spacing="24" HorizontalAlignment="Stretch">
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="0,0,8,8"
+                            Padding="20"
+                            HorizontalAlignment="Stretch">
+                            <StackPanel Spacing="24" HorizontalAlignment="Stretch">
 
                                 <!-- 翻译核心配置 -->
                                 <TextBlock Text="翻译核心配置" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,8"/>
@@ -311,6 +318,7 @@
                                             OffContent="已禁用"
                                             IsOn="False"/>
                                     </StackPanel>
+                                </StackPanel>
 
                                 <MenuFlyoutSeparator/>
 
@@ -362,7 +370,8 @@
                                         </StackPanel>
                                     </StackPanel>
 
-                        </StackPanel>
+                            </StackPanel>
+                        </Border>
                     </Expander>
 
                     <!-- ========================================= -->
@@ -373,7 +382,14 @@
                         IsExpanded="False"
                         HorizontalAlignment="Stretch"
                         HorizontalContentAlignment="Stretch">
-                        <StackPanel Spacing="24" HorizontalAlignment="Stretch">
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="0,0,8,8"
+                            Padding="20"
+                            HorizontalAlignment="Stretch">
+                            <StackPanel Spacing="24" HorizontalAlignment="Stretch">
 
                                 <!-- 翻译行为控制 -->
                                 <TextBlock Text="翻译行为控制" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,8"/>
@@ -446,6 +462,7 @@
                                                 IsOn="True"/>
                                         </StackPanel>
                                     </StackPanel>
+                                </StackPanel>
 
                                 <MenuFlyoutSeparator/>
 
@@ -569,6 +586,7 @@
                                             </ComboBox>
                                         </StackPanel>
                                     </StackPanel>
+                                </StackPanel>
 
                                 <MenuFlyoutSeparator/>
 
@@ -649,6 +667,7 @@
                                                 IsOn="False"/>
                                         </StackPanel>
                                     </StackPanel>
+                                </StackPanel>
 
                                 <MenuFlyoutSeparator/>
 
@@ -786,6 +805,7 @@
                                             </ComboBox>
                                         </StackPanel>
                                     </StackPanel>
+                                </StackPanel>
 
                                 <MenuFlyoutSeparator/>
 
@@ -811,6 +831,7 @@
                                                 IsOn="False"/>
                                         </StackPanel>
                                     </StackPanel>
+                                </StackPanel>
 
                                 <MenuFlyoutSeparator/>
 
@@ -910,7 +931,8 @@
                                         </StackPanel>
                                     </StackPanel>
 
-                        </StackPanel>
+                            </StackPanel>
+                        </Border>
                     </Expander>
 
                     <!-- ========================================= -->
@@ -921,7 +943,14 @@
                         IsExpanded="False"
                         HorizontalAlignment="Stretch"
                         HorizontalContentAlignment="Stretch">
-                        <StackPanel Spacing="24" HorizontalAlignment="Stretch">
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="0,0,8,8"
+                            Padding="20"
+                            HorizontalAlignment="Stretch">
+                            <StackPanel Spacing="24" HorizontalAlignment="Stretch">
 
                                 <TextBlock
                                     Text="⚠️ 警告：这些是高级开发者选项，修改不当可能导致游戏无法启动或崩溃"
@@ -1055,6 +1084,7 @@
                                                 HorizontalAlignment="Stretch"/>
                                         </StackPanel>
                                     </StackPanel>
+                                </StackPanel>
 
                                 <MenuFlyoutSeparator/>
 
@@ -1107,6 +1137,7 @@
                                             </ComboBox>
                                         </StackPanel>
                                     </StackPanel>
+                                </StackPanel>
 
                                 <MenuFlyoutSeparator/>
 
@@ -1269,6 +1300,7 @@
                                                 IsOn="False"/>
                                         </StackPanel>
                                     </StackPanel>
+                                </StackPanel>
 
                                 <MenuFlyoutSeparator/>
 
@@ -1317,6 +1349,7 @@
                                                 IsOn="False"/>
                                         </StackPanel>
                                     </StackPanel>
+                                </StackPanel>
 
                                 <MenuFlyoutSeparator/>
 
@@ -1398,6 +1431,7 @@
                                                 HorizontalAlignment="Stretch"/>
                                         </StackPanel>
                                     </StackPanel>
+                                </StackPanel>
 
                                 <MenuFlyoutSeparator/>
 
@@ -1476,6 +1510,7 @@
                                                 IsOn="False"/>
                                         </StackPanel>
                                     </StackPanel>
+                                </StackPanel>
 
                                 <MenuFlyoutSeparator/>
 
@@ -1576,6 +1611,7 @@
                                             </Grid>
                                         </StackPanel>
                                     </StackPanel>
+                                </StackPanel>
 
                                 <MenuFlyoutSeparator/>
 
@@ -1617,6 +1653,7 @@
                                                 HorizontalAlignment="Stretch"/>
                                         </StackPanel>
                                     </StackPanel>
+                                </StackPanel>
 
                                 <MenuFlyoutSeparator/>
 
@@ -1647,7 +1684,8 @@
                                         </StackPanel>
                                     </StackPanel>
 
-                        </StackPanel>
+                            </StackPanel>
+                        </Border>
                     </Expander>
 
                 </StackPanel>
