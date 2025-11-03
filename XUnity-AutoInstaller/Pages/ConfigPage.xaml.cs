@@ -321,6 +321,7 @@ namespace XUnity_AutoInstaller.Pages
             EnableTextMeshProToggle.IsOn = config.TextFrameworksTextMeshPro;
             EnableTextMeshToggle.IsOn = config.TextFrameworksTextMesh;
             EnableIMGUIToggle.IsOn = config.TextFrameworksIMGUI;
+            EnableFairyGUIToggle.IsOn = config.TextFrameworksFairyGUI;
 
             // Files
             DirectoryTextBox.Text = config.FilesDirectory;
@@ -382,6 +383,13 @@ namespace XUnity_AutoInstaller.Pages
             BlacklistedIMGUIPluginsTextBox.Text = config.BehaviourBlacklistedIMGUIPlugins;
             IgnoreVirtualTextSetterCallingRulesToggle.IsOn = config.BehaviourIgnoreVirtualTextSetterCallingRules;
             OutputTooLongTextToggle.IsOn = config.BehaviourOutputTooLongText;
+            OverrideFontSizeTextBox.Text = config.BehaviourOverrideFontSize;
+            BehaviourTextGetterCompatibilityModeToggle.IsOn = config.BehaviourTextGetterCompatibilityMode;
+            EnableTextPathLoggingToggle.IsOn = config.BehaviourEnableTextPathLogging;
+            TemplateAllNumberAwayToggle.IsOn = config.BehaviourTemplateAllNumberAway;
+            ReloadTranslationsOnFileChangeToggle.IsOn = config.BehaviourReloadTranslationsOnFileChange;
+            DisableTextMeshProScrollInEffectsToggle.IsOn = config.BehaviourDisableTextMeshProScrollInEffects;
+            CacheParsedTranslationsToggle.IsOn = config.BehaviourCacheParsedTranslations;
 
             // PersistRichTextMode ComboBox
             PersistRichTextModeComboBox.SelectedIndex = config.BehaviourPersistRichTextMode switch
@@ -407,6 +415,7 @@ namespace XUnity_AutoInstaller.Pages
             DuplicateTextureNamesTextBox.Text = config.TextureDuplicateTextureNames;
             EnableLegacyTextureLoadingToggle.IsOn = config.TextureEnableLegacyTextureLoading;
             CacheTexturesInMemoryToggle.IsOn = config.TextureCacheTexturesInMemory;
+            EnableSpriteHookingToggle.IsOn = config.TextureEnableSpriteHooking;
 
             // ResourceRedirector扩展选项
             PreferredStoragePathTextBox.Text = config.ResourceRedirectorPreferredStoragePath;
@@ -417,14 +426,28 @@ namespace XUnity_AutoInstaller.Pages
 
             // Authentication扩展
             WatsonUrlTextBox.Text = config.WatsonUrl;
+            WatsonKeyTextBox.Text = config.WatsonKey;
             DeepLFreeToggle.IsOn = config.DeepLLegitimateFree;
+            DeepLLegitimateExecutableLocationTextBox.Text = config.DeepLLegitimateExecutableLocation;
+            BaiduDelaySecondsNumber.Value = config.BaiduDelaySeconds;
+            LingoCloudLingoCloudTokenTextBox.Text = config.LingoCloudLingoCloudToken;
 
             // 翻译服务高级配置
             GoogleServiceUrlTextBox.Text = config.GoogleServiceUrl;
             DeepLMinDelayNumber.Value = config.DeepLMinDelay;
             DeepLMaxDelayNumber.Value = config.DeepLMaxDelay;
+            DeepLExecutableLocationTextBox.Text = config.DeepLExecutableLocation;
+            DeepLMinDelaySecondsNumber.Value = config.DeepLMinDelaySeconds;
+            DeepLMaxDelaySecondsNumber.Value = config.DeepLMaxDelaySeconds;
             CustomUrlTextBox.Text = config.CustomUrl;
+            CustomEnableShortDelayToggle.IsOn = config.CustomEnableShortDelay;
+            CustomDisableSpamChecksToggle.IsOn = config.CustomDisableSpamChecks;
             LecPowerTranslator15InstallationPathTextBox.Text = config.LecPowerTranslator15InstallationPath;
+            EzTransInstallationPathTextBox.Text = config.EzTransInstallationPath;
+            GoogleV2ServiceUrlTextBox.Text = config.GoogleV2ServiceUrl;
+            GoogleV2RPCIDTextBox.Text = config.GoogleV2RPCID;
+            GoogleV2VersionTextBox.Text = config.GoogleV2Version;
+            GoogleV2UseSimplestToggle.IsOn = config.GoogleV2UseSimplest;
 
             // Translation Aggregator
             TranslationAggregatorWidthNumber.Value = config.TranslationAggregatorWidth;
@@ -438,6 +461,7 @@ namespace XUnity_AutoInstaller.Pages
             // Http
             HttpUserAgentTextBox.Text = config.HttpUserAgent;
             DisableCertificateChecksToggle.IsOn = config.HttpDisableCertificateChecks;
+            DisableCertificateValidationToggle.IsOn = config.HttpDisableCertificateValidation;
 
             // Debug
             DebugEnableConsoleToggle.IsOn = config.DebugEnableConsole;
@@ -597,6 +621,7 @@ namespace XUnity_AutoInstaller.Pages
                 TextFrameworksTextMeshPro = EnableTextMeshProToggle.IsOn,
                 TextFrameworksTextMesh = EnableTextMeshToggle.IsOn,
                 TextFrameworksIMGUI = EnableIMGUIToggle.IsOn,
+                TextFrameworksFairyGUI = EnableFairyGUIToggle.IsOn,
                 FilesDirectory = DirectoryTextBox.Text,
                 FilesOutputFile = OutputFileTextBox.Text,
                 FilesSubstitutionFile = SubstitutionFileTextBox.Text,
@@ -650,6 +675,13 @@ namespace XUnity_AutoInstaller.Pages
                 BehaviourBlacklistedIMGUIPlugins = BlacklistedIMGUIPluginsTextBox.Text,
                 BehaviourIgnoreVirtualTextSetterCallingRules = IgnoreVirtualTextSetterCallingRulesToggle.IsOn,
                 BehaviourOutputTooLongText = OutputTooLongTextToggle.IsOn,
+                BehaviourOverrideFontSize = OverrideFontSizeTextBox.Text,
+                BehaviourTextGetterCompatibilityMode = BehaviourTextGetterCompatibilityModeToggle.IsOn,
+                BehaviourEnableTextPathLogging = EnableTextPathLoggingToggle.IsOn,
+                BehaviourTemplateAllNumberAway = TemplateAllNumberAwayToggle.IsOn,
+                BehaviourReloadTranslationsOnFileChange = ReloadTranslationsOnFileChangeToggle.IsOn,
+                BehaviourDisableTextMeshProScrollInEffects = DisableTextMeshProScrollInEffectsToggle.IsOn,
+                BehaviourCacheParsedTranslations = CacheParsedTranslationsToggle.IsOn,
 
                 // PersistRichTextMode
                 BehaviourPersistRichTextMode = PersistRichTextModeComboBox.SelectedIndex switch
@@ -675,6 +707,7 @@ namespace XUnity_AutoInstaller.Pages
                 TextureDuplicateTextureNames = DuplicateTextureNamesTextBox.Text,
                 TextureEnableLegacyTextureLoading = EnableLegacyTextureLoadingToggle.IsOn,
                 TextureCacheTexturesInMemory = CacheTexturesInMemoryToggle.IsOn,
+                TextureEnableSpriteHooking = EnableSpriteHookingToggle.IsOn,
 
                 // ResourceRedirector扩展选项
                 ResourceRedirectorPreferredStoragePath = PreferredStoragePathTextBox.Text,
@@ -685,14 +718,28 @@ namespace XUnity_AutoInstaller.Pages
 
                 // Authentication扩展
                 WatsonUrl = WatsonUrlTextBox.Text,
+                WatsonKey = WatsonKeyTextBox.Text,
                 DeepLLegitimateFree = DeepLFreeToggle.IsOn,
+                DeepLLegitimateExecutableLocation = DeepLLegitimateExecutableLocationTextBox.Text,
+                BaiduDelaySeconds = (int)BaiduDelaySecondsNumber.Value,
+                LingoCloudLingoCloudToken = LingoCloudLingoCloudTokenTextBox.Text,
 
                 // 翻译服务高级配置
                 GoogleServiceUrl = GoogleServiceUrlTextBox.Text,
                 DeepLMinDelay = (int)DeepLMinDelayNumber.Value,
                 DeepLMaxDelay = (int)DeepLMaxDelayNumber.Value,
+                DeepLExecutableLocation = DeepLExecutableLocationTextBox.Text,
+                DeepLMinDelaySeconds = (int)DeepLMinDelaySecondsNumber.Value,
+                DeepLMaxDelaySeconds = (int)DeepLMaxDelaySecondsNumber.Value,
                 CustomUrl = CustomUrlTextBox.Text,
+                CustomEnableShortDelay = CustomEnableShortDelayToggle.IsOn,
+                CustomDisableSpamChecks = CustomDisableSpamChecksToggle.IsOn,
                 LecPowerTranslator15InstallationPath = LecPowerTranslator15InstallationPathTextBox.Text,
+                EzTransInstallationPath = EzTransInstallationPathTextBox.Text,
+                GoogleV2ServiceUrl = GoogleV2ServiceUrlTextBox.Text,
+                GoogleV2RPCID = GoogleV2RPCIDTextBox.Text,
+                GoogleV2Version = GoogleV2VersionTextBox.Text,
+                GoogleV2UseSimplest = GoogleV2UseSimplestToggle.IsOn,
 
                 // Translation Aggregator
                 TranslationAggregatorWidth = (int)TranslationAggregatorWidthNumber.Value,
@@ -706,6 +753,7 @@ namespace XUnity_AutoInstaller.Pages
                 // Http
                 HttpUserAgent = HttpUserAgentTextBox.Text,
                 HttpDisableCertificateChecks = DisableCertificateChecksToggle.IsOn,
+                HttpDisableCertificateValidation = DisableCertificateValidationToggle.IsOn,
 
                 // Debug
                 DebugEnableConsole = DebugEnableConsoleToggle.IsOn,
@@ -869,6 +917,29 @@ namespace XUnity_AutoInstaller.Pages
                 if (folder != null)
                 {
                     TextureDirectoryTextBox.Text = folder.Path;
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError($"选择文件夹失败: {ex.Message}");
+            }
+        }
+
+        private async void BrowseEzTransPathButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var picker = new FolderPicker();
+                picker.SuggestedStartLocation = PickerLocationId.ComputerFolder;
+                picker.FileTypeFilter.Add("*");
+
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+                WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+                var folder = await picker.PickSingleFolderAsync();
+                if (folder != null)
+                {
+                    EzTransInstallationPathTextBox.Text = folder.Path;
                 }
             }
             catch (Exception ex)

@@ -338,6 +338,13 @@
                                             OnContent="已启用"
                                             OffContent="已禁用"
                                             IsOn="False"/>
+
+                                        <ToggleSwitch
+                                            x:Name="EnableFairyGUIToggle"
+                                            Header="FairyGUI"
+                                            OnContent="已启用"
+                                            OffContent="已禁用"
+                                            IsOn="False"/>
                                     </StackPanel>
 
                                 <MenuFlyoutSeparator/>
@@ -893,6 +900,17 @@
                                         </StackPanel>
 
                                         <StackPanel Spacing="8">
+                                            <TextBlock Text="Baidu 延迟秒数 (Delay Seconds)" FontWeight="SemiBold"/>
+                                            <NumberBox
+                                                x:Name="BaiduDelaySecondsNumber"
+                                                Value="1"
+                                                Minimum="0"
+                                                Maximum="10"
+                                                SpinButtonPlacementMode="Inline"
+                                                HorizontalAlignment="Stretch"/>
+                                        </StackPanel>
+
+                                        <StackPanel Spacing="8">
                                             <TextBlock Text="Yandex API Key" FontWeight="SemiBold"/>
                                             <TextBox
                                                 x:Name="YandexAPIKeyTextBox"
@@ -909,10 +927,26 @@
                                         </StackPanel>
 
                                         <StackPanel Spacing="8">
+                                            <TextBlock Text="Watson Key" FontWeight="SemiBold"/>
+                                            <TextBox
+                                                x:Name="WatsonKeyTextBox"
+                                                PlaceholderText="输入IBM Watson Key"
+                                                HorizontalAlignment="Stretch"/>
+                                        </StackPanel>
+
+                                        <StackPanel Spacing="8">
                                             <TextBlock Text="LingoCloud Token (彩云小译)" FontWeight="SemiBold"/>
                                             <TextBox
                                                 x:Name="LingoCloudTokenTextBox"
                                                 PlaceholderText="输入彩云小译API Token"
+                                                HorizontalAlignment="Stretch"/>
+                                        </StackPanel>
+
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="LingoCloud Token (LingoCloudToken)" FontWeight="SemiBold"/>
+                                            <TextBox
+                                                x:Name="LingoCloudLingoCloudTokenTextBox"
+                                                PlaceholderText="输入LingoCloud Token"
                                                 HorizontalAlignment="Stretch"/>
                                         </StackPanel>
 
@@ -935,6 +969,14 @@
                                                 OnContent="免费版"
                                                 OffContent="专业版"
                                                 IsOn="False"/>
+                                        </StackPanel>
+
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="DeepL API 可执行文件位置 (Executable Location)" FontWeight="SemiBold"/>
+                                            <TextBox
+                                                x:Name="DeepLLegitimateExecutableLocationTextBox"
+                                                PlaceholderText="留空使用默认值"
+                                                HorizontalAlignment="Stretch"/>
                                         </StackPanel>
                                     </StackPanel>
 
@@ -1296,6 +1338,72 @@
                                                 OffContent="已禁用"
                                                 IsOn="False"/>
                                         </StackPanel>
+
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="字体大小覆盖 (Override Font Size)" FontWeight="SemiBold"/>
+                                            <TextBlock
+                                                Text="留空使用默认值"
+                                                FontSize="12"
+                                                Opacity="0.7"/>
+                                            <TextBox
+                                                x:Name="OverrideFontSizeTextBox"
+                                                PlaceholderText="例如: 16"
+                                                HorizontalAlignment="Stretch"/>
+                                        </StackPanel>
+
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="文本获取器兼容模式 (Behaviour TextGetter Compatibility Mode)" FontWeight="SemiBold"/>
+                                            <ToggleSwitch
+                                                x:Name="BehaviourTextGetterCompatibilityModeToggle"
+                                                OnContent="已启用"
+                                                OffContent="已禁用"
+                                                IsOn="False"/>
+                                        </StackPanel>
+
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="启用文本路径日志 (Enable Text Path Logging)" FontWeight="SemiBold"/>
+                                            <ToggleSwitch
+                                                x:Name="EnableTextPathLoggingToggle"
+                                                OnContent="已启用"
+                                                OffContent="已禁用"
+                                                IsOn="False"/>
+                                        </StackPanel>
+
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="将所有数字模板化 (Template All Number Away)" FontWeight="SemiBold"/>
+                                            <ToggleSwitch
+                                                x:Name="TemplateAllNumberAwayToggle"
+                                                OnContent="已启用"
+                                                OffContent="已禁用"
+                                                IsOn="False"/>
+                                        </StackPanel>
+
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="文件变更时重新加载翻译 (Reload Translations On File Change)" FontWeight="SemiBold"/>
+                                            <ToggleSwitch
+                                                x:Name="ReloadTranslationsOnFileChangeToggle"
+                                                OnContent="已启用"
+                                                OffContent="已禁用"
+                                                IsOn="False"/>
+                                        </StackPanel>
+
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="禁用 TextMeshPro 滚动效果 (Disable TextMeshPro Scroll In Effects)" FontWeight="SemiBold"/>
+                                            <ToggleSwitch
+                                                x:Name="DisableTextMeshProScrollInEffectsToggle"
+                                                OnContent="已禁用"
+                                                OffContent="已启用"
+                                                IsOn="False"/>
+                                        </StackPanel>
+
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="缓存解析后的翻译 (Cache Parsed Translations)" FontWeight="SemiBold"/>
+                                            <ToggleSwitch
+                                                x:Name="CacheParsedTranslationsToggle"
+                                                OnContent="已启用"
+                                                OffContent="已禁用"
+                                                IsOn="False"/>
+                                        </StackPanel>
                                     </StackPanel>
 
                                 <MenuFlyoutSeparator/>
@@ -1466,6 +1574,15 @@
                                         </StackPanel>
 
                                         <StackPanel Spacing="8">
+                                            <TextBlock Text="启用 Sprite 钩子 (Enable Sprite Hooking)" FontWeight="SemiBold"/>
+                                            <ToggleSwitch
+                                                x:Name="EnableSpriteHookingToggle"
+                                                OnContent="已启用"
+                                                OffContent="已禁用"
+                                                IsOn="False"/>
+                                        </StackPanel>
+
+                                        <StackPanel Spacing="8">
                                             <TextBlock Text="加载未修改的纹理 (Load Unmodified Textures)" FontWeight="SemiBold"/>
                                             <ToggleSwitch
                                                 x:Name="LoadUnmodifiedTexturesToggle"
@@ -1532,6 +1649,19 @@
                                                 IsOn="False"/>
                                         </StackPanel>
 
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="禁用证书验证 (Disable Certificate Validation)" FontWeight="SemiBold"/>
+                                            <TextBlock
+                                                Text="⚠️ 警告: 可能导致安全风险"
+                                                Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                                                FontSize="12"/>
+                                            <ToggleSwitch
+                                                x:Name="DisableCertificateValidationToggle"
+                                                OnContent="已禁用"
+                                                OffContent="已启用"
+                                                IsOn="False"/>
+                                        </StackPanel>
+
                                         <TextBlock Text="自定义翻译服务 URL" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,0"/>
 
                                         <StackPanel Spacing="8">
@@ -1547,6 +1677,24 @@
                                         </StackPanel>
 
                                         <StackPanel Spacing="8">
+                                            <TextBlock Text="启用短延迟 (Enable Short Delay)" FontWeight="SemiBold"/>
+                                            <ToggleSwitch
+                                                x:Name="CustomEnableShortDelayToggle"
+                                                OnContent="已启用"
+                                                OffContent="已禁用"
+                                                IsOn="False"/>
+                                        </StackPanel>
+
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="禁用垃圾信息检查 (Disable Spam Checks)" FontWeight="SemiBold"/>
+                                            <ToggleSwitch
+                                                x:Name="CustomDisableSpamChecksToggle"
+                                                OnContent="已禁用"
+                                                OffContent="已启用"
+                                                IsOn="False"/>
+                                        </StackPanel>
+
+                                        <StackPanel Spacing="8">
                                             <TextBlock Text="Google 自定义服务 URL" FontWeight="SemiBold"/>
                                             <TextBlock
                                                 Text="自定义Google翻译API端点（留空使用默认）"
@@ -1557,6 +1705,41 @@
                                                 x:Name="GoogleServiceUrlTextBox"
                                                 PlaceholderText="例如: https://translate.googleapis.com"
                                                 HorizontalAlignment="Stretch"/>
+                                        </StackPanel>
+
+                                        <TextBlock Text="Google V2 配置" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,0"/>
+
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="Google V2 服务 URL (Service URL)" FontWeight="SemiBold"/>
+                                            <TextBox
+                                                x:Name="GoogleV2ServiceUrlTextBox"
+                                                PlaceholderText="留空使用默认值"
+                                                HorizontalAlignment="Stretch"/>
+                                        </StackPanel>
+
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="Google V2 RPC ID" FontWeight="SemiBold"/>
+                                            <TextBox
+                                                x:Name="GoogleV2RPCIDTextBox"
+                                                PlaceholderText="MkEWBc"
+                                                HorizontalAlignment="Stretch"/>
+                                        </StackPanel>
+
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="Google V2 版本 (VERSION)" FontWeight="SemiBold"/>
+                                            <TextBox
+                                                x:Name="GoogleV2VersionTextBox"
+                                                PlaceholderText="boq_translate-webserver_20210323.10_p0"
+                                                HorizontalAlignment="Stretch"/>
+                                        </StackPanel>
+
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="Google V2 使用最简单模式 (Use Simplest)" FontWeight="SemiBold"/>
+                                            <ToggleSwitch
+                                                x:Name="GoogleV2UseSimplestToggle"
+                                                OnContent="已启用"
+                                                OffContent="已禁用"
+                                                IsOn="False"/>
                                         </StackPanel>
 
                                         <TextBlock Text="DeepL 速率限制配置" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,0"/>
@@ -1583,6 +1766,36 @@
                                                 HorizontalAlignment="Stretch"/>
                                         </StackPanel>
 
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="DeepL 可执行文件位置 (Executable Location)" FontWeight="SemiBold"/>
+                                            <TextBox
+                                                x:Name="DeepLExecutableLocationTextBox"
+                                                PlaceholderText="留空使用默认值"
+                                                HorizontalAlignment="Stretch"/>
+                                        </StackPanel>
+
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="DeepL 最小延迟秒数 (Min Delay Seconds)" FontWeight="SemiBold"/>
+                                            <NumberBox
+                                                x:Name="DeepLMinDelaySecondsNumber"
+                                                Value="2"
+                                                Minimum="0"
+                                                Maximum="60"
+                                                SpinButtonPlacementMode="Inline"
+                                                HorizontalAlignment="Stretch"/>
+                                        </StackPanel>
+
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="DeepL 最大延迟秒数 (Max Delay Seconds)" FontWeight="SemiBold"/>
+                                            <NumberBox
+                                                x:Name="DeepLMaxDelaySecondsNumber"
+                                                Value="6"
+                                                Minimum="0"
+                                                Maximum="60"
+                                                SpinButtonPlacementMode="Inline"
+                                                HorizontalAlignment="Stretch"/>
+                                        </StackPanel>
+
                                         <TextBlock Text="本地翻译软件配置" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,0"/>
 
                                         <StackPanel Spacing="8">
@@ -1601,6 +1814,25 @@
                                                     Grid.Column="1"
                                                     Content="浏览"
                                                     Click="BrowseLecPathButton_Click"/>
+                                            </Grid>
+                                        </StackPanel>
+
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="ezTrans 安装路径" FontWeight="SemiBold"/>
+                                            <Grid ColumnSpacing="8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBox
+                                                    x:Name="EzTransInstallationPathTextBox"
+                                                    Grid.Column="0"
+                                                    PlaceholderText="C:\Program Files\ezTrans"
+                                                    HorizontalAlignment="Stretch"/>
+                                                <Button
+                                                    Grid.Column="1"
+                                                    Content="浏览"
+                                                    Click="BrowseEzTransPathButton_Click"/>
                                             </Grid>
                                         </StackPanel>
                                     </StackPanel>

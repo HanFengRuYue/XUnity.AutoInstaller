@@ -25,6 +25,7 @@ public class XUnityConfig
     public bool TextFrameworksTextMeshPro { get; set; } = true;
     public bool TextFrameworksTextMesh { get; set; } = true;
     public bool TextFrameworksIMGUI { get; set; } = false;
+    public bool TextFrameworksFairyGUI { get; set; } = false;
 
     // [Files]
     public string FilesDirectory { get; set; } = "Translation";
@@ -79,6 +80,11 @@ public class XUnityConfig
     /// 在内存中缓存纹理
     /// </summary>
     public bool TextureCacheTexturesInMemory { get; set; } = true;
+
+    /// <summary>
+    /// 启用Sprite钩子
+    /// </summary>
+    public bool TextureEnableSpriteHooking { get; set; } = false;
 
     // [Behaviour] - Advanced (这些选项实际在Behaviour节中)
     public bool AdvancedEnableTranslationScoping { get; set; } = true;
@@ -243,6 +249,41 @@ public class XUnityConfig
     /// </summary>
     public bool BehaviourOutputTooLongText { get; set; } = false;
 
+    /// <summary>
+    /// 字体大小覆盖（可选，空=不设置）
+    /// </summary>
+    public string BehaviourOverrideFontSize { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 文本获取器兼容模式（Behaviour节）
+    /// </summary>
+    public bool BehaviourTextGetterCompatibilityMode { get; set; } = false;
+
+    /// <summary>
+    /// 启用文本路径日志记录
+    /// </summary>
+    public bool BehaviourEnableTextPathLogging { get; set; } = false;
+
+    /// <summary>
+    /// 将所有数字模板化
+    /// </summary>
+    public bool BehaviourTemplateAllNumberAway { get; set; } = false;
+
+    /// <summary>
+    /// 文件变更时重新加载翻译
+    /// </summary>
+    public bool BehaviourReloadTranslationsOnFileChange { get; set; } = false;
+
+    /// <summary>
+    /// 禁用TextMeshPro滚动效果
+    /// </summary>
+    public bool BehaviourDisableTextMeshProScrollInEffects { get; set; } = false;
+
+    /// <summary>
+    /// 缓存解析后的翻译
+    /// </summary>
+    public bool BehaviourCacheParsedTranslations { get; set; } = false;
+
     // [Http]
     /// <summary>
     /// HTTP User-Agent字符串
@@ -253,6 +294,11 @@ public class XUnityConfig
     /// 禁用SSL证书验证
     /// </summary>
     public bool HttpDisableCertificateChecks { get; set; } = false;
+
+    /// <summary>
+    /// 禁用证书验证（HTTP节）
+    /// </summary>
+    public bool HttpDisableCertificateValidation { get; set; } = false;
 
     // [Debug]
     /// <summary>
@@ -338,6 +384,11 @@ public class XUnityConfig
     /// </summary>
     public string AuthenticationLingoCloudToken { get; set; } = string.Empty;
 
+    /// <summary>
+    /// 彩云小译Token（LingoCloud节）
+    /// </summary>
+    public string LingoCloudLingoCloudToken { get; set; } = string.Empty;
+
     // [Google] - Google翻译特定配置
     /// <summary>
     /// 自定义Google翻译API URL
@@ -355,17 +406,47 @@ public class XUnityConfig
     /// </summary>
     public int DeepLMaxDelay { get; set; } = 7;
 
+    /// <summary>
+    /// DeepL可执行文件位置
+    /// </summary>
+    public string DeepLExecutableLocation { get; set; } = string.Empty;
+
+    /// <summary>
+    /// DeepL最小请求延迟（秒）- 秒单位
+    /// </summary>
+    public int DeepLMinDelaySeconds { get; set; } = 2;
+
+    /// <summary>
+    /// DeepL最大请求延迟（秒）- 秒单位
+    /// </summary>
+    public int DeepLMaxDelaySeconds { get; set; } = 6;
+
     // [DeepLLegitimate] - DeepL API扩展配置
     /// <summary>
     /// 使用DeepL免费API计划
     /// </summary>
     public bool DeepLLegitimateFree { get; set; } = false;
 
+    /// <summary>
+    /// DeepL可执行文件位置
+    /// </summary>
+    public string DeepLLegitimateExecutableLocation { get; set; } = string.Empty;
+
     // [Custom] - 自定义翻译服务
     /// <summary>
     /// 自定义翻译服务端点URL
     /// </summary>
     public string CustomUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 启用短延迟
+    /// </summary>
+    public bool CustomEnableShortDelay { get; set; } = false;
+
+    /// <summary>
+    /// 禁用垃圾信息检查
+    /// </summary>
+    public bool CustomDisableSpamChecks { get; set; } = false;
 
     // [LecPowerTranslator15] - LecPowerTranslator配置
     /// <summary>
@@ -405,6 +486,44 @@ public class XUnityConfig
     /// Watson翻译服务URL
     /// </summary>
     public string WatsonUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Watson Key
+    /// </summary>
+    public string WatsonKey { get; set; } = string.Empty;
+
+    // [Baidu] - 百度翻译扩展配置
+    /// <summary>
+    /// 百度翻译请求延迟（秒）
+    /// </summary>
+    public int BaiduDelaySeconds { get; set; } = 1;
+
+    // [ezTrans] - ezTrans配置
+    /// <summary>
+    /// ezTrans安装路径
+    /// </summary>
+    public string EzTransInstallationPath { get; set; } = string.Empty;
+
+    // [GoogleV2] - Google V2翻译配置
+    /// <summary>
+    /// Google V2服务URL
+    /// </summary>
+    public string GoogleV2ServiceUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Google V2 RPC ID
+    /// </summary>
+    public string GoogleV2RPCID { get; set; } = "MkEWBc";
+
+    /// <summary>
+    /// Google V2版本
+    /// </summary>
+    public string GoogleV2Version { get; set; } = "boq_translate-webserver_20210323.10_p0";
+
+    /// <summary>
+    /// Google V2使用最简单模式
+    /// </summary>
+    public bool GoogleV2UseSimplest { get; set; } = false;
 
     /// <summary>
     /// 创建推荐配置（中文翻译）
