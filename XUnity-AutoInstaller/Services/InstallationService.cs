@@ -202,10 +202,41 @@ public class InstallationService
 
             if (!string.IsNullOrEmpty(options.XUnityVersion))
             {
-                // 使用指定版本
+                // 使用指定版本，根据平台选择正确的变体
                 _logger?.Info($"使用指定版本: {options.XUnityVersion}");
                 var allVersions = await _versionService.GetAllAvailableVersionsAsync(PackageType.XUnity, includePrerelease: false);
-                version = allVersions.FirstOrDefault(v => v.Version == options.XUnityVersion);
+                
+                bool isIL2CPP = options.TargetPlatform == Platform.IL2CPP_x86 || options.TargetPlatform == Platform.IL2CPP_x64;
+                
+                if (isIL2CPP)
+                {
+                    // IL2CPP 平台：优先选择 IL2CPP 变体
+                    version = allVersions.FirstOrDefault(v => 
+                        v.Version == options.XUnityVersion && 
+                        v.TargetPlatform == Platform.IL2CPP_x64);
+                    
+                    // 如果没有找到 IL2CPP 变体，回退到 Mono 变体
+                    if (version == null)
+                    {
+                        version = allVersions.FirstOrDefault(v => 
+                            v.Version == options.XUnityVersion && 
+                            v.TargetPlatform == null);
+                        _logger?.Warning($"未找到指定版本的 IL2CPP 变体，使用 Mono 变体");
+                    }
+                }
+                else
+                {
+                    // Mono 平台：优先选择 Mono 变体
+                    version = allVersions.FirstOrDefault(v => 
+                        v.Version == options.XUnityVersion && 
+                        v.TargetPlatform == null);
+                    
+                    // 如果没有找到 Mono 变体，回退到任何变体
+                    if (version == null)
+                    {
+                        version = allVersions.FirstOrDefault(v => v.Version == options.XUnityVersion);
+                    }
+                }
 
                 if (version == null)
                 {
@@ -214,9 +245,9 @@ public class InstallationService
             }
             else
             {
-                // 使用最新版本
-                _logger?.Info("获取最新版本...");
-                version = (await _versionService.GetRecommendedVersionsAsync(Platform.x64)).XUnity;
+                // 使用最新版本（根据平台自动选择正确的变体）
+                _logger?.Info($"获取最新版本（平台: {options.TargetPlatform}）...");
+                version = (await _versionService.GetRecommendedVersionsAsync(options.TargetPlatform)).XUnity;
             }
 
             if (version == null)

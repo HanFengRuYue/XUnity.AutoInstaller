@@ -96,6 +96,7 @@ public class WebDAVMirrorClient : IVersionFetcher, IDisposable
 
     /// <summary>
     /// 获取 XUnity.AutoTranslator 所有版本（从 WebDAV 镜像）
+    /// 支持 Mono 和 IL2CPP 两种变体
     /// </summary>
     public async Task<List<VersionInfo>> GetXUnityVersionsAsync(int maxCount = 10)
     {
@@ -113,11 +114,11 @@ public class WebDAVMirrorClient : IVersionFetcher, IDisposable
 
             var versions = new List<VersionInfo>();
 
-            // 解析文件列表
+            // 解析文件列表（获取更多文件以支持两个变体）
             var files = result.Resources
                 .Where(r => !r.IsCollection && r.DisplayName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
                 .OrderByDescending(r => r.LastModifiedDate ?? DateTime.MinValue)
-                .Take(maxCount);
+                .Take(maxCount * 2); // 获取更多以便包含两个变体
 
             foreach (var file in files)
             {
@@ -200,14 +201,22 @@ public class WebDAVMirrorClient : IVersionFetcher, IDisposable
 
     /// <summary>
     /// 解析 XUnity 文件名
-    /// 格式: XUnity.AutoTranslator-BepInEx-5.3.0.zip
+    /// 格式: XUnity.AutoTranslator-BepInEx-5.3.0.zip (Mono)
+    /// 格式: XUnity.AutoTranslator-BepInEx-IL2CPP-5.3.0.zip (IL2CPP)
     /// </summary>
     private VersionInfo? ParseXUnityFileName(string fileName, WebDavResource resource)
     {
         try
         {
-            // 匹配格式: XUnity.AutoTranslator-BepInEx-{version}.zip
-            var match = Regex.Match(fileName, @"XUnity\.AutoTranslator-BepInEx-(\d+\.\d+\.\d+(?:\.\d+)?(?:-[a-zA-Z0-9]+)?)\.zip", RegexOptions.IgnoreCase);
+            // 检查是否为 IL2CPP 版本
+            bool isIL2CPP = fileName.Contains("-IL2CPP-", StringComparison.OrdinalIgnoreCase);
+            
+            // 匹配格式: XUnity.AutoTranslator-BepInEx-{version}.zip 或 XUnity.AutoTranslator-BepInEx-IL2CPP-{version}.zip
+            var pattern = isIL2CPP
+                ? @"XUnity\.AutoTranslator-BepInEx-IL2CPP-(\d+\.\d+\.\d+(?:\.\d+)?(?:-[a-zA-Z0-9]+)?)\.zip"
+                : @"XUnity\.AutoTranslator-BepInEx-(\d+\.\d+\.\d+(?:\.\d+)?(?:-[a-zA-Z0-9]+)?)\.zip";
+            
+            var match = Regex.Match(fileName, pattern, RegexOptions.IgnoreCase);
 
             if (!match.Success)
             {
@@ -230,14 +239,16 @@ public class WebDAVMirrorClient : IVersionFetcher, IDisposable
 
             return new VersionInfo
             {
-                Name = $"XUnity.AutoTranslator {version}",
+                Name = isIL2CPP 
+                    ? $"XUnity.AutoTranslator {version} (IL2CPP)"
+                    : $"XUnity.AutoTranslator {version} (Mono)",
                 Version = tag,
                 ReleaseDate = resource.LastModifiedDate ?? DateTime.Now,
                 FileSize = resource.ContentLength ?? 0,
                 DownloadUrl = downloadUrl,
                 IsPrerelease = isPrerelease,
                 PackageType = PackageType.XUnity,
-                TargetPlatform = null // XUnity 与平台无关
+                TargetPlatform = isIL2CPP ? Platform.IL2CPP_x64 : null // IL2CPP 版本标记平台，Mono 版本为 null
             };
         }
         catch (Exception ex)

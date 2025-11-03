@@ -306,8 +306,18 @@ namespace XUnity_AutoInstaller.Pages
                 filteredBepInEx = filteredBepInEx.Where(v => v.IsPrerelease);
             }
 
-            // Filter XUnity versions (no platform filter needed)
+            // Filter XUnity versions (apply architecture filter)
             var filteredXUnity = _allXUnityVersions.AsEnumerable();
+
+            // Architecture filter (Mono/IL2CPP) - also applies to XUnity
+            if (ArchitectureFilterComboBox.SelectedIndex == 1) // Mono
+            {
+                filteredXUnity = filteredXUnity.Where(v => v.TargetPlatform == null);
+            }
+            else if (ArchitectureFilterComboBox.SelectedIndex == 2) // IL2CPP
+            {
+                filteredXUnity = filteredXUnity.Where(v => v.TargetPlatform == Platform.IL2CPP_x64 || v.TargetPlatform == Platform.IL2CPP_x86);
+            }
 
             if (VersionTypeComboBox.SelectedIndex == 1) // Stable
             {
@@ -380,7 +390,11 @@ namespace XUnity_AutoInstaller.Pages
             foreach (var version in versions.Take(50)) // Limit display count
             {
                 var dateText = version.ReleaseDate.ToString("yyyy-MM-dd");
-                var displayText = $"{version.Version} - {dateText}";
+                // 显示变体信息（Mono 或 IL2CPP）
+                var variantText = version.TargetPlatform == Platform.IL2CPP_x64 || version.TargetPlatform == Platform.IL2CPP_x86
+                    ? "IL2CPP"
+                    : "Mono";
+                var displayText = $"{version.Version} ({variantText}) - {dateText}";
 
                 // 创建包含DisplayText和VersionInfo的对象
                 var item = new AvailableVersionItem

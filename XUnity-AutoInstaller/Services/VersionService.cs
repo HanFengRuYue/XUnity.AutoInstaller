@@ -168,16 +168,53 @@ public class VersionService
             // 优先从缓存获取
             var cacheService = VersionCacheService.Instance;
             VersionInfo? bepinex;
+            
+            // 判断是否为 IL2CPP 平台（在方法开始处声明，避免重复声明）
+            bool isIL2CPP = platform == Platform.IL2CPP_x86 || platform == Platform.IL2CPP_x64;
 
             if (cacheService.IsInitialized)
             {
                 // 从缓存获取
                 bepinex = cacheService.GetLatestBepInExVersion(platform, includePrerelease: false);
-                var xunity = cacheService.GetLatestXUnityVersion(includePrerelease: false);
+                
+                // 根据平台选择正确的 XUnity 变体
+                VersionInfo? xunity;
+                
+                if (isIL2CPP)
+                {
+                    // IL2CPP 平台：优先选择 IL2CPP 变体
+                    var allXUnity = cacheService.GetXUnityVersions();
+                    xunity = allXUnity
+                        .Where(v => !v.IsPrerelease && v.TargetPlatform == Platform.IL2CPP_x64)
+                        .OrderByDescending(v => v.ReleaseDate)
+                        .FirstOrDefault();
+                    
+                    // 如果没有 IL2CPP 变体，回退到 Mono 变体
+                    if (xunity == null)
+                    {
+                        xunity = cacheService.GetLatestXUnityVersion(includePrerelease: false);
+                        LogService.Instance.Log("未找到 IL2CPP 变体，使用 Mono 变体", LogLevel.Warning, "[VersionService]");
+                    }
+                }
+                else
+                {
+                    // Mono 平台：优先选择 Mono 变体（TargetPlatform 为 null）
+                    var allXUnity = cacheService.GetXUnityVersions();
+                    xunity = allXUnity
+                        .Where(v => !v.IsPrerelease && v.TargetPlatform == null)
+                        .OrderByDescending(v => v.ReleaseDate)
+                        .FirstOrDefault();
+                    
+                    // 如果没有 Mono 变体，回退到任何变体
+                    if (xunity == null)
+                    {
+                        xunity = cacheService.GetLatestXUnityVersion(includePrerelease: false);
+                    }
+                }
 
                 if (bepinex != null && xunity != null)
                 {
-                    LogService.Instance.Log($"从缓存获取推荐版本: BepInEx {bepinex.Version}, XUnity {xunity.Version}", LogLevel.Debug, "[VersionService]");
+                    LogService.Instance.Log($"从缓存获取推荐版本: BepInEx {bepinex.Version}, XUnity {xunity.Version} ({xunity.Name})", LogLevel.Debug, "[VersionService]");
                     return (bepinex, xunity);
                 }
             }
@@ -204,12 +241,46 @@ public class VersionService
                     .FirstOrDefault();
             }
 
-            // XUnity：使用当前源（带自动回退）
-            var xunityVersions = await ExecuteWithFallbackAsync(fetcher => fetcher.GetXUnityVersionsAsync(maxCount: 5));
-            var xunityVersion = xunityVersions
-                .Where(v => !v.IsPrerelease)
-                .OrderByDescending(v => v.ReleaseDate)
-                .FirstOrDefault();
+            // XUnity：使用当前源（带自动回退），根据平台选择正确的变体
+            var xunityVersions = await ExecuteWithFallbackAsync(fetcher => fetcher.GetXUnityVersionsAsync(maxCount: 10));
+            
+            VersionInfo? xunityVersion;
+            
+            if (isIL2CPP)
+            {
+                // IL2CPP 平台：优先选择 IL2CPP 变体
+                xunityVersion = xunityVersions
+                    .Where(v => !v.IsPrerelease && v.TargetPlatform == Platform.IL2CPP_x64)
+                    .OrderByDescending(v => v.ReleaseDate)
+                    .FirstOrDefault();
+                
+                // 如果没有 IL2CPP 变体，回退到 Mono 变体
+                if (xunityVersion == null)
+                {
+                    xunityVersion = xunityVersions
+                        .Where(v => !v.IsPrerelease && v.TargetPlatform == null)
+                        .OrderByDescending(v => v.ReleaseDate)
+                        .FirstOrDefault();
+                    LogService.Instance.Log("未找到 IL2CPP 变体，使用 Mono 变体", LogLevel.Warning, "[VersionService]");
+                }
+            }
+            else
+            {
+                // Mono 平台：优先选择 Mono 变体（TargetPlatform 为 null）
+                xunityVersion = xunityVersions
+                    .Where(v => !v.IsPrerelease && v.TargetPlatform == null)
+                    .OrderByDescending(v => v.ReleaseDate)
+                    .FirstOrDefault();
+                
+                // 如果没有 Mono 变体，回退到任何变体
+                if (xunityVersion == null)
+                {
+                    xunityVersion = xunityVersions
+                        .Where(v => !v.IsPrerelease)
+                        .OrderByDescending(v => v.ReleaseDate)
+                        .FirstOrDefault();
+                }
+            }
 
             return (bepinex, xunityVersion);
         }

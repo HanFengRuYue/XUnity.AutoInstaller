@@ -127,10 +127,17 @@ namespace XUnity_AutoInstaller.Pages
                 // 自动推荐模式：平台改变时重新加载推荐版本
                 await LoadAndDisplayRecommendedVersionsAsync();
             }
-            else if (_bepinexVersions.Count > 0)
+            else
             {
-                // 手动模式：重新过滤BepInEx版本列表
-                UpdateBepInExVersionComboBox();
+                // 手动模式：重新过滤版本列表
+                if (_bepinexVersions.Count > 0)
+                {
+                    UpdateBepInExVersionComboBox();
+                }
+                if (_xunityVersions.Count > 0)
+                {
+                    UpdateXUnityVersionComboBox();
+                }
             }
         }
 
@@ -245,23 +252,70 @@ namespace XUnity_AutoInstaller.Pages
         }
 
         /// <summary>
-        /// 更新XUnity版本ComboBox
+        /// 更新XUnity版本ComboBox（根据当前选择的平台过滤和排序）
         /// </summary>
         private void UpdateXUnityVersionComboBox()
         {
-            var displayItems = _xunityVersions
-                .OrderByDescending(v => v.ReleaseDate)
-                .Select(v => new VersionDisplayItem
+            var selectedPlatform = PlatformComboBox.SelectedIndex switch
+            {
+                0 => Platform.x64,
+                1 => Platform.x86,
+                2 => Platform.IL2CPP_x64,
+                3 => Platform.IL2CPP_x86,
+                _ => Platform.x64
+            };
+
+            bool isIL2CPP = selectedPlatform == Platform.IL2CPP_x64 || selectedPlatform == Platform.IL2CPP_x86;
+
+            // 根据平台过滤和排序版本
+            var filteredVersions = _xunityVersions
+                .Where(v => 
                 {
-                    VersionInfo = v,
-                    Display = $"{v.Version} ({v.ReleaseDate:yyyy-MM-dd})"
+                    if (isIL2CPP)
+                    {
+                        // IL2CPP 平台：优先显示 IL2CPP 变体，但也显示 Mono 变体
+                        return v.TargetPlatform == Platform.IL2CPP_x64 || v.TargetPlatform == null;
+                    }
+                    else
+                    {
+                        // Mono 平台：优先显示 Mono 变体，但也显示 IL2CPP 变体
+                        return v.TargetPlatform == null || v.TargetPlatform == Platform.IL2CPP_x64;
+                    }
+                })
+                .OrderByDescending(v => 
+                {
+                    // 按平台匹配度排序：匹配的变体优先
+                    if (isIL2CPP && v.TargetPlatform == Platform.IL2CPP_x64) return 1;
+                    if (!isIL2CPP && v.TargetPlatform == null) return 1;
+                    return 0;
+                })
+                .ThenByDescending(v => v.ReleaseDate)
+                .ToList();
+
+            var displayItems = filteredVersions
+                .Select(v => 
+                {
+                    // 显示变体信息
+                    var variantText = v.TargetPlatform == Platform.IL2CPP_x64 || v.TargetPlatform == Platform.IL2CPP_x86
+                        ? "IL2CPP"
+                        : "Mono";
+                    var recommended = (isIL2CPP && v.TargetPlatform == Platform.IL2CPP_x64) ||
+                                     (!isIL2CPP && v.TargetPlatform == null)
+                        ? " [推荐]"
+                        : "";
+                    
+                    return new VersionDisplayItem
+                    {
+                        VersionInfo = v,
+                        Display = $"{v.Version} ({variantText}){recommended} ({v.ReleaseDate:yyyy-MM-dd})"
+                    };
                 })
                 .ToList();
 
             XUnityVersionComboBox.ItemsSource = displayItems;
             if (displayItems.Count > 0)
             {
-                XUnityVersionComboBox.SelectedIndex = 0; // 选择最新版本
+                XUnityVersionComboBox.SelectedIndex = 0; // 选择推荐版本（已排序）
             }
         }
 
@@ -356,10 +410,15 @@ namespace XUnity_AutoInstaller.Pages
                 // 显示推荐的XUnity版本
                 if (xunityRecommended != null)
                 {
+                    // 显示变体信息
+                    var variantText = xunityRecommended.TargetPlatform == Platform.IL2CPP_x64 || xunityRecommended.TargetPlatform == Platform.IL2CPP_x86
+                        ? "IL2CPP"
+                        : "Mono";
+                    
                     var xunityDisplayItem = new VersionDisplayItem
                     {
                         VersionInfo = xunityRecommended,
-                        Display = $"{xunityRecommended.Version} ({xunityRecommended.ReleaseDate:yyyy-MM-dd}) [推荐]"
+                        Display = $"{xunityRecommended.Version} ({variantText}) ({xunityRecommended.ReleaseDate:yyyy-MM-dd}) [推荐]"
                     };
                     XUnityVersionComboBox.ItemsSource = new[] { xunityDisplayItem };
                     XUnityVersionComboBox.SelectedIndex = 0;

@@ -110,6 +110,7 @@ public class GitHubAtomFeedClient : IVersionFetcher, IDisposable
 
     /// <summary>
     /// 获取 XUnity.AutoTranslator 所有版本（从 Atom feed）
+    /// 支持 Mono 和 IL2CPP 两种变体
     /// </summary>
     /// <param name="maxCount">最多获取的版本数量</param>
     public async Task<List<VersionInfo>> GetXUnityVersionsAsync(int maxCount = 10)
@@ -144,22 +145,70 @@ public class GitHubAtomFeedClient : IVersionFetcher, IDisposable
                                    title.ToLower().Contains("beta") ||
                                    version.Contains("-");
 
-                // 构造下载 URL
-                // 格式: XUnity.AutoTranslator-BepInEx-5.x.x.zip
-                var fileName = $"XUnity.AutoTranslator-BepInEx-{version}.zip";
-                var downloadUrl = $"https://github.com/bbepis/XUnity.AutoTranslator/releases/download/{tag}/{fileName}";
+                // 尝试从发布页面获取资产链接（支持 Mono 和 IL2CPP）
+                var releaseAssets = await GetReleaseAssetsAsync(entry.Link);
+                
+                // 查找 Mono 版本
+                var monoAsset = releaseAssets.FirstOrDefault(a => 
+                    a.Contains($"XUnity.AutoTranslator-BepInEx-{version}.zip", StringComparison.OrdinalIgnoreCase) &&
+                    !a.Contains("IL2CPP", StringComparison.OrdinalIgnoreCase));
+                
+                // 查找 IL2CPP 版本
+                var il2cppAsset = releaseAssets.FirstOrDefault(a => 
+                    a.Contains($"XUnity.AutoTranslator-BepInEx-IL2CPP-{version}.zip", StringComparison.OrdinalIgnoreCase));
 
-                versions.Add(new VersionInfo
+                // 添加 Mono 版本
+                if (!string.IsNullOrEmpty(monoAsset))
                 {
-                    Name = $"XUnity.AutoTranslator {version}",
-                    Version = tag,
-                    ReleaseDate = entry.Updated,
-                    FileSize = 0, // Atom feed 不提供文件大小
-                    DownloadUrl = downloadUrl,
-                    IsPrerelease = isPrerelease,
-                    PackageType = PackageType.XUnity,
-                    TargetPlatform = null // XUnity 与平台无关
-                });
+                    versions.Add(new VersionInfo
+                    {
+                        Name = $"XUnity.AutoTranslator {version} (Mono)",
+                        Version = tag,
+                        ReleaseDate = entry.Updated,
+                        FileSize = 0, // Atom feed 不提供文件大小
+                        DownloadUrl = monoAsset,
+                        IsPrerelease = isPrerelease,
+                        PackageType = PackageType.XUnity,
+                        TargetPlatform = null // Mono 版本适用于所有平台
+                    });
+                    LogService.Instance.Log($"找到 Mono 版本: {version}", LogLevel.Debug, "[AtomFeed]");
+                }
+                else
+                {
+                    // 如果无法从发布页面获取，回退到构造 URL
+                    var fileName = $"XUnity.AutoTranslator-BepInEx-{version}.zip";
+                    var downloadUrl = $"https://github.com/bbepis/XUnity.AutoTranslator/releases/download/{tag}/{fileName}";
+                    
+                    versions.Add(new VersionInfo
+                    {
+                        Name = $"XUnity.AutoTranslator {version} (Mono)",
+                        Version = tag,
+                        ReleaseDate = entry.Updated,
+                        FileSize = 0,
+                        DownloadUrl = downloadUrl,
+                        IsPrerelease = isPrerelease,
+                        PackageType = PackageType.XUnity,
+                        TargetPlatform = null
+                    });
+                    LogService.Instance.Log($"使用构造的 Mono URL: {version}", LogLevel.Debug, "[AtomFeed]");
+                }
+
+                // 添加 IL2CPP 版本
+                if (!string.IsNullOrEmpty(il2cppAsset))
+                {
+                    versions.Add(new VersionInfo
+                    {
+                        Name = $"XUnity.AutoTranslator {version} (IL2CPP)",
+                        Version = tag,
+                        ReleaseDate = entry.Updated,
+                        FileSize = 0,
+                        DownloadUrl = il2cppAsset,
+                        IsPrerelease = isPrerelease,
+                        PackageType = PackageType.XUnity,
+                        TargetPlatform = Platform.IL2CPP_x64 // 标记为 IL2CPP 平台
+                    });
+                    LogService.Instance.Log($"找到 IL2CPP 版本: {version}", LogLevel.Debug, "[AtomFeed]");
+                }
 
                 LogService.Instance.Log($"解析版本: {version}, 预览版: {isPrerelease}", LogLevel.Debug, "[AtomFeed]");
             }
@@ -172,6 +221,63 @@ public class GitHubAtomFeedClient : IVersionFetcher, IDisposable
             LogService.Instance.Log($"从 Atom Feed 获取 XUnity 版本失败: {ex.Message}", LogLevel.Error, "[AtomFeed]");
             throw new Exception($"获取 XUnity 版本失败: {ex.Message}", ex);
         }
+    }
+
+    /// <summary>
+    /// 从 GitHub 发布页面获取资产下载链接
+    /// </summary>
+    private async Task<List<string>> GetReleaseAssetsAsync(string releasePageUrl)
+    {
+        var assets = new List<string>();
+        
+        try
+        {
+            // 从发布页面 URL 提取 API URL
+            // 例如: https://github.com/bbepis/XUnity.AutoTranslator/releases/tag/v5.5.0
+            // 转换为: https://api.github.com/repos/bbepis/XUnity.AutoTranslator/releases/tags/v5.5.0
+            var apiUrl = releasePageUrl.Replace("https://github.com/", "https://api.github.com/repos/")
+                                       .Replace("/releases/tag/", "/releases/tags/");
+            
+            // 添加 User-Agent 头（GitHub API 要求）
+            using var request = new HttpRequestMessage(HttpMethod.Get, apiUrl);
+            request.Headers.Add("User-Agent", "XUnity-AutoInstaller");
+            request.Headers.Add("Accept", "application/vnd.github.v3+json");
+            
+            var response = await _httpClient.SendAsync(request);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                // 简单的 JSON 解析：查找 "browser_download_url" 字段
+                var downloadUrlPattern = new System.Text.RegularExpressions.Regex(@"""browser_download_url""\s*:\s*""([^""]+)""");
+                var matches = downloadUrlPattern.Matches(json);
+                
+                foreach (System.Text.RegularExpressions.Match match in matches)
+                {
+                    if (match.Groups.Count > 1)
+                    {
+                        var url = match.Groups[1].Value;
+                        // 只包含 XUnity.AutoTranslator-BepInEx 相关的 ZIP 文件
+                        if (url.Contains("XUnity.AutoTranslator-BepInEx", StringComparison.OrdinalIgnoreCase) &&
+                            url.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                        {
+                            assets.Add(url);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                LogService.Instance.Log($"无法获取发布资产: {response.StatusCode}", LogLevel.Warning, "[AtomFeed]");
+            }
+        }
+        catch (Exception ex)
+        {
+            LogService.Instance.Log($"获取发布资产失败: {ex.Message}", LogLevel.Warning, "[AtomFeed]");
+            // 不抛出异常，允许回退到构造 URL
+        }
+        
+        return assets;
     }
 
     /// <summary>
