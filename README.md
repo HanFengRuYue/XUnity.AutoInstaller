@@ -33,8 +33,10 @@ XUnity-AutoInstaller 是一款专为 Unity 游戏设计的自动化安装工具�
 
 ### 📦 版本管理
 - **智能版本获取** - 使用 GitHub Atom Feed，无速率限制，无需认证
+- **镜像网站支持** - 支持 WebDAV 镜像站作为备用下载源，自动回退机制
 - **平台自动适配** - 支持 x86、x64、IL2CPP 等多种平台自动匹配
 - **版本缓存系统** - 全局缓存机制，减少 90% 以上的网络请求
+- **下载状态指示** - 显示已下载版本，避免重复下载
 - **手动版本选择** - 支持安装特定历史版本
 
 ### ⚙️ 配置编辑器
@@ -49,16 +51,25 @@ XUnity-AutoInstaller 是一款专为 Unity 游戏设计的自动化安装工具�
 - **备份保护** - 安装前可选备份现有 BepInEx 目录
 - **旧版本清理** - 可选清理旧版本文件避免冲突
 
+### 🔤 TextMeshPro 字体管理
+- **Unity 版本检测** - 自动检测游戏 Unity 版本，智能推荐匹配字体
+- **字体资源下载** - 从 WebDAV 镜像站下载预配置的 TextMeshPro 字体
+- **版本相似度匹配** - 基于 Unity 版本相似度算法推荐最佳字体
+- **自动配置集成** - 安装后自动更新 XUnity 配置文件
+- **数据表格界面** - 支持排序、筛选、分页的现代化字体管理界面
+
 ### 🔧 高级特性
 - **统一日志系统** - 所有操作日志集中显示，支持级别过滤
 - **并发安装保护** - 线程安全机制防止多个安装任务冲突
 - **安装进度跨页面** - 全局进度追踪，任意页面查看安装状态
+- **自动回退机制** - GitHub 访问失败时自动切换到镜像源（会话级别）
 
 ## 💻 系统要求
 
 - **操作系统**: Windows 10 Build 17763 (2018 年 10 月更新) 或更高版本
 - **架构**: x64 (推荐) / x86
-- **.NET Runtime**: 无需安装（应用程序自包含）
+- **.NET Runtime**: [.NET 9.0 Desktop Runtime (x64)](https://dotnet.microsoft.com/download/dotnet/9.0)（框架依赖部署）
+- **Windows App Runtime**: 1.8+（Windows 11 通常已预装，Windows 10 可能需要手动安装）
 - **磁盘空间**: 约 150 MB
 
 ## 📥 下载与安装
@@ -67,7 +78,10 @@ XUnity-AutoInstaller 是一款专为 Unity 游戏设计的自动化安装工具�
 
 1. 前往 [Releases](../../releases) 页面
 2. 下载最新版本的 `XUnity-AutoInstaller.exe`
-3. 双击运行即可，无需安装
+3. 确保已安装 [.NET 9.0 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/9.0) 和 Windows App Runtime
+4. 双击运行即可，无需安装
+
+**注意**: 应用程序采用框架依赖部署模式，需要预先安装运行时。Release 版本为单文件 exe（约 10-30 MB），已启用裁剪和压缩优化。
 
 ### 方式二：从源码构建
 
@@ -106,25 +120,16 @@ powershell.exe -ExecutionPolicy Bypass -File Build-Release.ps1
 4. 根据需要调整其他高级选项
 5. 保存配置
 
-### 4️⃣ 启动游戏
+### 4️⃣ 下载 TextMeshPro 字体（可选）
+1. 进入"字体下载"页面
+2. 应用程序会自动检测游戏的 Unity 版本
+3. 查看推荐字体（绿色"推荐"标记）
+4. 点击"下载"将字体下载到缓存
+5. 点击"安装到游戏"将字体复制到游戏目录
+6. 选择自动配置为 Override Font 或 Fallback Font
+
+### 5️⃣ 启动游戏
 直接启动游戏，BepInEx 会自动加载，XUnity.AutoTranslator 将开始翻译游戏文本
-
-## 🛠️ 技术栈
-
-### 核心框架
-- **.NET 9.0** - 最新的 .NET 框架
-- **WinUI3** - Windows App SDK 1.8.251003001
-- **C# 13** - 启用可空引用类型
-
-### 关键库
-- **SharpCompress 0.41.0** - ZIP 压缩解压
-- **System.Xml.Linq** - Atom Feed XML 解析
-
-### 架构特点
-- **单例服务模式** - 全局状态管理（GameStateService、LogService、InstallationStateService、VersionCacheService）
-- **事件驱动通信** - 跨页面响应式更新
-- **异步优先** - 所有 I/O 操作使用 async/await
-- **无 MVVM** - 直接代码后置模式，简化架构
 
 ## 🔨 开发指南
 
@@ -169,108 +174,46 @@ powershell.exe -ExecutionPolicy Bypass -File Build-Release.ps1
 
 ```
 XUnity-AutoInstaller/
-├── Pages/                  # 6 个功能页面
+├── Pages/                  # 7 个功能页面
 │   ├── DashboardPage.xaml         # 主页 - 游戏路径选择和状态卡片
 │   ├── InstallPage.xaml           # 安装页 - 版本选择和安装进度
 │   ├── ConfigPage.xaml            # 配置页 - BepInEx 和 XUnity 配置编辑
+│   ├── FontDownloadPage.xaml     # 字体下载页 - TextMeshPro 字体管理
 │   ├── VersionManagementPage.xaml # 版本管理 - 已安装和可用版本
 │   ├── LogPage.xaml               # 日志页 - 统一日志显示和过滤
-│   └── SettingsPage.xaml          # 设置页 - 主题、Token、路径记忆
+│   └── SettingsPage.xaml          # 设置页 - 主题、下载源、路径记忆
 ├── Services/               # 业务逻辑层
 │   ├── GameStateService.cs        # 全局游戏路径管理（单例）
 │   ├── LogService.cs              # 统一日志服务（单例）
 │   ├── InstallationStateService.cs # 全局安装进度追踪（单例）
 │   ├── VersionCacheService.cs     # 全局版本缓存（单例）
 │   ├── GitHubAtomFeedClient.cs    # Atom Feed 版本获取和下载（无速率限制）
+│   ├── WebDAVMirrorClient.cs      # WebDAV 镜像站客户端（IVersionFetcher）
 │   ├── BepInExBuildsApiClient.cs  # IL2CPP 版本获取（builds.bepinex.dev）
-│   ├── VersionService.cs          # 版本服务协调层
+│   ├── VersionService.cs          # 版本服务协调层（自动回退）
 │   ├── InstallationService.cs     # 安装编排服务
 │   ├── GameLauncherService.cs     # 游戏启动和配置生成监控
 │   ├── ConfigurationService.cs    # INI 配置文件读写
-│   └── SettingsService.cs         # 设置持久化（JSON 文件）
+│   ├── SettingsService.cs         # 设置持久化（JSON 文件）
+│   ├── FontManagementService.cs   # TextMeshPro 字体管理服务
+│   ├── FontMirrorClient.cs        # 字体镜像站客户端（WebDAV）
+│   └── UnityVersionDetector.cs     # Unity 版本检测服务
 ├── Models/                 # 数据模型
 │   ├── BepInExConfig.cs           # 30 个 BepInEx 配置属性
 │   ├── XUnityConfig.cs            # 50+ XUnity 配置属性
 │   ├── InstallOptions.cs          # 安装选项模型
-│   └── AppSettings.cs             # 应用设置模型
+│   ├── AppSettings.cs             # 应用设置模型（包含 DownloadSource）
+│   ├── DownloadSourceType.cs     # 下载源类型枚举（GitHub/Mirror）
+│   └── FontResourceInfo.cs        # 字体资源信息模型
 ├── Utils/                  # 工具类
 │   ├── IniParser.cs               # INI 文件解析器
-│   ├── PathHelper.cs              # 路径处理工具
+│   ├── PathHelper.cs              # 路径处理工具（包含字体路径方法）
 │   └── LogWriter.cs               # LogService 适配器
 ├── App.xaml                # 应用入口
 ├── MainWindow.xaml         # 主窗口（导航框架）
 └── Package.appxmanifest    # 应用清单
 ```
 
-### 关键设计模式
-
-#### 单例服务
-```csharp
-// 所有页面共享同一个游戏路径
-var gamePath = GameStateService.Instance.CurrentGamePath;
-
-// 订阅路径变化事件
-GameStateService.Instance.GamePathChanged += OnGamePathChanged;
-```
-
-#### 版本缓存
-```csharp
-// 应用启动时初始化一次（App.OnLaunched）
-await VersionCacheService.Instance.RefreshAsync();
-
-// 页面只读取缓存，不触发刷新
-var versions = _versionCacheService.GetBepInExVersions();
-_versionCacheService.VersionsUpdated += OnVersionsUpdated;
-```
-
-#### 安装进度追踪
-```csharp
-// 跨页面进度显示
-InstallationStateService.Instance.InstallationStarted += OnInstallationStarted;
-InstallationStateService.Instance.ProgressChanged += OnProgressChanged;
-InstallationStateService.Instance.InstallationCompleted += OnInstallationCompleted;
-
-// 服务内部创建进度报告器
-var progress = InstallationStateService.Instance.CreateProgressReporter();
-```
-
-#### 统一日志
-```csharp
-// 所有日志通过 LogService
-LogService.Instance.Log("配置已保存", LogLevel.Info, "[Config]");
-
-// LogPage 自动接收和显示
-_logService.LogEntryAdded += OnLogEntryAdded;
-```
-
-## 📝 配置文件说明
-
-### BepInEx.cfg
-包含 30 个配置项，分为 8 个配置段：
-- `[Caching]` - 程序集缓存
-- `[Chainloader]` - 插件加载器
-- `[Harmony.Logger]` - Harmony 日志
-- `[Logging]` / `[Logging.Console]` / `[Logging.Disk]` - 日志系统
-- `[Preloader]` / `[Preloader.Entrypoint]` - 预加载器
-
-### AutoTranslatorConfig.ini
-包含 50+ 配置项，支持 17 种翻译服务：
-- Google Translate (多种模式)
-- Bing Translate
-- DeepL Translate
-- Baidu Translate
-- Yandex Translate
-- Papago Translate
-- Watson Translate
-- LecPowerTranslator15
-- ezTransXP
-- LingoCloud Translate
-- Custom Translate
-
-**重要提示**: XUnity 配置项的正确配置段映射：
-- `Language`, `FromLanguage` → `[General]`
-- `MaxCharactersPerTranslation`, `EnableUIResizing`, `Delay` 等 → `[Behaviour]`
-- `EnableUGUI`, `EnableTextMeshPro` 等 → `[TextFrameworks]`
 
 ## 🤝 贡献指南
 
@@ -281,13 +224,6 @@ _logService.LogEntryAdded += OnLogEntryAdded;
 3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
 5. 开启 Pull Request
-
-### 代码规范
-- 遵循 C# 编码规范
-- 使用 async/await 处理异步操作
-- 通过 LogService 记录日志，不使用 Debug.WriteLine
-- 添加必要的注释和文档
-- 页面初始化使用 `Loaded` 事件模式访问 XAML 控件
 
 ## 📄 许可证
 
@@ -305,9 +241,3 @@ _logService.LogEntryAdded += OnLogEntryAdded;
 
 - 提交 [Issue](../../issues)
 - 发起 [Discussion](../../discussions)
-
----
-
-<div align="center">
-Made with ❤️ for Unity game localization
-</div>
