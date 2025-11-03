@@ -236,35 +236,20 @@ public class InstallationService
             var zipPath = await _versionService.DownloadVersionAsync(version, downloadProgress);
             _logger?.Info($"下载完成: {zipPath}");
 
-            // 解压文件到临时目录
+            // 解压文件直接到游戏目录（保留完整的 BepInEx 目录结构）
+            // IMPORTANT: XUnity zip contains BepInEx/core/, BepInEx/plugins/XUnity.ResourceRedirector/,
+            // and BepInEx/plugins/XUnity.AutoTranslator/. We must extract directly to preserve this
+            // structure. The core folder contains XUnity.Common.dll and other critical dependencies.
             progress?.Report((85, "解压 XUnity..."));
-            _logger?.Info("解压文件...");
+            _logger?.Info("解压文件到游戏目录...");
 
-            var tempExtractPath = Path.Combine(PathHelper.GetTempDownloadDirectory(), "xunity_extract");
-            if (Directory.Exists(tempExtractPath))
+            var extractProgress = new Progress<int>(p =>
             {
-                Directory.Delete(tempExtractPath, true);
-            }
+                var overallProgress = 85 + (int)(p * 0.02); // 85-87%
+                progress?.Report((overallProgress, $"解压 XUnity ({p}%)..."));
+            });
 
-            await FileSystemService.ExtractZipAsync(zipPath, tempExtractPath, null);
-
-            // 复制 XUnity 文件到 BepInEx/plugins
-            progress?.Report((88, "安装 XUnity 插件..."));
-            var pluginsPath = PathHelper.GetBepInExPluginsPath(gamePath);
-            Directory.CreateDirectory(pluginsPath);
-
-            // 查找 XUnity 文件夹
-            var xunitySourcePath = FindXUnityFolder(tempExtractPath);
-            if (xunitySourcePath == null)
-            {
-                throw new Exception("在下载的文件中未找到 XUnity 文件夹");
-            }
-
-            var xunityTargetPath = PathHelper.GetXUnityPath(gamePath);
-            FileSystemService.CopyDirectory(xunitySourcePath, xunityTargetPath);
-
-            // 清理临时文件
-            Directory.Delete(tempExtractPath, true);
+            await FileSystemService.ExtractZipAsync(zipPath, gamePath, extractProgress);
 
             _logger?.Success("XUnity 安装完成");
         }
@@ -275,28 +260,6 @@ public class InstallationService
         }
     }
 
-    /// <summary>
-    /// 查找 XUnity 文件夹
-    /// </summary>
-    private string? FindXUnityFolder(string searchPath)
-    {
-        // 查找包含 XUnity.AutoTranslator 的文件夹
-        foreach (var dir in Directory.GetDirectories(searchPath, "*", SearchOption.AllDirectories))
-        {
-            if (dir.Contains("XUnity.AutoTranslator", StringComparison.OrdinalIgnoreCase))
-            {
-                return dir;
-            }
-
-            // 检查是否包含 XUnity DLL
-            if (Directory.GetFiles(dir, "XUnity.AutoTranslator*.dll").Length > 0)
-            {
-                return dir;
-            }
-        }
-
-        return null;
-    }
 
     /// <summary>
     /// 备份现有安装

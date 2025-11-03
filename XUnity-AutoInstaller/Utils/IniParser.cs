@@ -92,7 +92,7 @@ public class IniParser
 
             foreach (var kv in section.Value)
             {
-                sb.AppendLine($"{kv.Key} = {kv.Value}");
+                sb.AppendLine($"{kv.Key}={kv.Value}");
             }
 
             sb.AppendLine(); // 空行分隔
