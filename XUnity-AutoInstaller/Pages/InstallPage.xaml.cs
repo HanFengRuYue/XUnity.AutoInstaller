@@ -607,14 +607,7 @@ namespace XUnity_AutoInstaller.Pages
                 return;
             }
 
-            var dialog = new ContentDialog
-            {
-                Title = "错误",
-                Content = message,
-                CloseButtonText = "确定",
-                XamlRoot = this.XamlRoot
-            };
-            await dialog.ShowAsync();
+            await DialogHelper.ShowErrorAsync(this.XamlRoot, "错误", message);
         }
 
         private async Task ShowSuccessAsync(string message)
@@ -626,14 +619,7 @@ namespace XUnity_AutoInstaller.Pages
                 return;
             }
 
-            var dialog = new ContentDialog
-            {
-                Title = "成功",
-                Content = message,
-                CloseButtonText = "确定",
-                XamlRoot = this.XamlRoot
-            };
-            await dialog.ShowAsync();
+            await DialogHelper.ShowSuccessAsync(this.XamlRoot, "成功", message);
         }
     }
 }

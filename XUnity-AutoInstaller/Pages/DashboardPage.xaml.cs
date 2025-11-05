@@ -76,18 +76,9 @@ namespace XUnity_AutoInstaller.Pages
         {
             try
             {
-                var picker = new FolderPicker();
-                picker.SuggestedStartLocation = PickerLocationId.ComputerFolder;
-                picker.FileTypeFilter.Add("*");
-
-                // 获取主窗口 HWND（WinUI3 必需）
-                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-                WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-
-                var folder = await picker.PickSingleFolderAsync();
-                if (folder != null)
+                var gamePath = await DialogHelper.PickFolderAsync();
+                if (gamePath != null)
                 {
-                    var gamePath = folder.Path;
 
                     // 验证游戏目录
                     if (PathHelper.IsValidGameDirectory(gamePath))
@@ -339,19 +330,15 @@ namespace XUnity_AutoInstaller.Pages
             }
 
             // 显示二次确认对话框
-            var dialog = new ContentDialog
-            {
-                Title = "确认卸载",
-                Content = "即将完全卸载 BepInEx 和 XUnity.AutoTranslator，包括所有配置文件。\n\n" +
-                          "此操作不可撤销，是否继续？",
-                PrimaryButtonText = "卸载",
-                CloseButtonText = "取消",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.XamlRoot
-            };
+            var confirmed = await DialogHelper.ShowConfirmAsync(
+                this.XamlRoot,
+                "确认卸载",
+                "即将完全卸载 BepInEx 和 XUnity.AutoTranslator，包括所有配置文件。\n\n此操作不可撤销，是否继续？",
+                "卸载",
+                "取消"
+            );
 
-            var result = await dialog.ShowAsync();
-            if (result != ContentDialogResult.Primary)
+            if (!confirmed)
             {
                 return;
             }
@@ -372,9 +359,6 @@ namespace XUnity_AutoInstaller.Pages
 
                 LogService.Instance.Log($"开始卸载: {gamePath}", LogLevel.Info, "[首页]");
 
-                // 创建卸载选项
-                var options = new UninstallOptions();
-
                 // 创建日志记录器
                 var logger = new LogWriter(null, DispatcherQueue);
 
@@ -393,7 +377,7 @@ namespace XUnity_AutoInstaller.Pages
                 });
 
                 // 执行卸载
-                var success = await uninstallService.UninstallAsync(gamePath, options, progress);
+                var success = await uninstallService.UninstallAsync(gamePath, progress);
 
                 if (success)
                 {

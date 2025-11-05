@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using XUnity_AutoInstaller.Models;
 using XUnity_AutoInstaller.Services;
+using XUnity_AutoInstaller.Utils;
 
 namespace XUnity_AutoInstaller.Pages
 {
@@ -488,18 +489,14 @@ namespace XUnity_AutoInstaller.Pages
                 LogService.Instance.Log($"字体安装成功: {fontInfo.FileName}", LogLevel.Info, "[FontDownload]");
 
                 // Show config selection dialog
-                var configDialog = new ContentDialog
-                {
-                    Title = "字体安装成功",
-                    Content = "是否立即配置字体设置？",
-                    PrimaryButtonText = "设置为 Override Font",
-                    SecondaryButtonText = "设置为 Fallback Font",
-                    CloseButtonText = "稍后配置",
-                    DefaultButton = ContentDialogButton.Primary,
-                    XamlRoot = this.XamlRoot
-                };
-
-                var result = await configDialog.ShowAsync();
+                var result = await DialogHelper.ShowDialogAsync(
+                    this.XamlRoot,
+                    "字体安装成功",
+                    "是否立即配置字体设置？",
+                    "设置为 Override Font",
+                    "设置为 Fallback Font",
+                    "稍后配置"
+                );
 
                 if (result == ContentDialogResult.Primary)
                 {

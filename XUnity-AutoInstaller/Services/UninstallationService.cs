@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
-using XUnity_AutoInstaller.Models;
 using XUnity_AutoInstaller.Utils;
 
 namespace XUnity_AutoInstaller.Services;
@@ -23,10 +22,9 @@ public class UninstallationService
     /// 执行完整卸载流程
     /// </summary>
     /// <param name="gamePath">游戏路径</param>
-    /// <param name="options">卸载选项</param>
     /// <param name="progress">进度报告</param>
     /// <returns>是否成功卸载</returns>
-    public async Task<bool> UninstallAsync(string gamePath, UninstallOptions options, IProgress<(int percentage, string message)>? progress = null)
+    public async Task<bool> UninstallAsync(string gamePath, IProgress<(int percentage, string message)>? progress = null)
     {
         try
         {

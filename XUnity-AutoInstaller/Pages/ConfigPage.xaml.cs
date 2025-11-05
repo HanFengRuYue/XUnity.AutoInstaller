@@ -47,17 +47,9 @@ namespace XUnity_AutoInstaller.Pages
         {
             try
             {
-                var picker = new FolderPicker();
-                picker.SuggestedStartLocation = PickerLocationId.ComputerFolder;
-                picker.FileTypeFilter.Add("*");
-
-                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-                WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-
-                var folder = await picker.PickSingleFolderAsync();
-                if (folder != null)
+                var gamePath = await DialogHelper.PickFolderAsync();
+                if (gamePath != null)
                 {
-                    var gamePath = folder.Path;
                     if (PathHelper.IsValidGameDirectory(gamePath))
                     {
                         _gameStateService.SetGamePath(gamePath, saveToSettings: true);
@@ -897,17 +889,7 @@ namespace XUnity_AutoInstaller.Pages
                 _xunityConfig = xunityConfig;
 
                 // 显示成功对话框
-                if (this.XamlRoot != null)
-                {
-                    var dialog = new ContentDialog
-                    {
-                        Title = "保存成功",
-                        Content = "配置已成功保存",
-                        CloseButtonText = "确定",
-                        XamlRoot = this.XamlRoot
-                    };
-                    await dialog.ShowAsync();
-                }
+                await DialogHelper.ShowSuccessAsync(this.XamlRoot, "保存成功", "配置已成功保存");
             }
             catch (Exception ex)
             {
@@ -923,19 +905,15 @@ namespace XUnity_AutoInstaller.Pages
 
         private async void ResetButton_Click(object sender, RoutedEventArgs e)
         {
-            if (this.XamlRoot == null) return;
+            var confirmed = await DialogHelper.ShowConfirmAsync(
+                this.XamlRoot,
+                "重置配置",
+                "确定要重置为默认配置吗？此操作不可撤销。",
+                "确定",
+                "取消"
+            );
 
-            var dialog = new ContentDialog
-            {
-                Title = "重置配置",
-                Content = "确定要重置为默认配置吗？此操作不可撤销。",
-                PrimaryButtonText = "确定",
-                CloseButtonText = "取消",
-                XamlRoot = this.XamlRoot
-            };
-
-            var result = await dialog.ShowAsync();
-            if (result == ContentDialogResult.Primary)
+            if (confirmed)
             {
                 // 加载默认配置
                 _bepinexConfig = BepInExConfig.CreateDefault();
@@ -982,17 +960,10 @@ namespace XUnity_AutoInstaller.Pages
         {
             try
             {
-                var picker = new FolderPicker();
-                picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
-                picker.FileTypeFilter.Add("*");
-
-                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-                WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-
-                var folder = await picker.PickSingleFolderAsync();
-                if (folder != null)
+                var folderPath = await DialogHelper.PickFolderAsync();
+                if (folderPath != null)
                 {
-                    DirectoryTextBox.Text = folder.Path;
+                    DirectoryTextBox.Text = folderPath;
                 }
             }
             catch (Exception ex)
@@ -1005,17 +976,10 @@ namespace XUnity_AutoInstaller.Pages
         {
             try
             {
-                var picker = new FolderPicker();
-                picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
-                picker.FileTypeFilter.Add("*");
-
-                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-                WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-
-                var folder = await picker.PickSingleFolderAsync();
-                if (folder != null)
+                var folderPath = await DialogHelper.PickFolderAsync();
+                if (folderPath != null)
                 {
-                    TextureDirectoryTextBox.Text = folder.Path;
+                    TextureDirectoryTextBox.Text = folderPath;
                 }
             }
             catch (Exception ex)
@@ -1028,17 +992,10 @@ namespace XUnity_AutoInstaller.Pages
         {
             try
             {
-                var picker = new FolderPicker();
-                picker.SuggestedStartLocation = PickerLocationId.ComputerFolder;
-                picker.FileTypeFilter.Add("*");
-
-                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-                WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-
-                var folder = await picker.PickSingleFolderAsync();
-                if (folder != null)
+                var folderPath = await DialogHelper.PickFolderAsync();
+                if (folderPath != null)
                 {
-                    EzTransInstallationPathTextBox.Text = folder.Path;
+                    EzTransInstallationPathTextBox.Text = folderPath;
                 }
             }
             catch (Exception ex)
@@ -1051,17 +1008,10 @@ namespace XUnity_AutoInstaller.Pages
         {
             try
             {
-                var picker = new FolderPicker();
-                picker.SuggestedStartLocation = PickerLocationId.ComputerFolder;
-                picker.FileTypeFilter.Add("*");
-
-                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-                WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-
-                var folder = await picker.PickSingleFolderAsync();
-                if (folder != null)
+                var folderPath = await DialogHelper.PickFolderAsync();
+                if (folderPath != null)
                 {
-                    LecPowerTranslator15InstallationPathTextBox.Text = folder.Path;
+                    LecPowerTranslator15InstallationPathTextBox.Text = folderPath;
                 }
             }
             catch (Exception ex)

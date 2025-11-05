@@ -215,17 +215,15 @@ namespace XUnity_AutoInstaller.Pages
             if (this.XamlRoot == null) return;
 
             // 确认对话框
-            var confirmDialog = new ContentDialog
-            {
-                Title = "确认清理",
-                Content = "确定要清理所有下载缓存吗？\n这将删除所有已下载的压缩包。",
-                PrimaryButtonText = "确定",
-                CloseButtonText = "取消",
-                XamlRoot = this.XamlRoot
-            };
+            var confirmed = await DialogHelper.ShowConfirmAsync(
+                this.XamlRoot,
+                "确认清理",
+                "确定要清理所有下载缓存吗？\n这将删除所有已下载的压缩包。",
+                "确定",
+                "取消"
+            );
 
-            var result = await confirmDialog.ShowAsync();
-            if (result == ContentDialogResult.Primary)
+            if (confirmed)
             {
                 try
                 {
@@ -383,18 +381,15 @@ namespace XUnity_AutoInstaller.Pages
             if (this.XamlRoot == null) return;
 
             // 确认对话框
-            var confirmDialog = new ContentDialog
-            {
-                Title = "⚠️ 警告",
-                Content = "即将删除所有应用数据，包括：\n\n• 所有设置\n• 记住的游戏路径\n\n此操作不可撤销，确定继续吗？",
-                PrimaryButtonText = "确定删除",
-                CloseButtonText = "取消",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.XamlRoot
-            };
+            var confirmed = await DialogHelper.ShowConfirmAsync(
+                this.XamlRoot,
+                "⚠️ 警告",
+                "即将删除所有应用数据，包括：\n\n• 所有设置\n• 记住的游戏路径\n\n此操作不可撤销，确定继续吗？",
+                "确定删除",
+                "取消"
+            );
 
-            var result = await confirmDialog.ShowAsync();
-            if (result == ContentDialogResult.Primary)
+            if (confirmed)
             {
                 try
                 {

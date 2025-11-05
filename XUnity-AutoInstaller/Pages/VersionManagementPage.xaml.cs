@@ -416,17 +416,15 @@ namespace XUnity_AutoInstaller.Pages
             if (button?.Tag is InstalledVersionInfo version)
             {
                 var gamePath = _gameStateService.CurrentGamePath;
-                var dialog = new ContentDialog
-                {
-                    Title = "确认卸载",
-                    Content = $"确定要卸载 {version.PackageType} {version.Version} 吗？",
-                    PrimaryButtonText = "卸载",
-                    CloseButtonText = "取消",
-                    XamlRoot = this.XamlRoot
-                };
+                var confirmed = await DialogHelper.ShowConfirmAsync(
+                    this.XamlRoot,
+                    "确认卸载",
+                    $"确定要卸载 {version.PackageType} {version.Version} 吗？",
+                    "卸载",
+                    "取消"
+                );
 
-                var result = await dialog.ShowAsync();
-                if (result == ContentDialogResult.Primary && !string.IsNullOrEmpty(gamePath))
+                if (confirmed && !string.IsNullOrEmpty(gamePath))
                 {
                     try
                     {
@@ -562,18 +560,15 @@ namespace XUnity_AutoInstaller.Pages
             if (this.XamlRoot == null) return;
 
             // 确认对话框
-            var confirmDialog = new ContentDialog
-            {
-                Title = "确认恢复快照",
-                Content = $"确定要恢复快照 \"{snapshot.Name}\" 吗？\n\n这将替换当前安装的版本。",
-                PrimaryButtonText = "恢复",
-                CloseButtonText = "取消",
-                XamlRoot = this.XamlRoot,
-                DefaultButton = ContentDialogButton.Close
-            };
+            var confirmed = await DialogHelper.ShowConfirmAsync(
+                this.XamlRoot,
+                "确认恢复快照",
+                $"确定要恢复快照 \"{snapshot.Name}\" 吗？\n\n这将替换当前安装的版本。",
+                "恢复",
+                "取消"
+            );
 
-            var result = await confirmDialog.ShowAsync();
-            if (result == ContentDialogResult.Primary)
+            if (confirmed)
             {
                 try
                 {
@@ -626,18 +621,15 @@ namespace XUnity_AutoInstaller.Pages
             if (this.XamlRoot == null) return;
 
             // 确认对话框
-            var confirmDialog = new ContentDialog
-            {
-                Title = "确认删除快照",
-                Content = $"确定要删除快照 \"{snapshot.Name}\" 吗？\n\n此操作无法撤销。",
-                PrimaryButtonText = "删除",
-                CloseButtonText = "取消",
-                XamlRoot = this.XamlRoot,
-                DefaultButton = ContentDialogButton.Close
-            };
+            var confirmed = await DialogHelper.ShowConfirmAsync(
+                this.XamlRoot,
+                "确认删除快照",
+                $"确定要删除快照 \"{snapshot.Name}\" 吗？\n\n此操作无法撤销。",
+                "删除",
+                "取消"
+            );
 
-            var result = await confirmDialog.ShowAsync();
-            if (result == ContentDialogResult.Primary)
+            if (confirmed)
             {
                 try
                 {
@@ -668,18 +660,15 @@ namespace XUnity_AutoInstaller.Pages
                 }
 
                 // 确认对话框
-                var confirmDialog = new ContentDialog
-                {
-                    Title = "确认恢复快照",
-                    Content = $"确定要恢复快照 \"{snapshot.Name}\" 吗？\n\n这将替换当前安装的版本。",
-                    PrimaryButtonText = "恢复",
-                    CloseButtonText = "取消",
-                    XamlRoot = this.XamlRoot,
-                    DefaultButton = ContentDialogButton.Close
-                };
+                var confirmed = await DialogHelper.ShowConfirmAsync(
+                    this.XamlRoot,
+                    "确认恢复快照",
+                    $"确定要恢复快照 \"{snapshot.Name}\" 吗？\n\n这将替换当前安装的版本。",
+                    "恢复",
+                    "取消"
+                );
 
-                var result = await confirmDialog.ShowAsync();
-                if (result == ContentDialogResult.Primary)
+                if (confirmed)
                 {
                     try
                     {
@@ -704,18 +693,15 @@ namespace XUnity_AutoInstaller.Pages
             if (displayItem?.ItemData is SnapshotInfo snapshot)
             {
                 // 确认对话框
-                var confirmDialog = new ContentDialog
-                {
-                    Title = "确认删除快照",
-                    Content = $"确定要删除快照 \"{snapshot.Name}\" 吗？\n\n此操作无法撤销。",
-                    PrimaryButtonText = "删除",
-                    CloseButtonText = "取消",
-                    XamlRoot = this.XamlRoot,
-                    DefaultButton = ContentDialogButton.Close
-                };
+                var confirmed = await DialogHelper.ShowConfirmAsync(
+                    this.XamlRoot,
+                    "确认删除快照",
+                    $"确定要删除快照 \"{snapshot.Name}\" 吗？\n\n此操作无法撤销。",
+                    "删除",
+                    "取消"
+                );
 
-                var result = await confirmDialog.ShowAsync();
-                if (result == ContentDialogResult.Primary)
+                if (confirmed)
                 {
                     try
                     {
@@ -817,14 +803,7 @@ namespace XUnity_AutoInstaller.Pages
                 return;
             }
 
-            var dialog = new ContentDialog
-            {
-                Title = "错误",
-                Content = message,
-                CloseButtonText = "确定",
-                XamlRoot = this.XamlRoot
-            };
-            await dialog.ShowAsync();
+            await DialogHelper.ShowErrorAsync(this.XamlRoot, "错误", message);
         }
 
         private async Task ShowSuccessAsync(string message)
@@ -836,14 +815,7 @@ namespace XUnity_AutoInstaller.Pages
                 return;
             }
 
-            var dialog = new ContentDialog
-            {
-                Title = "成功",
-                Content = message,
-                CloseButtonText = "确定",
-                XamlRoot = this.XamlRoot
-            };
-            await dialog.ShowAsync();
+            await DialogHelper.ShowSuccessAsync(this.XamlRoot, "成功", message);
         }
 
         /// <summary>
