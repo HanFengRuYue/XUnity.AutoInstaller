@@ -64,6 +64,8 @@ public partial class VersionManagementViewModel : ObservableObject
     public Visibility XUnityContentVisibility => !IsLoadingAvailable ? Visibility.Visible : Visibility.Collapsed;
     public Visibility InstalledLoadingVisibility => IsLoadingInstalled ? Visibility.Visible : Visibility.Collapsed;
     public Visibility InstalledContentVisibility => !IsLoadingInstalled ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility EmptyInstalledVisibility => InstalledVersions.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility InstalledListVisibility => InstalledVersions.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     public VersionManagementViewModel(
         VersionCacheService versionCacheService,
@@ -81,6 +83,7 @@ public partial class VersionManagementViewModel : ObservableObject
         _versionCacheService.VersionsUpdated += OnVersionsUpdated;
         _installationStateService.InstallationStarted += OnInstallationStarted;
         _installationStateService.InstallationCompleted += OnInstallationCompleted;
+        InstalledVersions.CollectionChanged += OnInstalledVersionsCollectionChanged;
     }
 
     partial void OnIsLoadingAvailableChanged(bool value)
@@ -110,6 +113,12 @@ public partial class VersionManagementViewModel : ObservableObject
     partial void OnSelectedVersionTypeIndexChanged(int value)
     {
         ApplyFilters();
+    }
+
+    private void OnInstalledVersionsCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    {
+        OnPropertyChanged(nameof(EmptyInstalledVisibility));
+        OnPropertyChanged(nameof(InstalledListVisibility));
     }
 
     public async Task InitializeAsync()
@@ -449,5 +458,6 @@ public partial class VersionManagementViewModel : ObservableObject
         _versionCacheService.VersionsUpdated -= OnVersionsUpdated;
         _installationStateService.InstallationStarted -= OnInstallationStarted;
         _installationStateService.InstallationCompleted -= OnInstallationCompleted;
+        InstalledVersions.CollectionChanged -= OnInstalledVersionsCollectionChanged;
     }
 }
