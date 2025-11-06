@@ -5,19 +5,10 @@
 /// </summary>
 public class InstallOptions
 {
-    /// <summary>
-    /// 是否备份现有安装
-    /// </summary>
     public bool BackupExisting { get; set; } = true;
 
-    /// <summary>
-    /// 是否清理旧版本
-    /// </summary>
     public bool CleanOldVersion { get; set; }
 
-    /// <summary>
-    /// 目标平台
-    /// </summary>
     public Platform TargetPlatform { get; set; } = Platform.x64;
 
     /// <summary>

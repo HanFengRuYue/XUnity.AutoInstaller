@@ -28,9 +28,6 @@ public class FontResourceInfo
     /// </summary>
     public string FileName { get; set; } = string.Empty;
 
-    /// <summary>
-    /// 下载 URL
-    /// </summary>
     public string DownloadUrl { get; set; } = string.Empty;
 
     /// <summary>
@@ -38,9 +35,6 @@ public class FontResourceInfo
     /// </summary>
     public long FileSize { get; set; }
 
-    /// <summary>
-    /// 最后修改日期
-    /// </summary>
     public DateTime LastModified { get; set; }
 
     /// <summary>
@@ -87,9 +81,6 @@ public class FontResourceInfo
         }
     }
 
-    /// <summary>
-    /// 格式化的文件大小
-    /// </summary>
     public string FileSizeFormatted
     {
         get
@@ -123,24 +114,12 @@ public class FontResourceInfo
         }
     }
 
-    /// <summary>
-    /// 下载按钮是否可见
-    /// </summary>
     public Visibility IsDownloadButtonVisible => !IsCached && !IsInstalled ? Visibility.Visible : Visibility.Collapsed;
 
-    /// <summary>
-    /// 安装按钮是否可见
-    /// </summary>
     public Visibility IsInstallButtonVisible => IsCached && !IsInstalled ? Visibility.Visible : Visibility.Collapsed;
 
-    /// <summary>
-    /// 已安装状态是否可见
-    /// </summary>
     public Visibility IsInstalledStatusVisible => IsInstalled ? Visibility.Visible : Visibility.Collapsed;
 
-    /// <summary>
-    /// 推荐标识是否可见
-    /// </summary>
     public Visibility RecommendedBadgeVisibility => IsRecommended ? Visibility.Visible : Visibility.Collapsed;
 
     /// <summary>

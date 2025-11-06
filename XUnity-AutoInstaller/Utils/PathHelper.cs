@@ -25,49 +25,25 @@ public static class PathHelper
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Programs\Common")
     };
 
-    /// <summary>
-    /// 获取 BepInEx 目录路径
-    /// </summary>
     public static string GetBepInExPath(string gamePath) => Path.Combine(gamePath, "BepInEx");
 
-    /// <summary>
-    /// 获取 BepInEx 配置目录路径
-    /// </summary>
     public static string GetBepInExConfigPath(string gamePath) => Path.Combine(GetBepInExPath(gamePath), "config");
 
-    /// <summary>
-    /// 获取 BepInEx 插件目录路径
-    /// </summary>
     public static string GetBepInExPluginsPath(string gamePath) => Path.Combine(GetBepInExPath(gamePath), "plugins");
 
-    /// <summary>
-    /// 获取 BepInEx 核心目录路径
-    /// </summary>
     public static string GetBepInExCorePath(string gamePath) => Path.Combine(GetBepInExPath(gamePath), "core");
 
-    /// <summary>
-    /// 获取 XUnity.AutoTranslator 插件路径
-    /// </summary>
     public static string GetXUnityPath(string gamePath) => Path.Combine(GetBepInExPluginsPath(gamePath), "XUnity.AutoTranslator");
 
-    /// <summary>
-    /// 获取 BepInEx.cfg 配置文件路径
-    /// </summary>
     public static string GetBepInExConfigFile(string gamePath) => Path.Combine(GetBepInExConfigPath(gamePath), "BepInEx.cfg");
 
-    /// <summary>
-    /// 获取 AutoTranslatorConfig.ini 配置文件路径
-    /// </summary>
     public static string GetXUnityConfigFile(string gamePath) => Path.Combine(GetBepInExConfigPath(gamePath), "AutoTranslatorConfig.ini");
 
     /// <summary>
-    /// 获取 winhttp.dll 代理路径（BepInEx 入口点）
+    /// BepInEx 入口点
     /// </summary>
     public static string GetWinhttpDllPath(string gamePath) => Path.Combine(gamePath, "winhttp.dll");
 
-    /// <summary>
-    /// 获取 doorstop_config.ini 路径
-    /// </summary>
     public static string GetDoorstopConfigPath(string gamePath) => Path.Combine(gamePath, "doorstop_config.ini");
 
     /// <summary>
@@ -146,9 +122,6 @@ public static class PathHelper
         return cachePath;
     }
 
-    /// <summary>
-    /// 检查版本是否已缓存到本地
-    /// </summary>
     public static bool IsCachedVersion(VersionInfo version)
     {
         try
@@ -164,9 +137,6 @@ public static class PathHelper
         }
     }
 
-    /// <summary>
-    /// 格式化文件大小
-    /// </summary>
     public static string FormatFileSize(long bytes)
     {
         string[] sizes = { "B", "KB", "MB", "GB" };
@@ -180,9 +150,6 @@ public static class PathHelper
         return $"{len:0.##} {sizes[order]}";
     }
 
-    /// <summary>
-    /// 获取字体缓存目录路径
-    /// </summary>
     public static string GetFontCachePath()
     {
         var fontCachePath = Path.Combine(
@@ -195,16 +162,13 @@ public static class PathHelper
     }
 
     /// <summary>
-    /// 获取游戏中的字体目录路径 (BepInEx\fonts)
+    /// BepInEx\fonts
     /// </summary>
     public static string GetGameFontPath(string gamePath)
     {
         return Path.Combine(GetBepInExPath(gamePath), "fonts");
     }
 
-    /// <summary>
-    /// 检查字体是否已缓存
-    /// </summary>
     public static bool IsFontCached(string fileName)
     {
         try
@@ -219,9 +183,6 @@ public static class PathHelper
         }
     }
 
-    /// <summary>
-    /// 检查字体是否已安装到游戏
-    /// </summary>
     public static bool IsFontInstalledInGame(string gamePath, string fileName)
     {
         try

@@ -31,7 +31,7 @@
                     <StackPanel Spacing="8">
                         <TextBlock FontSize="14">
                             <Run FontWeight="SemiBold" Text="Unity 版本: "/>
-                            <Run x:Name="UnityVersionRun" Text="检测中..."/>
+                            <Run Text="{x:Bind ViewModel.UnityVersion, Mode=OneWay}"/>
                         </TextBlock>
                     </StackPanel>
                 </Border>
@@ -46,7 +46,7 @@
                         VerticalAlignment="Center"/>
                     <Button
                         Style="{StaticResource TextBlockButtonStyle}"
-                        Click="RefreshButton_Click"
+                        Command="{x:Bind ViewModel.LoadFontsCommand}"
                         VerticalAlignment="Center">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal" Spacing="4">
@@ -66,24 +66,24 @@
                         Header="字体名称"
                         PlaceholderText="输入字体名称筛选..."
                         Width="250"
-                        TextChanged="FilterBox_TextChanged"/>
+                        Text="{x:Bind ViewModel.FontNameFilter, Mode=TwoWay}"/>
                     <ComboBox
                         x:Name="UnityVersionFilterBox"
                         Header="Unity 版本"
                         Width="180"
-                        SelectionChanged="FilterBox_SelectionChanged">
-                        <ComboBoxItem Content="全部版本" IsSelected="True" Tag=""/>
+                        SelectedIndex="{x:Bind ViewModel.SelectedUnityVersionFilterIndex, Mode=TwoWay}">
+                        <ComboBoxItem Content="全部版本" Tag=""/>
                         <ComboBoxItem Content="Unity 6 (6000+)" Tag="6000"/>
-                        <ComboBoxItem Content="2022" Tag="2022"/>
-                        <ComboBoxItem Content="2021" Tag="2021"/>
-                        <ComboBoxItem Content="2020" Tag="2020"/>
-                        <ComboBoxItem Content="2019" Tag="2019"/>
-                        <ComboBoxItem Content="2018" Tag="2018"/>
                         <ComboBoxItem Content="2017" Tag="2017"/>
+                        <ComboBoxItem Content="2018" Tag="2018"/>
+                        <ComboBoxItem Content="2019" Tag="2019"/>
+                        <ComboBoxItem Content="2020" Tag="2020"/>
+                        <ComboBoxItem Content="2021" Tag="2021"/>
+                        <ComboBoxItem Content="2022" Tag="2022"/>
                     </ComboBox>
                     <Button
                         Content="清除筛选"
-                        Click="ClearFilter_Click"
+                        Command="{x:Bind ViewModel.ClearFilterCommand}"
                         VerticalAlignment="Bottom"
                         Margin="0,0,0,2"/>
                 </StackPanel>
@@ -117,11 +117,14 @@
                                         Padding="0"
                                         HorizontalAlignment="Stretch"
                                         HorizontalContentAlignment="Left"
-                                        Click="SortByFontName_Click">
+                                        Command="{x:Bind ViewModel.SortByFontNameCommand}">
                                         <Button.Content>
                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                 <TextBlock Text="字体名称" FontWeight="SemiBold" FontSize="14"/>
-                                                <FontIcon x:Name="FontNameSortIcon" Glyph="&#xE74A;" FontSize="12" Visibility="Collapsed"/>
+                                                <FontIcon
+                                                    Glyph="{x:Bind ViewModel.FontNameSortGlyph, Mode=OneWay}"
+                                                    FontSize="12"
+                                                    Visibility="{x:Bind ViewModel.FontNameSortIconVisibility, Mode=OneWay}"/>
                                             </StackPanel>
                                         </Button.Content>
                                     </Button>
@@ -134,11 +137,14 @@
                                         Padding="0"
                                         HorizontalAlignment="Stretch"
                                         HorizontalContentAlignment="Left"
-                                        Click="SortByUnityVersion_Click">
+                                        Command="{x:Bind ViewModel.SortByUnityVersionCommand}">
                                         <Button.Content>
                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                 <TextBlock Text="Unity 版本" FontWeight="SemiBold" FontSize="14"/>
-                                                <FontIcon x:Name="UnityVersionSortIcon" Glyph="&#xE74A;" FontSize="12" Visibility="Collapsed"/>
+                                                <FontIcon
+                                                    Glyph="{x:Bind ViewModel.UnityVersionSortGlyph, Mode=OneWay}"
+                                                    FontSize="12"
+                                                    Visibility="{x:Bind ViewModel.UnityVersionSortIconVisibility, Mode=OneWay}"/>
                                             </StackPanel>
                                         </Button.Content>
                                     </Button>
@@ -151,11 +157,14 @@
                                         Padding="0"
                                         HorizontalAlignment="Stretch"
                                         HorizontalContentAlignment="Left"
-                                        Click="SortByFileSize_Click">
+                                        Command="{x:Bind ViewModel.SortByFileSizeCommand}">
                                         <Button.Content>
                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                 <TextBlock Text="文件大小" FontWeight="SemiBold" FontSize="14"/>
-                                                <FontIcon x:Name="FileSizeSortIcon" Glyph="&#xE74A;" FontSize="12" Visibility="Collapsed"/>
+                                                <FontIcon
+                                                    Glyph="{x:Bind ViewModel.FileSizeSortGlyph, Mode=OneWay}"
+                                                    FontSize="12"
+                                                    Visibility="{x:Bind ViewModel.FileSizeSortIconVisibility, Mode=OneWay}"/>
                                             </StackPanel>
                                         </Button.Content>
                                     </Button>
@@ -170,9 +179,10 @@
                             </Border>
 
                             <!-- 字体列表 -->
-                            <ScrollViewer Height="450">
+                            <ScrollViewer Height="450" Visibility="{x:Bind ViewModel.ContentVisibility, Mode=OneWay}">
                                 <ListView
                                     x:Name="FontListView"
+                                    ItemsSource="{x:Bind ViewModel.Fonts, Mode=OneWay}"
                                     SelectionMode="None">
                                     <ListView.ItemTemplate>
                                         <DataTemplate x:DataType="models:FontResourceInfo">
@@ -295,7 +305,7 @@
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             Spacing="12"
-                            Visibility="Collapsed">
+                            Visibility="{x:Bind ViewModel.EmptyVisibility, Mode=OneWay}">
                             <FontIcon
                                 Glyph="&#xE8D2;"
                                 FontSize="48"
@@ -307,7 +317,7 @@
                             <Button
                                 Content="清除筛选"
                                 Style="{StaticResource AccentButtonStyle}"
-                                Click="ClearFilter_Click"/>
+                                Command="{x:Bind ViewModel.ClearFilterCommand}"/>
                         </StackPanel>
 
                         <!-- 加载中提示 -->
@@ -316,9 +326,9 @@
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             Spacing="12"
-                            Visibility="Visible">
+                            Visibility="{x:Bind ViewModel.LoadingVisibility, Mode=OneWay}">
                             <ProgressRing
-                                IsActive="True"
+                                IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
                                 Width="48"
                                 Height="48"/>
                             <TextBlock
@@ -333,7 +343,7 @@
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             Spacing="12"
-                            Visibility="Collapsed">
+                            Visibility="{x:Bind ViewModel.ErrorVisibility, Mode=OneWay}">
                             <FontIcon
                                 Glyph="&#xE7BA;"
                                 FontSize="48"
@@ -341,7 +351,7 @@
                                 Foreground="{ThemeResource SystemFillColorCriticalBrush}"/>
                             <TextBlock
                                 x:Name="ErrorTextBlock"
-                                Text="加载失败"
+                                Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
                                 FontSize="16"
                                 Opacity="0.6"
                                 TextAlignment="Center"
@@ -350,7 +360,7 @@
                             <Button
                                 Content="重试"
                                 Style="{StaticResource AccentButtonStyle}"
-                                Click="RefreshButton_Click"/>
+                                Command="{x:Bind ViewModel.LoadFontsCommand}"/>
                         </StackPanel>
                     </Grid>
                 </Border>

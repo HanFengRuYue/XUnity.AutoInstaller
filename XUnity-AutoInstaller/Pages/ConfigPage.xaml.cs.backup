@@ -1,205 +1,157 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
+using Windows.Storage.Pickers;
 using System;
-using System.Threading.Tasks;
+using System.Diagnostics;
+using System.IO;
 using XUnity_AutoInstaller.Models;
 using XUnity_AutoInstaller.Services;
 using XUnity_AutoInstaller.Utils;
-using XUnity_AutoInstaller.ViewModels;
 
 namespace XUnity_AutoInstaller.Pages
 {
     public sealed partial class ConfigPage : Page
     {
-        public ConfigViewModel ViewModel { get; }
+        private readonly GameStateService _gameStateService;
+        private BepInExConfig? _bepinexConfig;
+        private XUnityConfig? _xunityConfig;
 
         public ConfigPage()
         {
-            ViewModel = App.Services.GetRequiredService<ConfigViewModel>();
-
             this.InitializeComponent();
-
-            this.Loaded += OnPageLoaded;
-            this.Unloaded += OnPageUnloaded;
-        }
-
-        private async void OnPageLoaded(object sender, RoutedEventArgs e)
-        {
-            await ViewModel.InitializeAsync();
-            
-            if (ViewModel.BepInExConfig != null && ViewModel.XUnityConfig != null)
-            {
-                LoadBepInExConfigToUI(ViewModel.BepInExConfig);
-                LoadXUnityConfigToUI(ViewModel.XUnityConfig);
-            }
-
-            this.Loaded -= OnPageLoaded;
-        }
-
-        private void OnPageUnloaded(object sender, RoutedEventArgs e)
-        {
-            ViewModel.Cleanup();
-            this.Unloaded -= OnPageUnloaded;
+            _gameStateService = GameStateService.Instance;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
+
+            // 异步加载配置
+            DispatcherQueue.TryEnqueue(async () =>
+            {
+                // 从 GameStateService 获取游戏路径
+                var gamePath = _gameStateService.CurrentGamePath;
+                if (!string.IsNullOrEmpty(gamePath))
+                {
+                    await LoadConfigurationAsync();
+                }
+                else
+                {
+                    SetLockedState(true);
+                }
+            });
         }
 
-        // Button click event handlers
         private async void BrowseGamePathButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                await ViewModel.BrowseGamePathCommand.ExecuteAsync(null);
-                
-                if (ViewModel.BepInExConfig != null && ViewModel.XUnityConfig != null)
+                var gamePath = await DialogHelper.PickFolderAsync();
+                if (gamePath != null)
                 {
-                    LoadBepInExConfigToUI(ViewModel.BepInExConfig);
-                    LoadXUnityConfigToUI(ViewModel.XUnityConfig);
+                    if (PathHelper.IsValidGameDirectory(gamePath))
+                    {
+                        _gameStateService.SetGamePath(gamePath, saveToSettings: true);
+                        await LoadConfigurationAsync();
+                    }
+                    else
+                    {
+                        SetLockedState(true);
+                        ShowError("所选目录不是有效的游戏目录");
+                    }
                 }
             }
             catch (Exception ex)
             {
-                await DialogHelper.ShowErrorAsync(this.XamlRoot, "错误", ex.Message);
+                ShowError($"选择文件夹失败: {ex.Message}");
             }
         }
 
-        private async void SaveButton_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// 设置锁定状态
+        /// </summary>
+        private void SetLockedState(bool isLocked)
         {
+            if (LockedPanel == null || ConfigContentPanel == null || 
+                SaveButton == null || ResetButton == null || CancelButton == null ||
+                OpenConfigFolderButton == null)
+                return;
+
+            if (isLocked)
+            {
+                LockedPanel.Visibility = Visibility.Visible;
+                ConfigContentPanel.Visibility = Visibility.Collapsed;
+                SaveButton.IsEnabled = false;
+                ResetButton.IsEnabled = false;
+                CancelButton.IsEnabled = false;
+                OpenConfigFolderButton.IsEnabled = false;
+            }
+            else
+            {
+                LockedPanel.Visibility = Visibility.Collapsed;
+                ConfigContentPanel.Visibility = Visibility.Visible;
+                SaveButton.IsEnabled = true;
+                ResetButton.IsEnabled = true;
+                CancelButton.IsEnabled = true;
+                OpenConfigFolderButton.IsEnabled = true;
+            }
+        }
+
+        /// <summary>
+        /// 异步加载配置并填充 UI
+        /// </summary>
+        private async System.Threading.Tasks.Task LoadConfigurationAsync()
+        {
+            var gamePath = _gameStateService.CurrentGamePath;
+            if (string.IsNullOrEmpty(gamePath) || !ConfigurationService.ValidateGamePath(gamePath))
+            {
+                SetLockedState(true);
+                ShowError("无效的游戏路径或 BepInEx 未安装");
+                return;
+            }
+
+            // 解锁界面
+            SetLockedState(false);
+
             try
             {
-                // Read current UI state
-                ViewModel.BepInExConfig = ReadBepInExConfigFromUI();
-                ViewModel.XUnityConfig = ReadXUnityConfigFromUI();
+                // 显示加载指示器，隐藏配置内容
+                LoadingPanel.Visibility = Visibility.Visible;
+                ConfigContentPanel.Visibility = Visibility.Collapsed;
 
-                ViewModel.SaveCommand.Execute(null);
-                await DialogHelper.ShowSuccessAsync(this.XamlRoot, "保存成功", "配置已成功保存");
-            }
-            catch (Exception ex)
-            {
-                await DialogHelper.ShowErrorAsync(this.XamlRoot, "保存失败", ex.Message);
-            }
-        }
-
-        private async void ResetButton_Click(object sender, RoutedEventArgs e)
-        {
-            var confirmed = await DialogHelper.ShowConfirmAsync(
-                this.XamlRoot,
-                "重置配置",
-                "确定要重置为默认配置吗？此操作不可撤销。",
-                "确定",
-                "取消"
-            );
-
-            if (confirmed)
-            {
-                ViewModel.ResetCommand.Execute(null);
-
-                if (ViewModel.BepInExConfig != null && ViewModel.XUnityConfig != null)
+                // 在后台线程加载配置文件
+                var (bepinexConfig, xunityConfig) = await System.Threading.Tasks.Task.Run(() =>
                 {
-                    LoadBepInExConfigToUI(ViewModel.BepInExConfig);
-                    LoadXUnityConfigToUI(ViewModel.XUnityConfig);
-                }
-            }
-        }
+                    var bepinex = ConfigurationService.LoadBepInExConfig(gamePath);
+                    var xunity = ConfigurationService.LoadXUnityConfig(gamePath);
+                    return (bepinex, xunity);
+                });
 
-        private async void CancelButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                await ViewModel.CancelCommand.ExecuteAsync(null);
+                // 在 UI 线程更新界面
+                _bepinexConfig = bepinexConfig;
+                _xunityConfig = xunityConfig;
 
-                if (ViewModel.BepInExConfig != null && ViewModel.XUnityConfig != null)
-                {
-                    LoadBepInExConfigToUI(ViewModel.BepInExConfig);
-                    LoadXUnityConfigToUI(ViewModel.XUnityConfig);
-                }
+                LoadBepInExConfigToUI(_bepinexConfig);
+                LoadXUnityConfigToUI(_xunityConfig);
+
+                // 隐藏加载指示器，显示配置内容
+                LoadingPanel.Visibility = Visibility.Collapsed;
+                ConfigContentPanel.Visibility = Visibility.Visible;
             }
             catch (Exception ex)
             {
-                await DialogHelper.ShowErrorAsync(this.XamlRoot, "错误", ex.Message);
+                // 隐藏加载指示器
+                LoadingPanel.Visibility = Visibility.Collapsed;
+                ConfigContentPanel.Visibility = Visibility.Visible;
+
+                ShowError($"加载配置失败: {ex.Message}");
             }
         }
 
-        private async void OpenConfigFolderButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                ViewModel.OpenConfigFolderCommand.Execute(null);
-            }
-            catch (Exception ex)
-            {
-                await DialogHelper.ShowErrorAsync(this.XamlRoot, "错误", ex.Message);
-            }
-        }
-
-        private async void BrowseDirectoryButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var folderPath = await DialogHelper.PickFolderAsync();
-                if (folderPath != null && DirectoryTextBox != null)
-                {
-                    DirectoryTextBox.Text = folderPath;
-                }
-            }
-            catch (Exception ex)
-            {
-                await DialogHelper.ShowErrorAsync(this.XamlRoot, "错误", $"选择文件夹失败: {ex.Message}");
-            }
-        }
-
-        private async void BrowseTextureDirectoryButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var folderPath = await DialogHelper.PickFolderAsync();
-                if (folderPath != null && TextureDirectoryTextBox != null)
-                {
-                    TextureDirectoryTextBox.Text = folderPath;
-                }
-            }
-            catch (Exception ex)
-            {
-                await DialogHelper.ShowErrorAsync(this.XamlRoot, "错误", $"选择文件夹失败: {ex.Message}");
-            }
-        }
-
-        private async void BrowseEzTransPathButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var folderPath = await DialogHelper.PickFolderAsync();
-                if (folderPath != null && EzTransInstallationPathTextBox != null)
-                {
-                    EzTransInstallationPathTextBox.Text = folderPath;
-                }
-            }
-            catch (Exception ex)
-            {
-                await DialogHelper.ShowErrorAsync(this.XamlRoot, "错误", $"选择文件夹失败: {ex.Message}");
-            }
-        }
-
-        private async void BrowseLecPathButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var folderPath = await DialogHelper.PickFolderAsync();
-                if (folderPath != null && LecPowerTranslator15InstallationPathTextBox != null)
-                {
-                    LecPowerTranslator15InstallationPathTextBox.Text = folderPath;
-                }
-            }
-            catch (Exception ex)
-            {
-                await DialogHelper.ShowErrorAsync(this.XamlRoot, "错误", $"选择文件夹失败: {ex.Message}");
-            }
-        }
+        /// <summary>
+        /// 加载 BepInEx 配置到 UI
+        /// </summary>
         private void LoadBepInExConfigToUI(BepInExConfig config)
         {
             // Caching
@@ -310,7 +262,6 @@ namespace XUnity_AutoInstaller.Pages
         /// <summary>
         /// 加载 XUnity 配置到 UI
         /// </summary>
-        // LoadXUnityConfigToUI method
         private void LoadXUnityConfigToUI(XUnityConfig config)
         {
             // Service - Use Tag-based mapping for more reliability
@@ -572,7 +523,6 @@ namespace XUnity_AutoInstaller.Pages
         /// <summary>
         /// 从 UI 读取 BepInEx 配置
         /// </summary>
-        // ReadBepInExConfigFromUI method
         private BepInExConfig ReadBepInExConfigFromUI()
         {
             var config = new BepInExConfig
@@ -677,7 +627,6 @@ namespace XUnity_AutoInstaller.Pages
         /// <summary>
         /// 从 UI 读取 XUnity 配置
         /// </summary>
-        // ReadXUnityConfigFromUI method
         private XUnityConfig ReadXUnityConfigFromUI()
         {
             var config = new XUnityConfig
@@ -916,5 +865,168 @@ namespace XUnity_AutoInstaller.Pages
             return config;
         }
 
+        private async void SaveButton_Click(object sender, RoutedEventArgs e)
+        {
+            var gamePath = _gameStateService.CurrentGamePath;
+            if (string.IsNullOrEmpty(gamePath))
+            {
+                ShowError("游戏路径未设置");
+                return;
+            }
+
+            try
+            {
+                // 读取 UI 配置
+                var bepinexConfig = ReadBepInExConfigFromUI();
+                var xunityConfig = ReadXUnityConfigFromUI();
+
+                // 保存配置
+                ConfigurationService.SaveBepInExConfig(gamePath, bepinexConfig);
+                ConfigurationService.SaveXUnityConfig(gamePath, xunityConfig);
+
+                // 更新内部引用
+                _bepinexConfig = bepinexConfig;
+                _xunityConfig = xunityConfig;
+
+                // 显示成功对话框
+                await DialogHelper.ShowSuccessAsync(this.XamlRoot, "保存成功", "配置已成功保存");
+            }
+            catch (Exception ex)
+            {
+                ShowError($"保存配置失败: {ex.Message}");
+            }
+        }
+
+        private async void CancelButton_Click(object sender, RoutedEventArgs e)
+        {
+            // 重新加载配置
+            await LoadConfigurationAsync();
+        }
+
+        private async void ResetButton_Click(object sender, RoutedEventArgs e)
+        {
+            var confirmed = await DialogHelper.ShowConfirmAsync(
+                this.XamlRoot,
+                "重置配置",
+                "确定要重置为默认配置吗？此操作不可撤销。",
+                "确定",
+                "取消"
+            );
+
+            if (confirmed)
+            {
+                // 加载默认配置
+                _bepinexConfig = BepInExConfig.CreateDefault();
+                _xunityConfig = XUnityConfig.CreateRecommended();
+
+                // 更新 UI
+                LoadBepInExConfigToUI(_bepinexConfig);
+                LoadXUnityConfigToUI(_xunityConfig);
+            }
+        }
+
+        private void OpenConfigFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            var gamePath = _gameStateService.CurrentGamePath;
+            if (string.IsNullOrEmpty(gamePath))
+            {
+                ShowError("游戏路径未设置");
+                return;
+            }
+
+            try
+            {
+                var configPath = PathHelper.GetBepInExConfigPath(gamePath);
+
+                if (!Directory.Exists(configPath))
+                {
+                    ShowError("配置文件夹不存在");
+                    return;
+                }
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = configPath,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                ShowError($"打开文件夹失败: {ex.Message}");
+            }
+        }
+
+        private async void BrowseDirectoryButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var folderPath = await DialogHelper.PickFolderAsync();
+                if (folderPath != null)
+                {
+                    DirectoryTextBox.Text = folderPath;
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError($"选择文件夹失败: {ex.Message}");
+            }
+        }
+
+        private async void BrowseTextureDirectoryButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var folderPath = await DialogHelper.PickFolderAsync();
+                if (folderPath != null)
+                {
+                    TextureDirectoryTextBox.Text = folderPath;
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError($"选择文件夹失败: {ex.Message}");
+            }
+        }
+
+        private async void BrowseEzTransPathButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var folderPath = await DialogHelper.PickFolderAsync();
+                if (folderPath != null)
+                {
+                    EzTransInstallationPathTextBox.Text = folderPath;
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError($"选择文件夹失败: {ex.Message}");
+            }
+        }
+
+        private async void BrowseLecPathButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var folderPath = await DialogHelper.PickFolderAsync();
+                if (folderPath != null)
+                {
+                    LecPowerTranslator15InstallationPathTextBox.Text = folderPath;
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError($"选择文件夹失败: {ex.Message}");
+            }
+        }
+
+        private void ShowError(string message)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                ErrorInfoBar.Message = message;
+                ErrorInfoBar.IsOpen = true;
+            });
+        }
     }
 }

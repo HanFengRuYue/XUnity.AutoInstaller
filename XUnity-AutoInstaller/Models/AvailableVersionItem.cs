@@ -10,19 +10,10 @@ namespace XUnity_AutoInstaller.Models
         public string DisplayText { get; set; } = string.Empty;
         public VersionInfo Version { get; set; } = null!;
 
-        /// <summary>
-        /// 是否已缓存到本地
-        /// </summary>
         public bool IsCached { get; set; }
 
-        /// <summary>
-        /// 下载按钮的可见性
-        /// </summary>
         public Visibility IsDownloadButtonVisible => IsCached ? Visibility.Collapsed : Visibility.Visible;
 
-        /// <summary>
-        /// "已下载"文本的可见性
-        /// </summary>
         public Visibility IsDownloadedTextVisible => IsCached ? Visibility.Visible : Visibility.Collapsed;
     }
 }

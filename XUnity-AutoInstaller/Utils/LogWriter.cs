@@ -38,41 +38,26 @@ public class LogWriter
         }
     }
 
-    /// <summary>
-    /// 写入信息日志
-    /// </summary>
     public void Info(string message)
     {
         WriteLog("INFO", message);
     }
 
-    /// <summary>
-    /// 写入警告日志
-    /// </summary>
     public void Warning(string message)
     {
         WriteLog("WARN", message);
     }
 
-    /// <summary>
-    /// 写入错误日志
-    /// </summary>
     public void Error(string message)
     {
         WriteLog("ERROR", message);
     }
 
-    /// <summary>
-    /// 写入成功日志
-    /// </summary>
     public void Success(string message)
     {
         WriteLog("SUCCESS", message);
     }
 
-    /// <summary>
-    /// 写入日志
-    /// </summary>
     private void WriteLog(string level, string message)
     {
         // Map level to LogLevel enum
@@ -118,9 +103,6 @@ public class LogWriter
         }
     }
 
-    /// <summary>
-    /// 清空日志文件
-    /// </summary>
     public void ClearLogFile()
     {
         if (!string.IsNullOrEmpty(_logFilePath) && File.Exists(_logFilePath))

@@ -77,11 +77,6 @@ public class IniParser
         return result;
     }
 
-    /// <summary>
-    /// 将字典结构写入 INI 文件
-    /// </summary>
-    /// <param name="filePath">INI 文件路径</param>
-    /// <param name="data">字典：[Section][Key] = Value</param>
     public static void Write(string filePath, Dictionary<string, Dictionary<string, string>> data)
     {
         var sb = new StringBuilder();
@@ -123,9 +118,6 @@ public class IniParser
         return defaultValue;
     }
 
-    /// <summary>
-    /// 设置指定值
-    /// </summary>
     public static void SetValue(Dictionary<string, Dictionary<string, string>> data, string section, string key, string value)
     {
         if (!data.ContainsKey(section))
@@ -135,9 +127,6 @@ public class IniParser
         data[section][key] = value;
     }
 
-    /// <summary>
-    /// 获取布尔值
-    /// </summary>
     public static bool GetBool(Dictionary<string, Dictionary<string, string>> data, string section, string key, bool defaultValue = false)
     {
         var value = GetValue(data, section, key);
@@ -154,9 +143,6 @@ public class IniParser
         };
     }
 
-    /// <summary>
-    /// 获取整数值
-    /// </summary>
     public static int GetInt(Dictionary<string, Dictionary<string, string>> data, string section, string key, int defaultValue = 0)
     {
         var value = GetValue(data, section, key);

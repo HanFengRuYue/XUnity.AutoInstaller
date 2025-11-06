@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Net.Http;
 using System.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using XUnity_AutoInstaller.Services;
+using XUnity_AutoInstaller.ViewModels;
 
 namespace XUnity_AutoInstaller
 {
@@ -18,6 +20,11 @@ namespace XUnity_AutoInstaller
         public static Window? MainWindow { get; private set; }
 
         /// <summary>
+        /// 获取应用程序的服务提供者（用于依赖注入）
+        /// </summary>
+        public static IServiceProvider Services { get; private set; } = null!;
+
+        /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
         /// </summary>
@@ -26,6 +33,9 @@ namespace XUnity_AutoInstaller
             // Required for PublishSingleFile with framework-dependent deployment
             // This ensures Windows App Runtime can locate its files when bundled in single-file exe
             Environment.SetEnvironmentVariable("MICROSOFT_WINDOWSAPPRUNTIME_BASE_DIRECTORY", AppContext.BaseDirectory);
+
+            // Configure dependency injection container
+            Services = ConfigureServices();
 
             InitializeComponent();
 
@@ -138,6 +148,38 @@ namespace XUnity_AutoInstaller
                 LogService.Instance.Log($"详细信息: {ex.StackTrace}", LogLevel.Debug, "[App]");
                 LogService.Instance.Log("应用程序将正常启动，版本列表功能可能受限。您可以稍后在版本管理页面手动刷新。", LogLevel.Info, "[App]");
             }
+        }
+
+        /// <summary>
+        /// 配置依赖注入服务
+        /// </summary>
+        private static IServiceProvider ConfigureServices()
+        {
+            var services = new ServiceCollection();
+
+            // 注册单例服务（已存在的全局单例）
+            services.AddSingleton<GameStateService>(GameStateService.Instance);
+            services.AddSingleton<LogService>(LogService.Instance);
+            services.AddSingleton<VersionCacheService>(VersionCacheService.Instance);
+            services.AddSingleton<InstallationStateService>(InstallationStateService.Instance);
+            services.AddSingleton<SettingsService>(); // SettingsService 没有 Instance，创建新实例
+
+            // 注册 Transient 服务（每次请求创建新实例）
+            services.AddTransient<VersionService>();
+            services.AddTransient<InstallationService>();
+            services.AddTransient<ConfigurationService>();
+            services.AddTransient<FontManagementService>();
+
+            // 注册 ViewModels（每次请求创建新实例）
+            services.AddTransient<InstallViewModel>();
+            services.AddTransient<VersionManagementViewModel>();
+            services.AddTransient<FontDownloadViewModel>();
+            services.AddTransient<DashboardViewModel>();
+            services.AddTransient<SettingsViewModel>();
+            services.AddTransient<LogViewModel>();
+            services.AddTransient<ConfigViewModel>();
+
+            return services.BuildServiceProvider();
         }
     }
 }
